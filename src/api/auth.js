@@ -137,3 +137,61 @@ export async function uploadAvatar(dataUrl) {
   if (!res.ok) throw new Error(data.error || "Erro ao enviar foto");
   return data.url;
 }
+
+export async function requestPasswordResetEmail({ email } = {}) {
+  const res = await fetch(`${getBase()}/api/password-reset/request`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: email?.trim() || "",
+    }),
+  });
+
+  const contentType = res.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await res.json().catch(() => ({}))
+    : {};
+
+  if (!res.ok) {
+    const msg =
+      data.error ||
+      (res.status === 503
+        ? "Não foi possível enviar o e-mail no momento. Tente novamente."
+        : "Erro ao solicitar redefinição de senha.");
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+export async function confirmPasswordResetEmail({
+  email,
+  code,
+  newPassword,
+} = {}) {
+  const res = await fetch(`${getBase()}/api/password-reset/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: email?.trim() || "",
+      code: typeof code === "string" ? code.trim() : String(code ?? ""),
+      newPassword,
+    }),
+  });
+
+  const contentType = res.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await res.json().catch(() => ({}))
+    : {};
+
+  if (!res.ok) {
+    const msg =
+      data.error ||
+      (res.status === 503
+        ? "Erro ao redefinir a senha. Tente novamente."
+        : "Código inválido ou expirado.");
+    throw new Error(msg);
+  }
+
+  return data;
+}

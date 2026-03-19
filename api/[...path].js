@@ -7,6 +7,8 @@ import { handlePerfumes } from "../lib/api/perfumes.js";
 import { handleAdminUsers } from "../lib/api/adminUsers.js";
 import { handleAdminOrders } from "../lib/api/adminOrders.js";
 import { handleMyOrders } from "../lib/api/myOrders.js";
+import { handlePasswordResetRequest } from "../lib/api/passwordResetRequest.js";
+import { handlePasswordResetConfirm } from "../lib/api/passwordResetConfirm.js";
 
 function getPathSegments(req) {
   let segments = [];
@@ -61,6 +63,12 @@ export default async function handler(req, res) {
         return await handleLogin(req, res);
       case "register":
         return await handleRegister(req, res);
+      case "password-reset": {
+        const action = rest?.[0];
+        if (action === "request") return await handlePasswordResetRequest(req, res);
+        if (action === "confirm") return await handlePasswordResetConfirm(req, res);
+        break;
+      }
       case "admin-check":
         return await handleAdminCheck(req, res);
       case "me":

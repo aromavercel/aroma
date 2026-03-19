@@ -11,6 +11,7 @@ import {
   verifyToken,
 } from "./lib/auth.js";
 import { normalizePhone } from "./lib/phone.js";
+import { generateOtpCode, hashResetCode, constantTimeEqualHex } from "../lib/passwordReset.js";
 
 const MAX_AVATAR_SIZE = 4 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -1134,6 +1135,221 @@ app.post("/api/login", async (req, res) => {
   } catch (err) {
     console.error("Login error:", err);
     return res.status(500).json({ error: "Erro ao fazer login" });
+  }
+});
+
+function parseReqBody(req) {
+  let body = req.body;
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      body = {};
+    }
+  }
+  return body || {};
+}
+
+app.post("/api/password-reset/request", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+
+  try {
+    const body = parseReqBody(req);
+    const email = body.email ?? body.e_mail;
+    const emailNormalized =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
+
+    if (!emailNormalized) {
+      return res.status(400).json({ error: "E-mail é obrigatório" });
+    }
+
+    // Não enumerar usuários: em caso de telefone não existir, responde ok.
+    const ok = () => res.status(200).json({ ok: true });
+
+    const rows = await sql`SELECT id, email FROM users WHERE email = ${emailNormalized}`;
+
+    if (rows.length === 0) {
+      return ok();
+    }
+
+    const user = rows[0];
+
+    const cooldownSeconds =
+      Number(process.env.PASSWORD_RESET_COOLDOWN_SECONDS) || 60;
+    const ttlMinutes = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES) || 10;
+
+    const active = await sql`
+      SELECT id, created_at
+      FROM password_reset_tokens
+      WHERE user_email = ${emailNormalized}
+        AND used_at IS NULL
+        AND expires_at > now()
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+
+    if (active.length > 0) {
+      const createdAtMs = new Date(active[0].created_at).getTime();
+      const nowMs = Date.now();
+      if (
+        Number.isFinite(createdAtMs) &&
+        nowMs - createdAtMs <= cooldownSeconds * 1000
+      ) {
+        return ok();
+      }
+    }
+
+    await sql`
+      UPDATE password_reset_tokens
+      SET used_at = now()
+      WHERE user_email = ${emailNormalized}
+        AND used_at IS NULL
+        AND expires_at > now()
+    `;
+
+    const otpCode = generateOtpCode(6);
+    const tokenHash = hashResetCode(otpCode, emailNormalized);
+
+    const [inserted] = await sql`
+      INSERT INTO password_reset_tokens (user_email, user_id, token_hash, expires_at, attempts)
+      VALUES (
+        ${emailNormalized},
+        ${user.id},
+        ${tokenHash},
+        now() + (${ttlMinutes} * interval '1 minute'),
+        0
+      )
+      RETURNING id
+    `;
+
+    try {
+      const transport = getMailTransport();
+      if (!transport) {
+        return res.status(503).json({ error: "Envio de e-mail não está configurado no servidor." });
+      }
+
+      const from = (process.env.SMTP_FROM || process.env.SMTP_USER || "").trim();
+      if (!from) {
+        return res.status(503).json({ error: "SMTP_FROM/SMTP_USER não definido no servidor." });
+      }
+
+      await transport.sendMail({
+        from,
+        to: emailNormalized,
+        subject: "Recuperação de senha - Aroma Expresso",
+        text: `Seu código de verificação é ${otpCode}. Ele expira em ${ttlMinutes} minutos.`,
+        html: `<p>Seu código de verificação é <strong>${otpCode}</strong>.</p><p>Ele expira em ${ttlMinutes} minutos.</p>`,
+      });
+    } catch (mailErr) {
+      console.error("E-mail send error:", mailErr);
+      await sql`
+        UPDATE password_reset_tokens
+        SET used_at = now()
+        WHERE id = ${inserted?.id || null}
+      `;
+      return res.status(503).json({ error: "Não foi possível enviar o e-mail no momento. Tente novamente." });
+    }
+
+    return ok();
+  } catch (err) {
+    console.error("Password reset request error:", err);
+    return res
+      .status(500)
+      .json({ error: "Erro ao solicitar redefinição de senha" });
+  }
+});
+
+app.post("/api/password-reset/confirm", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+
+  try {
+    const body = parseReqBody(req);
+    const email = body.email ?? body.e_mail;
+    const code = body.code ?? body.otp;
+    const newPassword = body.newPassword ?? body.password;
+
+    const emailNormalized =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
+
+    const codeStr =
+      typeof code === "string" ? code.trim() : String(code ?? "").trim();
+    const passwordStr = typeof newPassword === "string" ? newPassword : "";
+
+    if (!emailNormalized) return res.status(400).json({ error: "E-mail é obrigatório" });
+    if (!codeStr) return res.status(400).json({ error: "Código é obrigatório" });
+    if (!passwordStr) return res.status(400).json({ error: "Nova senha é obrigatória" });
+    if (passwordStr.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "Senha deve ter no mínimo 6 caracteres" });
+    }
+
+    const tokens = await sql`
+      SELECT id, token_hash, attempts, user_id
+      FROM password_reset_tokens
+      WHERE user_email = ${emailNormalized}
+        AND used_at IS NULL
+        AND expires_at > now()
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+
+    if (!tokens || tokens.length === 0) {
+      return res.status(400).json({ error: "Código inválido ou expirado" });
+    }
+
+    const token = tokens[0];
+    const maxAttempts =
+      Number(process.env.PASSWORD_RESET_MAX_ATTEMPTS) || 5;
+    const attempts = Number(token.attempts) || 0;
+
+    if (attempts >= maxAttempts) {
+      await sql`
+        UPDATE password_reset_tokens
+        SET used_at = now()
+        WHERE id = ${token.id}
+      `;
+      return res.status(400).json({ error: "Código inválido ou expirado" });
+    }
+
+    const tokenHashAttempt = hashResetCode(codeStr, emailNormalized);
+    const ok = constantTimeEqualHex(tokenHashAttempt, token.token_hash);
+
+    if (!ok) {
+      const nextAttempts = attempts + 1;
+      if (nextAttempts >= maxAttempts) {
+        await sql`
+          UPDATE password_reset_tokens
+          SET attempts = ${nextAttempts}, used_at = now()
+          WHERE id = ${token.id}
+        `;
+      } else {
+        await sql`
+          UPDATE password_reset_tokens
+          SET attempts = ${nextAttempts}
+          WHERE id = ${token.id}
+        `;
+      }
+      return res.status(400).json({ error: "Código inválido ou expirado" });
+    }
+
+    const newHash = await hashPassword(passwordStr);
+    await sql`
+      UPDATE users
+      SET password_hash = ${newHash}, updated_at = now()
+      WHERE id = ${token.user_id}
+    `;
+
+    await sql`
+      UPDATE password_reset_tokens
+      SET used_at = now()
+      WHERE id = ${token.id}
+    `;
+
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("Password reset confirm error:", err);
+    return res.status(500).json({ error: "Erro ao redefinir a senha" });
   }
 });
 
