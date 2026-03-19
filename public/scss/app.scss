@@ -1,0 +1,60 @@
+/* ---------------------------------------------------------
+    * Name: Vineta - Multipurpose eCommerce
+    * Version: 1.0.1
+    * Author: Themesflat
+    * Author URI: http://themesflat.com 
+
+	* Abstracts variable
+    
+    * Reset css styles
+
+    * Components
+
+        * header
+        * footer
+        * tabs
+        * slider banner
+        * button
+        * form
+        * drop down
+        * carousel
+        * avatar
+        * pop up
+        * box icon
+        * hover
+        * collection
+        * product
+        * blog
+        * testimonial
+        * lookbook
+        * accordion
+        * brand
+        * zoom
+        * shop
+        * cart
+        * account
+        
+    * section
+
+    * Responsive
+
+    * RTL
+ ------------------------------------------------------------------------------ */
+
+/*--------- Abstracts variable ---------- */
+@use "./abstracts/index" as abstract;
+
+/*---------- Reset css styles ----------- */
+@use "reset";
+
+/*------------ Components ---------------- */
+@use "./component/index" as component;
+
+/*------------ sections ---------------- */
+@use "./sections";
+
+/*-------------- Responsive ----------------- */
+@use "./responsive";
+
+/*-------------- RTL ----------------- */
+@use "./rtl";

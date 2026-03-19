@@ -1,0 +1,344 @@
+@use "../abstracts/index" as *;
+
+.box-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @include transition3;
+    cursor: pointer;
+    .icon-cart2 {
+        margin-top: -2px;
+    }
+}
+
+.tf-social-icon {
+    --facebook-cl: rgb(59, 89, 152);
+    --twitter-cl: rgb(85, 85, 85);
+    --instagram-cl: linear-gradient(#8a3ab9, #e95950, #fccc63);
+    --threads-cl: rgb(224, 53, 102);
+    --youtube-cl: rgb(205, 32, 31);
+    --tiktok-cl: linear-gradient(#25f4ee, #000, #fe2c55);
+    --tiktok-cl2: rgb(254, 44, 85);
+    --pinterest-cl: rgb(203, 32, 39);
+    --tumblr-cl: rgb(55, 69, 92);
+    --vimeo-cl: rgb(26, 183, 234);
+    --snapchat-cl: rgb(255, 221, 0);
+    --whatsapp-cl: rgb(0, 230, 118);
+    --linked_in-cl: rgb(23, 106, 255);
+    --wechat-cl: rgb(26, 173, 24);
+    --reddit-cl: rgb(255, 69, 0);
+    --line-cl: rgb(0, 195, 77);
+    --spotify-cl: rgb(30, 125, 96);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    .social-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+        color: var(--dark);
+        border: 1px solid var(--dark);
+        color: var(--dark);
+        border-radius: 50%;
+        background-color: var(--white);
+        @include transition3;
+    }
+    .social-facebook {
+        &:hover {
+            background-color: transparent;
+            color: var(--facebook-cl);
+            border-color: var(--facebook-cl);
+        }
+    }
+    .social-instagram {
+        &:hover {
+            background-color: transparent;
+            color: var(--threads-cl);
+            border-color: var(--threads-cl);
+        }
+    }
+    .social-x {
+        font-size: 10px;
+        &:hover {
+            background-color: transparent;
+            color: var(--twitter-cl);
+            border-color: var(--twitter-cl);
+        }
+    }
+    .social-snapchat {
+        &:hover {
+            background-color: transparent;
+            color: var(--snapchat-cl);
+            border-color: var(--snapchat-cl);
+        }
+    }
+    .social-youtube {
+        &:hover {
+            background-color: transparent;
+            color: var(--youtube-cl);
+            border-color: var(--youtube-cl);
+        }
+    }
+    .social-linkedin {
+        &:hover {
+            background-color: transparent;
+            color: var(--linked_in-cl);
+            border-color: var(--linked_in-cl);
+        }
+    }
+    &.style-fill {
+        .social-item {
+            background-color: var(--line);
+            border: none;
+        }
+        .social-facebook:hover {
+            background: var(--facebook-cl);
+            color: var(--white);
+            border: none;
+        }
+        .social-x:hover {
+            background: var(--twitter-cl);
+            color: var(--white);
+            border: none;
+        }
+        .social-instagram:hover {
+            background: var(--instagram-cl);
+            color: var(--white);
+            border: none;
+        }
+        .social-tiktok:hover {
+            background: var(--tiktok-cl);
+            color: var(--white);
+            border: none;
+        }
+        .social-pinterest:hover {
+            background: var(--pinterest-cl);
+            color: var(--white);
+            border: none;
+        }
+        .social-amazon:hover {
+            background: var(--dark);
+            color: var(--white);
+            border: none;
+        }
+        .social-youtube:hover {
+            background: var(--youtube-cl);
+            color: var(--white);
+            border: none;
+        }
+        .social-linkedin {
+            background: var(--linked_in-cl);
+            color: var(--white);
+            border: none;
+        }
+    }
+    &.style-large {
+        gap: 15px;
+
+        .social-item {
+            width: 38px;
+            height: 38px;
+            border-color: var(--line);
+            font-size: 16px;
+            color: #383d38;
+        }
+        .social-facebook {
+            font-size: 18px;
+            &:hover {
+                background: var(--facebook-cl);
+                color: var(--white);
+                border: transparent;
+            }
+        }
+        .social-x:hover {
+            background: var(--twitter-cl);
+            color: var(--white);
+            border: transparent;
+        }
+        .social-instagram:hover {
+            background: var(--instagram-cl);
+            color: var(--white);
+            border: transparent;
+        }
+        .social-snapchat {
+            &:hover {
+                background-color: var(--snapchat-cl);
+                color: var(--white);
+                border: transparent;
+            }
+        }
+        .social-linkedin:hover {
+            background: var(--linked_in-cl);
+            color: var(--white);
+            border: transparent;
+        }
+    }
+    &.style-default {
+        gap: 20px;
+        a {
+            display: flex;
+            font-size: 16px;
+        }
+    }
+    &.style-1 {
+        a {
+            border: 2px solid #cacaca;
+            width: 48px;
+            height: 48px;
+            font-size: 18px;
+        }
+    }
+    &.style-white {
+        li a {
+            width: 47px;
+            height: 47px;
+            border: 0 ;
+            font-size: 12px;
+            background-color: var(--white) !important;
+            color: #1F1F1F;
+            &:hover {
+                color: var(--white);
+                background-color: #1F1F1F !important;
+            }
+        }
+    }
+}
+
+.tf-icon-box {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    .icon {
+        font-size: 28px;
+    }
+    .content {
+        display: grid;
+        gap: 8px;
+        .title {
+            font-weight: 500;
+            font-size: 16px;
+            line-height: 16px;
+        }
+        .desc {
+            font-size: 15px;
+            line-height: 24px;
+            color: var(--text);
+        }
+    }
+    &.style-2 {
+        padding: 0;
+        border: 0;
+        .box-icon {
+            width: 64px;
+            height: 64px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            // .icon {
+            //     font-size: 24px;
+            // }
+        }
+        .title {
+            font-size: 18px;
+            line-height: 18px;
+        }
+    }
+    &.style-3 {
+        padding: 0;
+        border: 0;
+        flex-direction: row;
+        text-align: left;
+        .title {
+            font-size: 18px;
+            line-height: 18px;
+        }
+        .box-icon {
+            width: 64px;
+            height: 64px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .content {
+            gap: 12px;
+        }
+    }
+    &.style-4 {
+        padding: 24px;
+        border: 0;
+        .title {
+            font-size: 18px;
+            line-height: 18px;
+        }
+        .content {
+            gap: 12px;
+        }
+    }
+    &.style-border {
+        .box-icon {
+            width: 74px;
+            height: 74px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            .icon {
+                // font-size: 23px;
+            }
+        }
+    }
+    &.style-lg {
+        border-radius: 16px;
+        .title {
+            font-size: 18px;
+            line-height: 18px;
+        }
+    }
+}
+
+.tf-icon-box-v2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    .icon {
+        font-size: 24px;
+        color: #ff8e8e;
+    }
+    .title {
+        font-size: 16px;
+        line-height: 20.8px;
+        letter-spacing: -0.02em;
+    }
+}
+
+.flat-wrapper-iconbox {
+    border: 1px solid #2a4528;
+    border-radius: 20px;
+    padding: 77px 30px 49px;
+    position: relative;
+    > .title {
+        position: absolute;
+        left: 50%;
+        top: -8%;
+        transform: translateX(-50%);
+        padding: 0px 20px;
+        z-index: 1;
+        background-color: #fffcf6;
+        text-align: center;
+        text-wrap: nowrap;
+    }
+    .tf-icon-box{
+        .box-icon{
+            border: 1px solid #4D8036;
+        }
+        .title{
+            font-size: 20px;
+            line-height: 26px;
+        }
+    }
+}

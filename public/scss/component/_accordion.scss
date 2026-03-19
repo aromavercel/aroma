@@ -1,0 +1,29 @@
+.widget-accordion{
+    border-bottom: 1px solid var(--line);
+    .accordion-title{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 20px 0px;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        cursor: pointer;
+        .icon{
+            font-size: 8px;
+            transition: transform 0.35s linear;
+        }
+        &:not(.collapsed){
+            .icon{
+                transform: rotate(180deg);
+            }
+        }
+    }
+    .accordion-body{
+        padding: 10px 0px 20px;
+    }
+    &:first-child{
+        border-top: 1px solid var(--line);
+    }
+}

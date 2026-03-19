@@ -1,0 +1,437 @@
+@use "../abstracts/index" as *;
+.swiper {
+    --swiper-theme-color: var(--primary);
+    --swiper-pagination-progressbar-bg-color: #d9d9d9;
+}
+.swiper-pagination-progressbar {
+    border-radius: 34px;
+    overflow: hidden;
+}
+
+.swiper-horizontal > .swiper-pagination-bullets .swiper-pagination-bullet,
+.swiper-pagination-horizontal.swiper-pagination-bullets .swiper-pagination-bullet {
+    margin: 0px;
+}
+
+.sw-dots {
+    display: flex;
+    gap: 10px;
+    .swiper-pagination-bullet {
+        background: #373737;
+        position: relative;
+        opacity: 1;
+        @include tf-transition-1;
+        &::after {
+            content: "";
+            width: 26px;
+            height: 26px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            // transform: translate(-50%, -50%) rotate(120deg);
+            border-radius: 50%;
+            border: 1px solid #ff4747;
+            border-top-color: transparent;
+            @include tf-transition-1;
+            opacity: 0;
+            animation: spin-border 1.5s linear infinite;
+        }
+        &.swiper-pagination-bullet-active {
+            margin: 0px 10px;
+            &::after {
+                opacity: 1;
+                transform: translate(-50%, -50%) rotate(45deg);
+            }
+        }
+    }
+    &.style-dark{
+        .swiper-pagination-bullet{
+            &::after{
+                border: 1px solid var(--dark);
+                border-top-color: transparent;  
+            }
+        }  
+    }
+    &.style-white {
+        .swiper-pagination-bullet {
+            background: var(--white);
+            &::after {
+                border-color: #cacaca;
+                border-top-color: transparent;
+            }
+        }
+        &.border-red {
+            .swiper-pagination-bullet {
+                &::after {
+                    border: 1px solid #ff4747;
+                    border-top-color: transparent;
+                }
+            }
+        }
+    }
+    &.style-grey {
+        .swiper-pagination-bullet {
+            background: #b4b4b4;
+            &::after {
+                border: 1px solid var(--white);
+                transform: translate(-50%, -50%);
+                width: 16px;
+                height: 16px;
+            }
+            &.swiper-pagination-bullet-active {
+                background: var(--white);
+                border-color: var(--white);
+                margin: 0px 4px;
+            }
+        }
+    }
+    &.style-2 {
+        gap: 12px;
+        .swiper-pagination-bullet {
+            background-color: #1b1b1b;
+            &::after {
+                transform: translate(-50%, -50%);
+                border: unset;
+                height: 18px;
+                width: 18px;
+                border: 5px solid var(--primary-3);
+            }
+            &.swiper-pagination-bullet-active {
+                margin: 0px 5px !important;
+                background-color: var(--white);
+            }
+        }
+        &.type-2 {
+            gap: 10px;
+            .swiper-pagination-bullet {
+                background-color: #bababa;
+                &::after {
+                    transform: translate(-50%, -50%);
+                    border: unset;
+                    height: 26px;
+                    width: 26px;
+                    border: 9px solid #eeeeeeb2;
+                }
+                &.swiper-pagination-bullet-active {
+                    margin: 0px 9px !important;
+                    background-color: var(--dark);
+                }
+            }
+        }
+    }
+    &.dot-white {
+        .swiper-pagination-bullet {
+            background: var(--white);
+        }
+    }
+    &.border-white {
+        .swiper-pagination-bullet {
+            &::after {
+                border: 1px solid var(--white);
+            }
+        }
+    }
+    &.small {
+        height: 15px;
+        align-items: center;
+        .swiper-pagination-bullet {
+            height: 6px;
+            width: 6px;
+            &::after {
+                animation: unset;
+            }
+            &.swiper-pagination-bullet-active {
+                &::after {
+                    width: 15px;
+                    height: 15px;
+                }
+            }
+        }
+    }
+}
+
+.sw-dot-default {
+    display: flex;
+    gap: 4px;
+    margin-top: 20px;
+    .swiper-pagination-bullet {
+        width: 16px;
+        height: 16px;
+        @include flex(center, center);
+        @include transition3;
+        background-color: transparent;
+        border: 1px solid transparent;
+        position: relative;
+        opacity: 1;
+        &:before {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background-color: #b1b1b1;
+            @include transition3;
+        }
+    }
+    .swiper-pagination-bullet-active {
+        border-color: var(--dark);
+        &::before {
+            background-color: var(--dark);
+        }
+    }
+    &.style-white {
+        .swiper-pagination-bullet {
+            &::before {
+                background-color: var(--white);
+            }
+        }
+        .swiper-pagination-bullet-active {
+            border-color: var(--white);
+            &::before {
+                background-color: var(--white);
+            }
+        }
+    }
+    &.style-sm {
+        gap: 2px;
+        .swiper-pagination-bullet {
+            width: 14px;
+            height: 14px;
+            &:before {
+                width: 4px;
+                height: 4px;
+            }
+        }
+    }
+}
+
+.sw-auto {
+    .swiper-wrapper {
+        align-items: center;
+    }
+    .swiper-slide {
+        width: auto;
+        transition-timing-function: linear;
+    }
+    &.tf-sw-iconbox-row {
+        .swiper-wrapper {
+            justify-content: space-between;
+        }
+    }
+}
+
+.nav-swiper {
+    background-color: var(--white);
+    border-radius: 999px;
+    @include transition3;
+    @include flex(center, center);
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    color: var(--dark);
+    cursor: pointer;
+    &::after {
+        font-size: 12px;
+        color: var(--dark);
+        font-weight: 600;
+        @include transition3();
+    }
+    &:hover {
+        background-color: var(--rgba-dark-2);
+        border-color: var(--rgba-dark-2);
+        &::after {
+            color: var(--white);
+        }
+    }
+    &.style-1 {
+        width: 48px;
+        height: 48px;
+        border: 0 !important;
+        background-color: transparent !important;
+        &.swiper-button-prev{
+            transform: rotate(180deg);
+            &::after{
+                font-family: $fontIcon;
+                font-size: 18px;
+                content: '\e904';
+                font-weight: 400;
+            }
+        }
+        &.swiper-button-next::after {
+            font-family: $fontIcon;
+            font-size: 18px;
+            content: '\e904';
+            font-weight: 400;
+        }
+        &:hover {
+            &::after {
+                color: var(--primary) !important;
+            }
+        }
+    }
+    &.swiper-button-disabled {
+        background-color: rgba(0, 0, 0, 0.4);
+        border-color: transparent;
+        cursor: text;
+    }
+    &.arrow-1 {
+        &.swiper-button-prev {
+            transform: rotate(180deg);
+            &::after {
+                font-family: $fontIcon;
+                content: "\e904";
+                font-weight: 400;
+            }
+        }
+        &.swiper-button-next {
+            &::after {
+                font-family: $fontIcon;
+                content: "\e904";
+                font-weight: 400;
+            }
+        }
+    }
+    &.size-30 {
+        width: 30px;
+        height: 30px;
+        &::after {
+            font-size: 10px;
+        }
+    }
+    &.size-36 {
+        width: 36px;
+        height: 36px;
+        &::after {
+            font-size: 10px;
+        }
+    }
+    &.style-line {
+        background-color: transparent;
+        border-color: var(--dark);
+        color: var(--dark);
+        &::after {
+            @include transition3;
+        }
+        &:hover:not(.swiper-button-disabled) {
+            background-color: var(--dark);
+            border-color: var(--dark);
+        }
+        &.swiper-button-disabled {
+            border-color: rgba(0, 0, 0, 0.4);
+            cursor: text;
+            &::after {
+                color: rgba(0, 0, 0, 0.4);
+            }
+        }
+    }
+    &.line-white {
+        background-color: transparent;
+        border-color: var(--white);
+        &::after {
+            color: var(--white);
+            @include transition3;
+        }
+        &:hover:not(.swiper-button-disabled) {
+            background-color: var(--white);
+            border-color: var(--white);
+            &::after {
+                color: var(--dark);
+            }
+        }
+        &.swiper-button-disabled {
+            border-color: rgba(255, 255, 255, 0.4);
+            cursor: text;
+            &::after {
+                color: rgba(255, 255, 255, 0.4);
+            }
+        }
+    }
+}
+
+.hover-sw-nav {
+    position: relative;
+}
+
+.fl-control-sw {
+    position: relative;
+    .nav-swiper {
+        margin-top: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    &.pos1 {
+        .nav-swiper {
+            top: 45%;
+        }
+    }
+    &.pos2 {
+        .nav-swiper {
+            top: 38%;
+        }
+    }
+    &.pos3 {
+        .nav-swiper {
+            top: 43%;
+        }
+    }
+}
+.fl-control-sw2 {
+    position: relative;
+    .nav-swiper {
+        margin-top: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    &.pos1 {
+        .nav-swiper {
+            top: 42%;
+        }
+    }
+    &.pos2 {
+        .nav-swiper {
+            top: 38%;
+        }
+    }
+}
+.wrap-pos-nav {
+    position: relative;
+    .nav-swiper {
+        position: absolute;
+        margin-top: 3px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    &.sw-over-product {
+        .nav-swiper {
+            margin-top: -10px;
+        }
+    }
+}
+
+.box-nav-swiper {
+    display: flex;
+    gap: 8px;
+    .nav-swiper {
+        position: unset;
+        margin: 0;
+    }
+    &.style-2 {
+        gap: 12px;
+    }
+}
+
+.tab-content {
+    .swiper-pagination-progressbar {
+        margin-top: 30px;
+    }
+}
+.sw-height {
+    .swiper-slide {
+        height: auto;
+        .tf-icon-box,
+        .card-product {
+            width: 100%;
+            height: 100%;
+        }
+    }
+}

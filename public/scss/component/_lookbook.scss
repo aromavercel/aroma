@@ -1,0 +1,467 @@
+@use "../abstracts/index" as *;
+
+.tf-pin-btn {
+    cursor: pointer;
+    @include transition3;
+    position: relative;
+    span {
+        display: block;
+        width: 25px;
+        height: 25px;
+        border: 9px solid var(--white);
+        border-radius: 50%;
+        background-color: var(--dark);
+        @include transition3;
+
+        &:hover {
+            &::after,
+            &::before {
+                position: absolute;
+                content: "";
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                border: solid 1px var(--white);
+                border-radius: 50%;
+            }
+            &::before {
+                animation: ripple-line 2s linear infinite;
+            }
+            &::after {
+                animation: ripple-line 2s 1s linear infinite;
+            }
+        }
+    }
+    &.style-lg {
+        span {
+            width: 28px;
+            height: 28px;
+        }
+    }
+    &.style-hover {
+        &:hover {
+            span {
+                background-color: var(--primary);
+            }
+        }
+    }
+    &.style-dark {
+        width: 28px;
+        height: 28px;
+        background-color: var(--white);
+        @include flex(center, center);
+        border-radius: 50%;
+        span {
+            background-color: var(--dark);
+            width: 12px;
+            height: 12px;
+            border: 0;
+            @include transition3;
+        }
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.7);
+
+            span {
+                background-color: var(--primary);
+            }
+        }
+    }
+}
+.tf-pin-btn2 {
+    cursor: pointer;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    position: relative;
+    @include flex(center, center);
+    z-index: 1;
+    background-color: rgba(255, 255, 255, 0.6);
+    @include transition3;
+    span {
+        width: 9px;
+        height: 9px;
+        background-color: var(--dark);
+        border-radius: 50%;
+    }
+    &::after,
+    &::before {
+        position: absolute;
+        content: "";
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        border-radius: 9999px;
+        animation: ripple-fill 3s infinite;
+    }
+    &::after {
+        animation-delay: 0.5s;
+    }
+    &::before {
+        animation-delay: 0.9s;
+    }
+    &.active {
+        width: 32px;
+        height: 32px;
+        span {
+            width: 12px;
+            height: 12px;
+        }
+    }
+}
+
+.collection-position-3 {
+    position: relative;
+}
+
+.cls-lookbook {
+    overflow: unset;
+    position: relative;
+    .img-style {
+        border-radius: 20px;
+        display: block;
+    }
+    .lookbook-item {
+        position: absolute;
+        left: 30%;
+        bottom: 32%;
+        &.position1 {
+            left: 40%;
+            bottom: 12%;
+        }
+        &.position2 {
+            left: 32%;
+            bottom: 18%;
+        }
+        &.position3 {
+            left: 58%;
+            bottom: 10%;
+        }
+        &.position4 {
+            left: 36%;
+            bottom: 45%;
+        }
+        &.position5 {
+            left: 70%;
+            bottom: 16%;
+        }
+    }
+}
+.tf-sw-lookbook {
+    .cls-lookbook {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+.lookbook-item {
+    .dropdown-menu {
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        padding: 0;
+        z-index: 99;
+    }
+}
+.loobook-product {
+    padding: 14px;
+    background-color: var(--white);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+    .content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+    }
+    .info {
+        display: grid;
+        gap: 4px;
+        text-align: start;
+    }
+    .price-wrap {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .img-style {
+        border-radius: 0;
+        flex-shrink: 0;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .btn-lookbook {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        @include flex(center, center);
+        background-color: var(--dark);
+        flex-shrink: 0;
+        font-size: 17px;
+        i {
+            color: var(--white);
+        }
+        &:hover {
+            background-color: var(--primary);
+        }
+    }
+    .price-old {
+        color: #c9c9c9;
+        opacity: 1;
+        &::after {
+            background-color: #c9c9c9;
+        }
+    }
+    &::before {
+        content: "";
+        position: absolute;
+        border-width: 8px;
+        border-style: solid;
+    }
+    &.style-row {
+        flex-direction: row;
+        .img-style {
+            max-width: 72px;
+        }
+    }
+}
+.dropup {
+    .loobook-product {
+        margin-bottom: 20px;
+        margin-top: 20px;
+        &::before {
+            border-color: var(--white) transparent transparent transparent;
+            bottom: -4%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    }
+}
+
+.lookbook-item {
+    .dropend {
+        .dropdown-menu {
+            --bs-dropdown-min-width: max-content;
+            margin-left: 15px !important;
+        }
+        .loobook-product {
+            margin: -36px 0px;
+        }
+    }
+}
+
+.sw-lookbook-wrap {
+    padding-top: 70px;
+    margin-top: -70px;
+}
+
+// banner-lookbook
+.banner-lookbook {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .lookbook-item {
+        position: absolute;
+        left: 52%;
+        bottom: 32%;
+        &.position1 {
+            left: 58%;
+            bottom: 27%;
+        }
+        &.position2 {
+            left: 32%;
+            bottom: 14%;
+        }
+        &.position3 {
+            left: 41%;
+            bottom: 82%;
+        }
+    }
+}
+.dropdown-custom {
+    .dropdown-menu {
+        --bs-dropdown-min-width: max-content;
+    }
+}
+.flat-with-text-lookbook {
+    align-items: center;
+    .banner-img {
+        position: relative;
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .tf-pin-btn {
+            position: absolute;
+            &.pin-1 {
+                top: 40%;
+                left: 43%;
+            }
+            &.pin-2 {
+                top: 85%;
+                left: 43%;
+            }
+        }
+    }
+    .lookbook-content {
+        .box-title {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .swiper {
+            width: 100%;
+        }
+        .total-lb {
+            margin-top: 20px;
+        }
+    }
+}
+
+.flat-with-text-lookbook-v2 {
+    .banner-img {
+        position: relative;
+        width: 100%;
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .tf-pin-btn {
+            position: absolute;
+            &.pin-1 {
+                top: 42%;
+                left: 25%;
+            }
+            &.pin-2 {
+                top: 30%;
+                left: 44%;
+            }
+            &.pin-3 {
+                top: 62%;
+                left: 80%;
+            }
+        }
+    }
+    .lookbook-content {
+        padding: 0px 15px 40px;
+        width: 100%;
+        .box-title {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .swiper {
+            width: 100%;
+        }
+        .total-lb {
+            margin-top: 20px;
+        }
+    }
+}
+.flat-wrapper-lookbook {
+    display: block;
+    .image-lookbook {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .tf-pin-btn2 {
+            position: absolute;
+        }
+        .pin-1 {
+            left: 18%;
+            bottom: 35%;
+        }
+        .pin-2 {
+            left: 50%;
+            bottom: 30%;
+        }
+        .pin-3 {
+            right: 2%;
+            top: 47%;
+        }
+    }
+    .col-left {
+        padding-bottom: 24px;
+    }
+    .card-product {
+        .tf-btn {
+            font-size: 18px;
+            line-height: 22px;
+            text-transform: none;
+        }
+    }
+}
+.slider-wrap-lb {
+    position: relative;
+    .title {
+        margin-bottom: 24px;
+    }
+    .swiper-button-prev {
+        left: 0;
+    }
+    .swiper-button-next {
+        right: 0;
+    }
+    .nav-swiper {
+        top: 50%;
+    }
+    .card-product {
+        .card-product-info {
+            padding: 20px 2px;
+        }
+    }
+}
+
+@keyframes ripple-line {
+    to {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+@keyframes ripple-fill {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+.wrapper-lookbook-1 {
+    .col-right {
+        width: 49.31%;
+    }
+    .image-lookbook {
+        .pin-1 {
+            left: 63%;
+            bottom: 30%;
+        }
+        .pin-2 {
+            left: 49%;
+            bottom: 49%;
+        }
+    }
+}

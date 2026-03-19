@@ -1,0 +1,109 @@
+@use "../abstracts/index" as *;
+
+.brand-item {
+    max-width: 240px;
+    height: 114px;
+    @include transition3;
+    img{
+        @include transition3;
+    }
+}
+.tf-brand {
+    &:hover {
+        .brand-item {
+            opacity: 0.4;
+        }
+    }
+    .brand-item:hover {
+        opacity: 1;
+    }
+    &.style-2 {
+        padding: 24px 0;
+        gap: 64px;
+        .brand-item {
+            max-width: unset;
+            height: unset;
+        }
+    }
+}
+.sw-brand {
+    border: 1px solid var(--line);
+    .brand-item {
+        max-width: 100%;
+        height: 100%;
+    }
+    &:hover {
+        .swiper-slide {
+            img{
+                opacity: 0.4; 
+            }
+        }
+    }
+    .swiper-slide:hover {
+        img{
+            opacity: 1;
+        }
+    }
+    .swiper-slide {
+        &:not(:last-child) {
+            .brand-item {
+                border-right: 1px solid var(--line);
+            }
+        }
+    }
+}
+
+.gallery-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    .box-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: var(--white);
+        position: absolute;
+        z-index: 2;
+        @include center;
+        @include flex(center, center);
+        color: var(--dark);
+        font-size: 12px;
+        &:hover {
+            background-color: var(--dark);
+            color: var(--white);
+        }
+    }
+}
+
+.wrap-gallery {
+    position: relative;
+    .wrap-gallery-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #252525;
+        color: var(--white);
+        width: 64px;
+        height: 64px;
+        font-size: 20px;
+        position: absolute;
+        top: 55%;
+        left: 50%;
+        transform: translate(-50%,-50%);
+        border-radius: 50%;
+        z-index: 5;
+        opacity: 0;
+        visibility: hidden;
+        &:hover {
+            color: #252525;
+            background-color: var(--white);
+        }
+    }
+    &:hover {
+        .wrap-gallery-icon {
+            top: 50%;
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+}

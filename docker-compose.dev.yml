@@ -1,0 +1,35 @@
+# Desenvolvimento: front + back dentro do Docker, com hot reload
+# Uso: docker compose -f docker-compose.dev.yml up --build
+
+services:
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - frontend_node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "5173:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      # Para o front chamar o back no Docker (navegador usa localhost:3001 do host):
+      - VITE_API_URL=http://localhost:3001
+
+  backend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+    # Para login funcionar no Docker: crie .env (copie de .env.example) e descomente:
+    # env_file: [ .env ]
+
+volumes:
+  frontend_node_modules:
+  backend_node_modules:
