@@ -1,4 +1,5 @@
 import React from "react";
+import AromaSocialIcons from "@/components/common/AromaSocialIcons";
 
 export default function BlogSingle({ blog }) {
   return (
@@ -136,37 +137,7 @@ export default function BlogSingle({ blog }) {
             </div>
             <div className="entry-social">
               <p>Share:</p>
-              <ul className="tf-social-icon style-large">
-                <li>
-                  <a
-                    href="https://www.facebook.com/"
-                    className="social-item social-facebook"
-                  >
-                    <i className="icon icon-fb" />
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.instagram.com/"
-                    className="social-item social-instagram"
-                  >
-                    <i className="icon icon-instagram" />
-                  </a>
-                </li>
-                <li>
-                  <a href="https://x.com/" className="social-item social-x">
-                    <i className="icon icon-x" />
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.snapchat.com/"
-                    className="social-item social-snapchat"
-                  >
-                    <i className="icon icon-snapchat" />
-                  </a>
-                </li>
-              </ul>
+              <AromaSocialIcons />
             </div>
           </div>
           <div className="related-post">

@@ -188,6 +188,7 @@ export default function CatalogPage() {
   return (
     <>
       <MetaComponent meta={metadata} />
+      <div className="catalog-page">
       <Topbar />
       <Header1 />
       <Breadcumb pageName="Catálogo" pageTitle="Catálogo de perfumes" />
@@ -464,6 +465,7 @@ export default function CatalogPage() {
       <CatalogFilterModal {...sidebarProps} />
       <Features />
       <Footer1 />
+      </div>
     </>
   );
 }

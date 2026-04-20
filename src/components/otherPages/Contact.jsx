@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { sendContactMessage } from "@/api/contact";
+import AromaSocialIcons from "@/components/common/AromaSocialIcons";
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
@@ -93,37 +94,7 @@ export default function Contact() {
                   </p>
                 </li>
               </ul>
-              <ul className="tf-social-icon style-large">
-                <li>
-                  <a
-                    href="https://www.facebook.com/"
-                    className="social-item social-facebook"
-                  >
-                    <i className="icon icon-fb" />
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.instagram.com/"
-                    className="social-item social-instagram"
-                  >
-                    <i className="icon icon-instagram" />
-                  </a>
-                </li>
-                <li>
-                  <a href="https://x.com/" className="social-item social-x">
-                    <i className="icon icon-x" />
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.snapchat.com/"
-                    className="social-item social-snapchat"
-                  >
-                    <i className="icon icon-snapchat" />
-                  </a>
-                </li>
-              </ul>
+              <AromaSocialIcons />
             </div>
           </div>
           <div className="col-lg-6 mt-4 mt-lg-5">

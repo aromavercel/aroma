@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { registerPromoAlert } from "@/api/promoAlert";
+import AromaSocialIcons from "@/components/common/AromaSocialIcons";
 
 export default function Footer1({
   paddingBottom = false,
@@ -87,37 +88,7 @@ export default function Footer1({
                 />
               </Link>
             </div>
-            <ul className="tf-social-icon style-large">
-              <li>
-                <a
-                  href="https://www.facebook.com/"
-                  className="social-item social-facebook"
-                >
-                  <i className="icon icon-fb" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.instagram.com/"
-                  className="social-item social-instagram"
-                >
-                  <i className="icon icon-instagram" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.snapchat.com/"
-                  className="social-item social-linkedin"
-                >
-                  <i className="icon icon-linkedin" />
-                </a>
-              </li>
-              <li>
-                <a href="https://x.com/" className="social-item social-x">
-                  <i className="icon icon-x" />
-                </a>
-              </li>
-            </ul>
+            <AromaSocialIcons />
           </div>
         </div>
       </div>
@@ -172,7 +143,13 @@ export default function Footer1({
                           />
                         </svg>
                       </span>
-                      <a href="tel:5575999997821">(75) 9 9999 7821</a>
+                      <a
+                        href="https://wa.me/5575999997821"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        (75) 9 9999 7821
+                      </a>
                     </li>
                     <li className="item">
                       <span className="box-icon">
@@ -189,7 +166,9 @@ export default function Footer1({
                           />
                         </svg>
                       </span>
-                      contato@aromaexpresso.com
+                      <a href="mailto:contato@aromaexpresso.com">
+                        contato@aromaexpresso.com
+                      </a>
                     </li>
                   </ul>
                   <a
