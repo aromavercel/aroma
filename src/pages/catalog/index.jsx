@@ -13,6 +13,7 @@ import LayoutHandler from "@/components/products/LayoutHandler";
 import Features from "@/components/products/Features";
 import { getPerfumesList } from "@/api/perfumes";
 import { getPerfumeDisplayData, getBrandOptions, normalizeBrandKey } from "@/data/perfumes";
+import Skeleton from "@/components/common/Skeleton";
 
 const ITEMS_PER_PAGE = 24;
 const metadata = {
@@ -325,8 +326,20 @@ export default function CatalogPage() {
               {/* Área de listagem: lista ou grid conforme activeLayout */}
               <div className="wrapper-control-shop">
                 {loading ? (
-                  <div className="col-12 text-center py-5">
-                    <p className="text-muted">Carregando catálogo...</p>
+                  <div className="py-4">
+                    <div className={`wrapper-shop tf-grid-layout tf-col-${activeLayout}`} id="gridLayout">
+                      {Array.from({ length: 12 }).map((_, idx) => (
+                        <div key={`sk-${idx}`} className="card-product">
+                          <div className="card-product-wrapper">
+                            <Skeleton style={{ width: "100%", height: 260 }} />
+                          </div>
+                          <div className="card-product-info" style={{ paddingTop: 12 }}>
+                            <Skeleton variant="text" style={{ width: "70%", marginBottom: 10 }} />
+                            <Skeleton variant="text" style={{ width: "40%" }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : loadError ? (
                   <div className="col-12 text-center py-5">
@@ -433,7 +446,7 @@ export default function CatalogPage() {
                         </button>
                       </li>
                       <li>
-                        <span className="text-sm text-main-2 px-2">
+                        <span className="pagination-status">
                           Página {pageIndex} de {totalPages}
                         </span>
                       </li>

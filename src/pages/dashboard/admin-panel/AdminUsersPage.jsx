@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAdminUsers } from "@/api/admin";
+import Skeleton from "@/components/common/Skeleton";
 
 function formatDate(val) {
   if (!val) return "—";
@@ -24,7 +25,18 @@ export default function AdminUsersPage() {
       <h5 className="title-account mb-3">Usuários cadastrados</h5>
       <p className="text-muted mb-4">Lista de usuários com acesso ao site.</p>
       {loading ? (
-        <p className="text-muted">Carregando...</p>
+        <div className="py-3">
+          {Array.from({ length: 8 }).map((_, idx) => (
+            <div key={`sk-u-${idx}`} className="d-flex align-items-center gap-3 py-2">
+              <Skeleton style={{ width: 36, height: 36, borderRadius: "50%" }} rounded={false} />
+              <div style={{ flex: 1 }}>
+                <Skeleton variant="text" style={{ width: "40%", marginBottom: 8 }} />
+                <Skeleton variant="text" style={{ width: "25%" }} />
+              </div>
+              <Skeleton variant="text" style={{ width: 80 }} />
+            </div>
+          ))}
+        </div>
       ) : error ? (
         <p className="text-muted">{error}</p>
       ) : list.length === 0 ? (

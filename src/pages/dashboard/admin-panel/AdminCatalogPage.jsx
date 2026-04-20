@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PerfumeFormModal from "@/components/catalog/PerfumeFormModal";
 import { getPerfumesList, deletePerfume } from "@/api/perfumes";
 import { getPerfumeDisplayData } from "@/data/perfumes";
+import Skeleton from "@/components/common/Skeleton";
 
 export default function AdminCatalogPage() {
   const navigate = useNavigate();
@@ -69,7 +70,40 @@ export default function AdminCatalogPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-5"><p className="text-muted">Carregando catálogo...</p></div>
+          <div className="py-4">
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th style={{ width: 60 }}>Imagem</th>
+                    <th>Título</th>
+                    <th>Catálogo</th>
+                    <th>Status</th>
+                    <th className="text-end" style={{ width: 160 }}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 8 }).map((_, idx) => (
+                    <tr key={`sk-row-${idx}`}>
+                      <td>
+                        <Skeleton style={{ width: 56, height: 56 }} />
+                      </td>
+                      <td>
+                        <Skeleton variant="text" style={{ width: "65%", marginBottom: 8 }} />
+                        <Skeleton variant="text" style={{ width: "35%" }} />
+                      </td>
+                      <td><Skeleton variant="text" style={{ width: 90, height: 14 }} /></td>
+                      <td><Skeleton variant="text" style={{ width: 120, height: 14 }} /></td>
+                      <td className="text-end">
+                        <Skeleton style={{ width: 70, height: 32, display: "inline-block", marginRight: 8 }} />
+                        <Skeleton style={{ width: 70, height: 32, display: "inline-block" }} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         ) : loadError ? (
           <div className="text-center py-5">
             <p className="text-muted">{loadError}</p>
