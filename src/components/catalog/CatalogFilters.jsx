@@ -1,5 +1,4 @@
 import React from "react";
-import { CATALOG_OPTIONS } from "@/data/perfumes";
 
 const SORT_OPTIONS = [
   { value: "default", label: "Padrão" },
@@ -10,8 +9,9 @@ const SORT_OPTIONS = [
 ];
 
 export default function CatalogFilters({
-  catalogValue,
-  onCatalogChange,
+  brandOptions,
+  brandValue,
+  onBrandChange,
   searchValue,
   onSearchChange,
   priceMin,
@@ -30,13 +30,13 @@ export default function CatalogFilters({
     <div className="catalog-filters mb-4">
       <div className="row g-3 align-items-end">
         <div className="col-12 col-md-6 col-lg-3">
-          <label className="form-label text-sm text-main-2 mb-1">Catálogo</label>
+          <label className="form-label text-sm text-main-2 mb-1">Marca</label>
           <select
             className="form-select form-select-sm"
-            value={catalogValue}
-            onChange={(e) => onCatalogChange(e.target.value)}
+            value={brandValue}
+            onChange={(e) => onBrandChange(e.target.value)}
           >
-            {CATALOG_OPTIONS.map((opt) => (
+            {(brandOptions || []).map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>

@@ -1,4 +1,21 @@
 services:
+  db:
+    image: postgres:16
+    container_name: aroma_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aroma
+      POSTGRES_USER: aroma
+      POSTGRES_PASSWORD: aroma
+    ports:
+      - "5432:5432"
+    volumes:
+      - aroma_pgdata:/var/lib/postgresql/data
+
+volumes:
+  aroma_pgdata:
+
+services:
   web:
     build: .
     ports:

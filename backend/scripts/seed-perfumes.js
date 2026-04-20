@@ -26,6 +26,26 @@ const CATALOG_FILES = [
   { file: "thekingofparfums_data_perfume_normal.json", source: "normal" },
 ];
 
+function normalizeBrandKey(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function extractBrandFromTitle(title) {
+  const t = String(title || "").trim();
+  if (!t) return { name: "Sem marca", key: "sem marca" };
+  const dashIdx = t.indexOf("-");
+  let brand = dashIdx > 0 ? t.slice(0, dashIdx) : t.split(/\s+/)[0];
+  brand = String(brand || "").trim();
+  if (!brand) brand = "Sem marca";
+  const key = normalizeBrandKey(brand);
+  return { name: brand, key: key || "sem marca" };
+}
+
 function toArray(data) {
   if (Array.isArray(data)) return data;
   if (data?.items) return data.items;
@@ -64,13 +84,59 @@ async function downloadImage(url) {
   return Buffer.from(await res.arrayBuffer());
 }
 
+function getBlobAccess() {
+  const raw = (process.env.BLOB_ACCESS || "").trim().toLowerCase();
+  if (raw === "public" || raw === "private") return raw;
+  // Sem configuração explícita: tentamos sem "access" e reagimos ao erro.
+  return null;
+}
+
+function isAccessModeError(err) {
+  const msg = String(err?.message || err || "");
+  return (
+    msg.includes('Cannot use public access on a private store') ||
+    msg.includes('access must be "public"') ||
+    msg.includes('access must be "private"')
+  );
+}
+
+function inferRequiredAccessFromError(err) {
+  const msg = String(err?.message || err || "");
+  if (msg.includes('Cannot use public access on a private store')) return "private";
+  if (msg.includes('access must be "public"')) return "public";
+  if (msg.includes('access must be "private"')) return "private";
+  return null;
+}
+
 async function uploadImageToBlob(buffer, pathname, token) {
-  const blob = await put(pathname, buffer, {
-    access: "public",
-    addRandomSuffix: true,
-    token,
-  });
-  return blob.url;
+  // Estratégia:
+  // - tenta 1x com o que foi configurado (ou sem "access" se não foi)
+  // - se a Vercel reclamar do modo, tenta 1x com o modo exigido
+  const configured = getBlobAccess(); // "public" | "private" | null
+
+  const tryPut = async (access) => {
+    const opts = { addRandomSuffix: true, token };
+    if (access) opts.access = access;
+    try {
+      return await put(pathname, buffer, opts);
+    } catch (err) {
+      const accessLabel = access || "(sem access)";
+      console.warn(`  Upload Blob falhou (${accessLabel}):`, String(err?.message || err));
+      throw err;
+    }
+  };
+
+  try {
+    const blob = await tryPut(configured);
+    return blob.url;
+  } catch (err) {
+    const required = inferRequiredAccessFromError(err);
+    if (required && required !== configured) {
+      const blob2 = await tryPut(required);
+      return blob2.url;
+    }
+    throw err;
+  }
 }
 
 async function main() {
@@ -120,6 +186,15 @@ async function main() {
     }
 
     try {
+      const brand = extractBrandFromTitle(title);
+      const [brandRow] = await sql`
+        INSERT INTO brands (name, name_key)
+        VALUES (${brand.name}, ${brand.key})
+        ON CONFLICT (name_key) DO UPDATE SET name = EXCLUDED.name
+        RETURNING id
+      `;
+      const brandId = brandRow?.id;
+
       const imageUrls = getPerfumeAllImageUrls(item);
       const urlToBlobUrl = new Map();
 
@@ -153,9 +228,12 @@ async function main() {
       const description = typeof item.description === "string" ? item.description.trim() || null : null;
 
       const [row] = await sql`
-        INSERT INTO perfumes (external_url, title, description, catalog_source, notes, variants, updated_at)
-        VALUES (${externalUrl}, ${title}, ${description}, ${item.catalogSource}, ${JSON.stringify(notes)}, ${JSON.stringify(variants)}, now())
+        INSERT INTO perfumes (brand_id, external_url, title, description, catalog_source, notes, variants, updated_at)
+        VALUES (${brandId}, ${externalUrl}, ${title}, ${description}, ${item.catalogSource}, ${JSON.stringify(
+          notes,
+        )}, ${JSON.stringify(variants)}, now())
         ON CONFLICT (external_url) DO UPDATE SET
+          brand_id = EXCLUDED.brand_id,
           title = EXCLUDED.title,
           description = EXCLUDED.description,
           notes = EXCLUDED.notes,

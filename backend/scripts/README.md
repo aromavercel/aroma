@@ -20,6 +20,7 @@ O script `seed-perfumes.js` lê os três JSON do catálogo em `src/data/`, faz u
 
    - `DATABASE_URL` – connection string do Postgres
    - `BLOB_READ_WRITE_TOKEN` – token do Vercel Blob (em Vercel: Storage → Blob → Create Token, com permissão de leitura e escrita)
+   - `BLOB_ACCESS` (opcional) – `private` ou `public` (se o seu Blob Store estiver privado, a seed precisa usar `private`)
 
 ### Como usar
 
@@ -28,6 +29,11 @@ Na **raiz do projeto** (pasta `aroma`):
 ```bash
 node --env-file=.env backend/scripts/seed-perfumes.js
 ```
+
+- Dica: você pode usar um arquivo `.env` diferente (ex.: `.env.local` para banco local, `.env.neon` para o Neon):
+  ```bash
+  node --env-file=.env.local backend/scripts/seed-perfumes.js
+  ```
 
 - O script usa os JSON em `src/data/`:
   - `thekingofparfums_data_perfume_arabe.json`
@@ -42,3 +48,37 @@ node --env-file=.env backend/scripts/seed-perfumes.js
 - **API:** `GET /api/perfumes/:id` retorna um perfume com todas as imagens e variantes.
 
 O frontend pode passar a consumir o catálogo desses endpoints em vez dos JSON estáticos.
+
+---
+
+## Banco local (Postgres via Docker)
+
+Se você quiser rodar o projeto no seu PC usando **Postgres local**, sem quebrar o deploy (Neon/Vercel), use o `docker-compose.yml` na raiz.
+
+### Subir o Postgres
+
+```bash
+docker compose up -d
+```
+
+### Configurar variáveis
+
+- Copie `.env.local.example` para `.env.local`
+- Coloque `DATABASE_URL` local (sem SSL), exemplo:
+  - `postgresql://aroma:aroma@localhost:5432/aroma?sslmode=disable`
+
+### Criar o schema no banco local
+
+Você pode aplicar o schema completo de uma vez:
+
+```bash
+psql "postgresql://aroma:aroma@localhost:5432/aroma?sslmode=disable" -f backend/schema.sql
+```
+
+ou, se preferir, aplicar as migrations na ordem.
+
+### Rodar a seed no banco local
+
+```bash
+node --env-file=.env.local backend/scripts/seed-perfumes.js
+```

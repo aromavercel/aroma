@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { CATALOG_OPTIONS } from "@/data/perfumes";
 
 export default function CatalogSidebar({
-  catalogValue,
-  onCatalogChange,
+  brandOptions,
+  brandValue,
+  onBrandChange,
   searchValue,
   onSearchChange,
   priceMin,
@@ -13,7 +13,7 @@ export default function CatalogSidebar({
   onPriceMinChange,
   onPriceMaxChange,
   totalCount,
-  countByCatalog,
+  countByBrand,
 }) {
   return (
     <>
@@ -30,21 +30,21 @@ export default function CatalogSidebar({
             aria-expanded="true"
             aria-controls="catalog-collections"
           >
-            <span>Catálogo</span>
+            <span>Marca</span>
             <span className="icon icon-arrow-up" />
           </div>
           <div id="catalog-collections" className="collapse show">
             <ul className="collapse-body list-categories current-scrollbar">
-              {CATALOG_OPTIONS.map((opt) => {
-                const count = countByCatalog?.[opt.value] ?? null;
+              {(brandOptions || []).map((opt) => {
+                const count = countByBrand?.[opt.value] ?? null;
                 return (
                   <li key={opt.value} className="cate-item">
                     <button
                       type="button"
                       className={`text-sm link cate-link w-100 text-start border-0 bg-transparent p-0 ${
-                        catalogValue === opt.value ? "fw-medium text-primary" : ""
+                        brandValue === opt.value ? "fw-medium text-primary" : ""
                       }`}
-                      onClick={() => onCatalogChange(opt.value)}
+                      onClick={() => onBrandChange(opt.value)}
                     >
                       <span>{opt.label}</span>
                       {count != null && <span className="count">({count})</span>}

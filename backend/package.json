@@ -4,7 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch --env-file=../.env server.js",
-    "start": "node --env-file=../.env server.js"
+    "start": "node --env-file=../.env server.js",
+    "dev:local": "node --watch --env-file=../.env.local server.js",
+    "start:local": "node --env-file=../.env.local server.js",
+    "dev:neon": "node --watch --env-file=../.env.neon server.js",
+    "start:neon": "node --env-file=../.env.neon server.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.0",
