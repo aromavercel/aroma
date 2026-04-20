@@ -20,9 +20,20 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_unique ON users (phone) WHERE phone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_last_activity_at ON users (last_activity_at);
+
+CREATE TABLE IF NOT EXISTS brands (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  name_key TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_brands_name_key_unique ON brands (name_key);
 
 CREATE TABLE IF NOT EXISTS perfumes (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_id       UUID NOT NULL REFERENCES brands(id) ON DELETE RESTRICT,
   external_url   TEXT UNIQUE,
   title          TEXT NOT NULL,
   description    TEXT,
@@ -44,6 +55,7 @@ CREATE TABLE IF NOT EXISTS perfumes (
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE INDEX IF NOT EXISTS idx_perfumes_brand_id ON perfumes (brand_id);
 CREATE INDEX IF NOT EXISTS idx_perfumes_catalog_source ON perfumes (catalog_source);
 CREATE INDEX IF NOT EXISTS idx_perfumes_title ON perfumes (title);
 

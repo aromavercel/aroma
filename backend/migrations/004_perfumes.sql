@@ -1,10 +1,14 @@
- matching the given port. if a string is given, it is matched with includes */
-  filterCallsByPort (port: MockCallHistory.FilterCallsParameter): Array<MockCallHistoryLog>
-  /** return all MockCallHistoryLog matching the given origin. if a string is given, it is matched with includes */
-  filterCallsByOrigin (origin: MockCallHistory.FilterCallsParameter): Array<MockCallHistoryLog>
-  /** return all MockCallHistoryLog matching the given path. if a string is given, it is matched with includes */
-  filterCallsByPath (path: MockCallHistory.FilterCallsParameter): Array<MockCallHistoryLog>
-  /** return all MockCallHistoryLog matching the given hash. if a string is given, it is matched with includes */
-  filterCallsByHash (hash: MockCallHistory.FilterCallsParameter): Array<MockCallHistoryLog>
-  /** return all MockCallHistoryLog matching the given fullUrl. if a string is given, it is matched with includes */
-  filterCallsByFullUrl 
+CREATE TABLE IF NOT EXISTS perfumes (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  external_url   TEXT NOT NULL UNIQUE,
+  title          TEXT NOT NULL,
+  description    TEXT,
+  catalog_source VARCHAR(50) NOT NULL,
+  notes          JSONB,
+  variants       JSONB,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_perfumes_catalog_source ON perfumes (catalog_source);
+CREATE INDEX IF NOT EXISTS idx_perfumes_title ON perfumes (title);

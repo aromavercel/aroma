@@ -1,6 +1,42 @@
-export const CATALOG_OPTIONS = [
-  { value: "all", label: "Todos" },
-  { value: "arabe", label: "Ãrabe" },
+export function normalizeBrandKey(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+export function extractBrandFromTitle(title) {
+  const t = String(title || "").trim();
+  if (!t) return { name: "Sem marca", key: "sem marca" };
+  const dashIdx = t.indexOf("-");
+  let brand = dashIdx > 0 ? t.slice(0, dashIdx) : t.split(/\s+/)[0];
+  brand = String(brand || "").trim();
+  if (!brand) brand = "Sem marca";
+  const key = normalizeBrandKey(brand);
+  return { name: brand, key: key || "sem marca" };
+}
+
+export function getBrandOptions(perfumesList) {
+  const map = new Map();
+  (perfumesList || []).forEach((p) => {
+    const explicit = typeof p?.brand === "string" ? p.brand.trim() : "";
+    const b = explicit ? { name: explicit, key: normalizeBrandKey(explicit) } : extractBrandFromTitle(p?.title);
+    if (!b?.key) return;
+    if (!map.has(b.key)) map.set(b.key, b.name);
+  });
+  const items = [...map.entries()]
+    .map(([key, name]) => ({ key, name }))
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  return [{ value: "all", label: "Todas as marcas" }].concat(
+    items.map((x) => ({ value: x.key, label: x.name })),
+  );
+}
+
+// Mantido para o painel admin (campo técnico do banco)
+export const CATALOG_SOURCE_OPTIONS = [
+  { value: "arabe", label: "Árabe" },
   { value: "feminino", label: "Feminino" },
   { value: "normal", label: "Masculino / Unissex" },
 ];
@@ -9,7 +45,7 @@ export const CATALOG_OPTIONS = [
  * TEMPORÁRIO: quando o blob está fora do limite, usar imagem local para visualização.
  * Coloque em false quando o banco/blob voltar a funcionar.
  */
-const USE_TEMPORARY_PERFUME_IMAGE = true;
+const USE_TEMPORARY_PERFUME_IMAGE = false;
 const TEMPORARY_PERFUME_IMAGE = "/images/perfume1.webp";
 
 export function getPerfumeDisplayData(item) {
@@ -29,10 +65,14 @@ export function getPerfumeDisplayData(item) {
   }
   const priceShort = firstVariant?.price_short || (priceMin != null ? `R$ ` + priceMin.toFixed(2).replace(".", ",") : "");
   const source = item.catalogSource || "normal";
-  const labels = { arabe: "Ãrabe", feminino: "Feminino", normal: "Masculino / Unissex" };
+  const labels = { arabe: "Árabe", feminino: "Feminino", normal: "Masculino / Unissex" };
+  const brand = typeof item?.brand === "string" && item.brand.trim()
+    ? item.brand.trim()
+    : extractBrandFromTitle(item?.title).name;
   return {
     imageUrl,
     title: item.title || "",
+    brand,
     priceMin: priceMin ?? 0,
     priceShort,
     url: item.url || "#",

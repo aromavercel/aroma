@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CATALOG_OPTIONS } from "@/data/perfumes";
+import { CATALOG_SOURCE_OPTIONS } from "@/data/perfumes";
 
 const MODAL_ID = "perfumeFormModal";
-const CATALOG_SELECT_OPTIONS = CATALOG_OPTIONS.filter((o) => o.value !== "all");
+const CATALOG_SELECT_OPTIONS = CATALOG_SOURCE_OPTIONS;
 
 function notesToForm(notes) {
   const n = notes || {};

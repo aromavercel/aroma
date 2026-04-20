@@ -12,7 +12,7 @@ import PerfumeCardList from "@/components/catalog/PerfumeCardList";
 import LayoutHandler from "@/components/products/LayoutHandler";
 import Features from "@/components/products/Features";
 import { getPerfumesList } from "@/api/perfumes";
-import { getPerfumeDisplayData, CATALOG_OPTIONS } from "@/data/perfumes";
+import { getPerfumeDisplayData, getBrandOptions, normalizeBrandKey } from "@/data/perfumes";
 
 const ITEMS_PER_PAGE = 24;
 const metadata = {
@@ -32,7 +32,7 @@ export default function CatalogPage() {
   const [perfumesList, setPerfumesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [catalogValue, setCatalogValue] = useState("all");
+  const [brandValue, setBrandValue] = useState("all");
   const [searchValue, setSearchValue] = useState("");
   const [priceMinInput, setPriceMinInput] = useState("");
   const [priceMaxInput, setPriceMaxInput] = useState("");
@@ -55,25 +55,30 @@ export default function CatalogPage() {
       });
   }, []);
 
-  const countByCatalog = useMemo(() => {
+  const brandOptions = useMemo(() => getBrandOptions(perfumesList), [perfumesList]);
+
+  const countByBrand = useMemo(() => {
     const counts = {};
-    CATALOG_OPTIONS.forEach((opt) => {
-      if (opt.value === "all") {
-        counts.all = perfumesList.length;
-      } else {
-        counts[opt.value] = perfumesList.filter(
-          (p) => (p.catalogSource || "normal") === opt.value
-        ).length;
-      }
+    const keys = (perfumesList || []).map((p) =>
+      normalizeBrandKey(getPerfumeDisplayData(p).brand),
+    );
+    (brandOptions || []).forEach((opt) => {
+      if (opt.value === "all") counts.all = perfumesList.length;
+      else counts[opt.value] = keys.filter((k) => k === opt.value).length;
     });
     return counts;
-  }, [perfumesList]);
+  }, [perfumesList, brandOptions]);
 
   const filteredAndSorted = useMemo(() => {
     let list = [...perfumesList];
 
-    if (catalogValue !== "all") {
-      list = list.filter((p) => (p.catalogSource || "normal") === catalogValue);
+    if (brandValue !== "all") {
+      list = list.filter((p) => {
+        const d = getPerfumeDisplayData(p);
+        const key = String(brandValue || "").trim();
+        const bKey = normalizeBrandKey(d.brand);
+        return bKey === key;
+      });
     }
 
     const search = searchValue.trim().toLowerCase();
@@ -119,7 +124,7 @@ export default function CatalogPage() {
     return list;
   }, [
     perfumesList,
-    catalogValue,
+    brandValue,
     searchValue,
     priceMinInput,
     priceMaxInput,
@@ -135,21 +140,21 @@ export default function CatalogPage() {
   }, [filteredAndSorted, pageIndex]);
 
   const appliedFilterCount =
-    (catalogValue !== "all" ? 1 : 0) +
+    (brandValue !== "all" ? 1 : 0) +
     (searchValue.trim() ? 1 : 0) +
     (priceMinInput !== "" ? 1 : 0) +
     (priceMaxInput !== "" ? 1 : 0);
 
   const handleClearFilters = () => {
-    setCatalogValue("all");
+    setBrandValue("all");
     setSearchValue("");
     setPriceMinInput("");
     setPriceMaxInput("");
     setCurrentPage(1);
   };
 
-  const setCatalogAndPage = (v) => {
-    setCatalogValue(v);
+  const setBrandAndPage = (v) => {
+    setBrandValue(v);
     setCurrentPage(1);
   };
   const setSearchAndPage = (v) => {
@@ -173,8 +178,9 @@ export default function CatalogPage() {
     SORT_OPTIONS.find((o) => o.value === sortValue)?.label || "Padrão";
 
   const sidebarProps = {
-    catalogValue,
-    onCatalogChange: setCatalogAndPage,
+    brandOptions,
+    brandValue,
+    onBrandChange: setBrandAndPage,
     searchValue,
     onSearchChange: setSearchAndPage,
     priceMin: priceMinInput,
@@ -182,7 +188,7 @@ export default function CatalogPage() {
     onPriceMinChange: setPriceMinAndPage,
     onPriceMaxChange: setPriceMaxAndPage,
     totalCount: totalFiltered,
-    countByCatalog,
+    countByBrand,
   };
 
   return (
@@ -257,19 +263,19 @@ export default function CatalogPage() {
                     {totalFiltered !== 1 ? "s" : ""}
                   </div>
                   <div id="applied-filters" className="d-flex flex-wrap gap-2 align-items-center">
-                    {catalogValue !== "all" && (
+                    {brandValue !== "all" && (
                       <span
                         className="filter-tag"
-                        onClick={() => setCatalogAndPage("all")}
+                        onClick={() => setBrandAndPage("all")}
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) =>
-                          e.key === "Enter" && setCatalogAndPage("all")
+                          e.key === "Enter" && setBrandAndPage("all")
                         }
                       >
-                        <span className="remove-tag icon-close" /> Catálogo:{" "}
-                        {CATALOG_OPTIONS.find((o) => o.value === catalogValue)
-                          ?.label ?? catalogValue}
+                        <span className="remove-tag icon-close" /> Marca:{" "}
+                        {brandOptions.find((o) => o.value === brandValue)?.label ??
+                          brandValue}
                       </span>
                     )}
                     {searchValue.trim() && (
