@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 import { Link } from "react-router-dom";
+import AromaSocialIcons from "@/components/common/AromaSocialIcons";
 
 export default function Footer5() {
   const [success, setSuccess] = useState(true);
@@ -86,37 +87,7 @@ export default function Footer5() {
                 />
               </Link>
             </div>
-            <ul className="tf-social-icon style-large">
-              <li>
-                <a
-                  href="https://www.facebook.com/"
-                  className="social-item social-facebook"
-                >
-                  <i className="icon icon-fb" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.instagram.com/"
-                  className="social-item social-instagram"
-                >
-                  <i className="icon icon-instagram" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.snapchat.com/"
-                  className="social-item social-linkedin"
-                >
-                  <i className="icon icon-linkedin" />
-                </a>
-              </li>
-              <li>
-                <a href="https://x.com/" className="social-item social-x">
-                  <i className="icon icon-x" />
-                </a>
-              </li>
-            </ul>
+            <AromaSocialIcons />
           </div>
         </div>
       </div>

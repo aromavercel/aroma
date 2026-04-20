@@ -1,3 +1,10 @@
+/* Hover do WhatsApp nos círculos de rede (variável já existe em .tf-social-icon) */
+.tf-social-icon .social-item.social-whatsapp:hover {
+  background-color: transparent;
+  color: var(--whatsapp-cl);
+  border-color: var(--whatsapp-cl);
+}
+
 @keyframes infiniteslide17418080312321156 {
   0% {
     transform: translate3d(0, 0, 0);
@@ -122,6 +129,58 @@
 
   100% {
     transform: translate3d(-148.0625px, 0, 0);
+  }
+}
+
+/* Catálogo: contraste (filtros em <button>, títulos/preços dos cards) */
+.catalog-page {
+  .widget-facet .list-categories .cate-item button.cate-link {
+    color: var(--dark);
+    &:hover {
+      color: var(--primary);
+    }
+    .count {
+      color: var(--text-2);
+      font-weight: 400;
+    }
+    &.text-primary {
+      color: var(--primary);
+      .count {
+        color: var(--text-2);
+      }
+    }
+  }
+  .tf-dropdown-sort .text-sort-value,
+  .tf-dropdown-sort .icon {
+    color: var(--dark);
+  }
+  .tf-dropdown-sort .dropdown-menu .select-item {
+    color: var(--dark);
+    &:hover,
+    &.active {
+      color: var(--dark);
+    }
+  }
+  .wg-pagination button.pagination-item {
+    color: var(--dark);
+    &:disabled {
+      color: var(--text-4);
+      opacity: 0.85;
+    }
+    &:hover:not(:disabled) {
+      color: var(--white);
+    }
+  }
+  .card-product .card-product-info {
+    .name-product {
+      color: var(--dark);
+      &:hover {
+        color: var(--primary);
+      }
+    }
+    .price-wrap {
+      color: var(--dark);
+    }
   }
 }
 

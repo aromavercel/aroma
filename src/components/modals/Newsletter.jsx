@@ -1,6 +1,7 @@
 "use client";
 import { Link } from "react-router-dom";
 import React, { useEffect, useRef, useState } from "react";
+import AromaSocialIcons from "@/components/common/AromaSocialIcons";
 
 import axios from "axios";
 export default function Newsletter() {
@@ -132,31 +133,7 @@ export default function Newsletter() {
                 Send
               </button>
             </form>
-            <ul className="tf-social-icon style-default justify-content-center">
-              <li>
-                <a href="https://x.com/" className="social-x">
-                  <i className="icon icon-x" />
-                </a>
-              </li>
-              <li>
-                <a href="https://www.facebook.com/" className="social-facebook">
-                  <i className="icon icon-fb2" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.instagram.com/"
-                  className="social-instagram"
-                >
-                  <i className="icon icon-instagram" />
-                </a>
-              </li>
-              <li>
-                <a href="https://www.youtube.com/" className="social-youtube">
-                  <i className="icon icon-youtube" />
-                </a>
-              </li>
-            </ul>
+            <AromaSocialIcons className="tf-social-icon style-default justify-content-center" />
             <p className="text text-sm mb-0 text-main">
               Will be used in accordance with our{" "}
               <Link to={`/privacy-policy`} className="fw-medium">

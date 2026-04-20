@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 import { Link } from "react-router-dom";
+import AromaSocialIcons from "@/components/common/AromaSocialIcons";
+import { WHATSAPP_CHAT_URL, INSTAGRAM_PROFILE_URL } from "@/data/socialLinks";
 
 export default function Footer6() {
   const [success, setSuccess] = useState(true);
@@ -105,37 +107,7 @@ export default function Footer6() {
                   </Link>
                   <p className="body-mb_12 font-11">(64) 8344 1233</p>
                   <p className="body-text mb_40 font-11">hello@ecomposer.com</p>
-                  <ul className="tf-social-icon style-white">
-                    <li>
-                      <a
-                        href="https://www.facebook.com/"
-                        className="social-item social-facebook"
-                      >
-                        <i className="icon icon-fb" />
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="https://www.instagram.com/"
-                        className="social-item social-instagram"
-                      >
-                        <i className="icon icon-instagram" />
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="https://www.snapchat.com/"
-                        className="social-item social-linkedin"
-                      >
-                        <i className="icon icon-linkedin" />
-                      </a>
-                    </li>
-                    <li>
-                      <a href="https://x.com/" className="social-item social-x">
-                        <i className="icon icon-x" />
-                      </a>
-                    </li>
-                  </ul>
+                  <AromaSocialIcons className="tf-social-icon style-white" />
                 </div>
               </div>
             </div>
@@ -181,30 +153,21 @@ export default function Footer6() {
                     <li>
                       <a
                         className="font-11 body-text"
-                        href="https://www.facebook.com/"
+                        href={WHATSAPP_CHAT_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        Facebook
+                        WhatsApp
                       </a>
                     </li>
                     <li>
                       <a
                         className="font-11 body-text"
-                        href="https://www.instagram.com/"
+                        href={INSTAGRAM_PROFILE_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         Instagram
-                      </a>
-                    </li>
-                    <li>
-                      <a className="font-11 body-text" href="https://x.com/">
-                        Twitter
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        className="font-11 body-text"
-                        href="https://www.pinterest.com/"
-                      >
-                        Pinterest
                       </a>
                     </li>
                   </ul>

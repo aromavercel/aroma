@@ -1,4 +1,5 @@
 import React from "react";
+import AromaSocialIcons from "@/components/common/AromaSocialIcons";
 import LanguageSelect from "../common/LanguageSelect";
 import CurrencySelect from "../common/CurrencySelect";
 
@@ -11,37 +12,7 @@ export default function Topbar2({
       <div className={fullWidth ? "container-full" : "container"}>
         <div className="topbar-wraper">
           <div className="d-none d-xl-block flex-shrink-0">
-            <ul className="topbar-left tf-social-icon">
-              <li>
-                <a
-                  href="https://www.facebook.com/"
-                  className="social-item social-facebook"
-                >
-                  <i className="icon icon-fb" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.instagram.com/"
-                  className="social-item social-instagram"
-                >
-                  <i className="icon icon-instagram" />
-                </a>
-              </li>
-              <li>
-                <a href="https://x.com/" className="social-item social-x">
-                  <i className="icon icon-x" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.snapchat.com/"
-                  className="social-item social-snapchat"
-                >
-                  <i className="icon icon-snapchat" />
-                </a>
-              </li>
-            </ul>
+            <AromaSocialIcons className="topbar-left tf-social-icon" />
           </div>
           <div className="overflow-hidden">
             <div className="topbar-center marquee-wrapper">
