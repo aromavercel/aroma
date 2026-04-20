@@ -18,13 +18,25 @@ export function extractBrandFromTitle(title) {
   return { name: brand, key: key || "sem marca" };
 }
 
+export function toTitleCase(input) {
+  const s = String(input || "").trim();
+  if (!s) return "";
+  return s
+    .toLowerCase()
+    .split(/\s+/g)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ""))
+    .join(" ");
+}
+
 export function getBrandOptions(perfumesList) {
   const map = new Map();
   (perfumesList || []).forEach((p) => {
     const explicit = typeof p?.brand === "string" ? p.brand.trim() : "";
-    const b = explicit ? { name: explicit, key: normalizeBrandKey(explicit) } : extractBrandFromTitle(p?.title);
+    const b = explicit
+      ? { name: explicit, key: normalizeBrandKey(explicit) }
+      : extractBrandFromTitle(p?.title);
     if (!b?.key) return;
-    if (!map.has(b.key)) map.set(b.key, b.name);
+    if (!map.has(b.key)) map.set(b.key, toTitleCase(b.name));
   });
   const items = [...map.entries()]
     .map(([key, name]) => ({ key, name }))
@@ -72,7 +84,7 @@ export function getPerfumeDisplayData(item) {
   return {
     imageUrl,
     title: item.title || "",
-    brand,
+    brand: toTitleCase(brand),
     priceMin: priceMin ?? 0,
     priceShort,
     url: item.url || "#",

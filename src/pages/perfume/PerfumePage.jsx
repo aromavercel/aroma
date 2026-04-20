@@ -11,6 +11,7 @@ import PerfumeDescription from "@/components/perfume/PerfumeDescription";
 import Features from "@/components/products/Features";
 import { getPerfumeById } from "@/api/perfumes";
 import { getPerfumeDisplayData, getPerfumeAllImages } from "@/data/perfumes";
+import Skeleton from "@/components/common/Skeleton";
 
 export default function PerfumePage() {
   const { id } = useParams();
@@ -36,7 +37,24 @@ export default function PerfumePage() {
         <Breadcumb product={{ title: "Perfume" }} backLink="/catalogo" />
         <section className="tf-section">
           <div className="container">
-            <p className="text-muted text-center py-5">Carregando...</p>
+            <div className="row py-4">
+              <div className="col-md-6 mb-4 mb-md-0">
+                <Skeleton style={{ width: "100%", height: 420 }} />
+                <div className="d-flex gap-2 mt-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={`thumb-${i}`} style={{ width: 70, height: 70 }} />
+                  ))}
+                </div>
+              </div>
+              <div className="col-md-6">
+                <Skeleton variant="text" style={{ width: "60%", height: 16, marginBottom: 14 }} />
+                <Skeleton variant="text" style={{ width: "40%", height: 14, marginBottom: 18 }} />
+                <Skeleton style={{ width: "100%", height: 44, marginBottom: 10 }} />
+                <Skeleton style={{ width: "100%", height: 44, marginBottom: 10 }} />
+                <Skeleton style={{ width: "80%", height: 44, marginBottom: 18 }} />
+                <Skeleton style={{ width: "100%", height: 140 }} />
+              </div>
+            </div>
           </div>
         </section>
         <Footer1 />
