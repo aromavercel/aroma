@@ -3,12 +3,17 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import { useContextElement } from "@/context/Context";
 import { updateProfile } from "@/api/auth";
+import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLocations";
+import { fetchAddressByCep, formatCep, onlyDigits } from "@/utils/cep";
 
 export default function Address() {
   const { user, setUser } = useContextElement();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [cities, setCities] = useState([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
   const [form, setForm] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -17,7 +22,6 @@ export default function Address() {
     city: user?.city || "",
     state: user?.state || "",
     zipcode: user?.zipcode || "",
-    country: user?.country || "Brasil",
     phone: user?.phone || "",
   });
 
@@ -25,6 +29,57 @@ export default function Address() {
     const { id, value } = e.target;
     setForm((prev) => ({ ...prev, [id]: value }));
   };
+
+  const handleZipcodeChange = async (e) => {
+    const nextMasked = formatCep(e.target.value);
+    setForm((prev) => ({ ...prev, zipcode: nextMasked }));
+
+    const digits = onlyDigits(nextMasked);
+    if (digits.length !== 8) return;
+
+    setLoadingCep(true);
+    try {
+      const found = await fetchAddressByCep(digits);
+      if (!found) return;
+      setForm((prev) => ({
+        ...prev,
+        zipcode: found.cep || nextMasked,
+        state: found.state || prev.state,
+        city: found.city || prev.city,
+        address: found.street || prev.address,
+        address_complement:
+          prev.address_complement || found.complement || prev.address_complement,
+      }));
+    } catch {
+      // silencioso
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const uf = (form.state || "").trim().toUpperCase();
+      if (!uf) {
+        setCities([]);
+        return;
+      }
+      setLoadingCities(true);
+      try {
+        const list = await fetchBrazilCitiesByUF(uf);
+        if (!cancelled) setCities(list);
+      } catch {
+        if (!cancelled) setCities([]);
+      } finally {
+        if (!cancelled) setLoadingCities(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [form.state]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,7 +94,7 @@ export default function Address() {
         city: form.city,
         state: form.state,
         zipcode: form.zipcode,
-        country: form.country,
+        country: COUNTRY_BR_LABEL,
       };
       const { user: updated } = await updateProfile(payload);
       setUser(updated);
@@ -114,9 +169,6 @@ export default function Address() {
                             )}
                             {user?.zipcode && (
                               <p className="text-md">CEP: {user.zipcode}</p>
-                            )}
-                            {user?.country && (
-                              <p className="text-md">{user.country}</p>
                             )}
                             {user?.phone && (
                               <p className="text-md">Telefone: {user.phone}</p>
@@ -209,24 +261,45 @@ export default function Address() {
                   <div className="cols">
                     <fieldset>
                       <label htmlFor="city">Cidade</label>
-                      <input
-                        type="text"
+                      <select
                         id="city"
                         value={form.city}
                         onChange={handleChange}
                         required
-                      />
+                        disabled={!form.state || loadingCities}
+                      >
+                        <option value="">
+                          {!form.state
+                            ? "Selecione o estado primeiro"
+                            : loadingCities
+                              ? "Carregando cidades…"
+                              : "Selecione a cidade"}
+                        </option>
+                        {cities.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
                     </fieldset>
                   </div>
                   <div className="cols">
                     <fieldset>
                       <label htmlFor="state">Estado (UF)</label>
-                      <input
-                        type="text"
+                      <select
                         id="state"
                         value={form.state}
-                        onChange={handleChange}
-                      />
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setForm((prev) => ({ ...prev, state: next, city: "" }));
+                        }}
+                      >
+                        {BR_STATES.map((opt) => (
+                          <option key={opt.value || "empty"} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     </fieldset>
                   </div>
                   <div className="cols">
@@ -236,20 +309,15 @@ export default function Address() {
                         type="text"
                         id="zipcode"
                         value={form.zipcode}
-                        onChange={handleChange}
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                        maxLength={9}
+                        onChange={handleZipcodeChange}
                         required
                       />
-                    </fieldset>
-                  </div>
-                  <div className="cols">
-                    <fieldset>
-                      <label htmlFor="country">País</label>
-                      <input
-                        type="text"
-                        id="country"
-                        value={form.country}
-                        onChange={handleChange}
-                      />
+                      {loadingCep ? (
+                        <div className="text-sm text-muted mt-1">Buscando endereço pelo CEP…</div>
+                      ) : null}
                     </fieldset>
                   </div>
                   <div className="cols">

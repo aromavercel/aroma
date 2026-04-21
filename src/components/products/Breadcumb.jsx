@@ -13,7 +13,7 @@ export default function Breadcumb({
             <h4 className="title">Women</h4>
             <div className="breadcrumb-list">
               <Link className="breadcrumb-item" to={`/`}>
-                Home
+                Início
               </Link>
               {showCollection && (
                 <>

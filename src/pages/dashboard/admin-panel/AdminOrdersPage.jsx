@@ -5,6 +5,7 @@ import { getAdminOrders, updateOrderStatus } from "@/api/admin";
 const STATUS_OPTIONS = [
   { value: "all", label: "Todos os estados" },
   { value: "pending", label: "Pedido realizado" },
+  { value: "confirmed", label: "Pedido confirmado" },
   { value: "shipped", label: "Enviado" },
   { value: "completed", label: "Finalizado" },
   { value: "canceled", label: "Cancelado" },
@@ -36,6 +37,8 @@ function getStatusLabel(status) {
   switch (status) {
     case "pending":
       return "Pedido realizado";
+    case "confirmed":
+      return "Pedido confirmado";
     case "shipped":
       return "Enviado";
     case "completed":
@@ -51,6 +54,8 @@ function getStatusBadgeClass(status) {
   switch (status) {
     case "pending":
       return "bg-warning text-dark";
+    case "confirmed":
+      return "bg-primary";
     case "shipped":
       return "bg-info text-dark";
     case "completed":

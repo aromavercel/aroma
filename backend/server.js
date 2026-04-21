@@ -601,7 +601,7 @@ app.get("/api/admin/orders", async (req, res) => {
       typeof req.query.status === "string"
         ? req.query.status.trim().toLowerCase()
         : "";
-    const allowedStatus = ["pending", "shipped", "completed", "canceled"];
+    const allowedStatus = ["pending", "confirmed", "shipped", "completed", "canceled"];
     const hasFilter =
       statusParam && statusParam !== "all" && allowedStatus.includes(statusParam);
 
@@ -666,7 +666,7 @@ app.patch("/api/admin/orders/:id/status", async (req, res) => {
     const { id } = req.params;
     if (!id) return res.status(400).json({ error: "ID do pedido é obrigatório" });
 
-    const allowedStatus = ["pending", "shipped", "completed", "canceled"];
+    const allowedStatus = ["pending", "confirmed", "shipped", "completed", "canceled"];
     const body = req.body || {};
     const status =
       typeof body.status === "string"
@@ -676,7 +676,7 @@ app.patch("/api/admin/orders/:id/status", async (req, res) => {
     if (!allowedStatus.includes(status)) {
       return res.status(400).json({
         error:
-          "Status inválido. Use: pending, shipped, completed ou canceled.",
+          "Status inválido. Use: pending, confirmed, shipped, completed ou canceled.",
       });
     }
 

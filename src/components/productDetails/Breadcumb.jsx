@@ -8,7 +8,7 @@ export default function Breadcumb({ product, backLink = "/shop-default" }) {
           <div className="breadcrumb-wrap">
             <div className="breadcrumb-list">
               <Link to={`/`} className="breadcrumb-item">
-                Home
+                Início
               </Link>
               <div className="breadcrumb-item dot">
                 <span />

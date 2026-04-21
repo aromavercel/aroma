@@ -44,13 +44,9 @@ export default function Header7() {
           <div className="col-xxl-5 col-xl-4 col-md-4 col-3">
             <ul className="nav-icon d-flex justify-content-end align-items-center">
               <li className="nav-search">
-                <a
-                  href="#search"
-                  data-bs-toggle="modal"
-                  className="nav-icon-item"
-                >
+                <Link to="/buscar" className="nav-icon-item">
                   <i className="icon icon-search" />
-                </a>
+                </Link>
               </li>
               <UserAccountTrigger />
               <li className="nav-wishlist">

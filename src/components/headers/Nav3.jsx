@@ -35,7 +35,7 @@ export default function Nav3() {
             isMenuParentActive(demoItems) ? "menuActive" : ""
           } `}
         >
-          Home
+          Início
           <i className="icon icon-arr-down" />
         </a>
         <div className="sub-menu mega-menu mega-home">
