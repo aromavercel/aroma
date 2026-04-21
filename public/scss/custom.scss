@@ -243,6 +243,100 @@
   min-height: 16px;
 }
 
+/* Página /buscar usando o mesmo layout do modal */
+#search-page.modal.popup-search {
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+  background: var(--white);
+  z-index: 1055;
+}
+
+/* Checkout desabilitado no mini-cart */
+.tf-mini-cart-view-checkout .tf-btn.disabled {
+  pointer-events: none;
+  opacity: 0.55;
+  filter: grayscale(0.2);
+}
+
+/* Página de pedido recebido */
+.thankyou-page {
+  .thankyou-wrap {
+    display: flex;
+    justify-content: center;
+  }
+
+  .thankyou-card {
+    width: 100%;
+    max-width: 920px;
+    background: var(--white);
+    border: 1px solid var(--rgba-dark-3);
+    border-radius: 18px;
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    gap: 18px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
+  }
+
+  .thankyou-badge {
+    width: 84px;
+    height: 84px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.12);
+    color: rgb(16, 185, 129);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    border: 1px solid rgba(16, 185, 129, 0.22);
+  }
+
+  .thankyou-content h1 {
+    font-size: 34px;
+    line-height: 1.15;
+  }
+
+  .thankyou-important {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--rgba-dark-3);
+    border-radius: 14px;
+    padding: 16px 16px;
+    margin-bottom: 18px;
+  }
+
+  .thankyou-important ul {
+    padding-left: 1.15rem;
+    margin: 0;
+  }
+
+  .thankyou-important li + li {
+    margin-top: 8px;
+  }
+
+  .thankyou-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  @media (max-width: 767px) {
+    .thankyou-card {
+      grid-template-columns: 1fr;
+      padding: 20px;
+    }
+    .thankyou-badge {
+      width: 72px;
+      height: 72px;
+      font-size: 30px;
+    }
+    .thankyou-content h1 {
+      font-size: 26px;
+    }
+  }
+}
+
 /* Catálogo: mesma altura para todos os campos de filtro */
 .catalog-filters {
   .form-control,

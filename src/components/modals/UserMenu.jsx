@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useContextElement } from "@/context/Context";
 import { updateProfile, uploadAvatar } from "@/api/auth";
+import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLocations";
 
 function ageFromBirthDate(birthDate) {
   if (!birthDate) return null;
@@ -15,7 +16,7 @@ function ageFromBirthDate(birthDate) {
 }
 
 function formatLocation(user) {
-  const parts = [user.city, user.state, user.country].filter(Boolean);
+  const parts = [user.city, user.state].filter(Boolean);
   return parts.length ? parts.join(", ") : null;
 }
 
@@ -26,13 +27,14 @@ export default function UserMenu() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
+  const [cities, setCities] = useState([]);
+  const [loadingCities, setLoadingCities] = useState(false);
   const [form, setForm] = useState({
     name: "",
     avatar_url: "",
     birth_date: "",
     city: "",
     state: "",
-    country: "",
     email: "",
   });
 
@@ -44,11 +46,34 @@ export default function UserMenu() {
         birth_date: user.birth_date ? user.birth_date.slice(0, 10) : "",
         city: user.city || "",
         state: user.state || "",
-        country: user.country || "",
         email: user.email || "",
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const uf = (form.state || "").trim().toUpperCase();
+      if (!uf) {
+        setCities([]);
+        return;
+      }
+      setLoadingCities(true);
+      try {
+        const list = await fetchBrazilCitiesByUF(uf);
+        if (!cancelled) setCities(list);
+      } catch {
+        if (!cancelled) setCities([]);
+      } finally {
+        if (!cancelled) setLoadingCities(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [form.state]);
 
   if (!user) return null;
 
@@ -97,7 +122,7 @@ export default function UserMenu() {
         birth_date: form.birth_date || null,
         city: form.city || null,
         state: form.state || null,
-        country: form.country || null,
+        country: COUNTRY_BR_LABEL,
         email: form.email || null,
       });
       setUser(updated);
@@ -275,33 +300,42 @@ export default function UserMenu() {
               </fieldset>
               <fieldset className="mb_12">
                 <label className="text-sm text-main-2 d-block mb_4">Cidade</label>
-                <input
-                  type="text"
+                <select
                   className="form-control"
-                  placeholder="Cidade"
                   value={form.city}
                   onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                />
+                  disabled={!form.state || loadingCities}
+                >
+                  <option value="">
+                    {!form.state
+                      ? "Selecione o estado primeiro"
+                      : loadingCities
+                        ? "Carregando cidades…"
+                        : "Selecione a cidade"}
+                  </option>
+                  {cities.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
               </fieldset>
               <fieldset className="mb_12">
                 <label className="text-sm text-main-2 d-block mb_4">Estado</label>
-                <input
-                  type="text"
+                <select
                   className="form-control"
-                  placeholder="Estado"
                   value={form.state}
-                  onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
-                />
-              </fieldset>
-              <fieldset className="mb_12">
-                <label className="text-sm text-main-2 d-block mb_4">País</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="País"
-                  value={form.country}
-                  onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-                />
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setForm((f) => ({ ...f, state: next, city: "" }));
+                  }}
+                >
+                  {BR_STATES.map((opt) => (
+                    <option key={opt.value || "empty"} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </fieldset>
               <fieldset className="mb_12">
                 <label className="text-sm text-main-2 d-block mb_4">E-mail</label>

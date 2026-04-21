@@ -6,29 +6,22 @@ import { useState, useEffect } from "react";
 import { updateProfile } from "@/api/auth";
 import { createOrder } from "@/api/orders";
 import { getCart } from "@/api/cart";
-
-const BR_STATES = [
-  { value: "", label: "Estado" },
-  { value: "AC", label: "Acre" }, { value: "AL", label: "Alagoas" }, { value: "AM", label: "Amazonas" }, { value: "AP", label: "Amapá" },
-  { value: "BA", label: "Bahia" }, { value: "CE", label: "Ceará" }, { value: "DF", label: "Distrito Federal" }, { value: "ES", label: "Espírito Santo" },
-  { value: "GO", label: "Goiás" }, { value: "MA", label: "Maranhão" }, { value: "MG", label: "Minas Gerais" }, { value: "MS", label: "Mato Grosso do Sul" },
-  { value: "MT", label: "Mato Grosso" }, { value: "PA", label: "Pará" }, { value: "PB", label: "Paraíba" }, { value: "PE", label: "Pernambuco" },
-  { value: "PI", label: "Piauí" }, { value: "PR", label: "Paraná" }, { value: "RJ", label: "Rio de Janeiro" }, { value: "RN", label: "Rio Grande do Norte" },
-  { value: "RO", label: "Rondônia" }, { value: "RR", label: "Roraima" }, { value: "RS", label: "Rio Grande do Sul" }, { value: "SC", label: "Santa Catarina" },
-  { value: "SE", label: "Sergipe" }, { value: "SP", label: "São Paulo" }, { value: "TO", label: "Tocantins" },
-];
+import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLocations";
+import { fetchAddressByCep, formatCep, onlyDigits } from "@/utils/cep";
 
 export default function Checkout() {
   const { user, cartProducts, totalPrice, setCartProducts, setUser } = useContextElement();
   const navigate = useNavigate();
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
-  const [country, setCountry] = useState("");
   const [address, setAddress] = useState("");
   const [apartment, setApartment] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [cities, setCities] = useState([]);
+  const [loadingCities, setLoadingCities] = useState(false);
   const [zipcode, setZipcode] = useState("");
+  const [loadingCep, setLoadingCep] = useState(false);
   const [phone, setPhone] = useState("");
   const [contact, setContact] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -39,7 +32,6 @@ export default function Checkout() {
     const nameParts = (user.name || "").trim().split(/\s+/);
     setFirstname(nameParts[0] || "");
     setLastname(nameParts.slice(1).join(" ") || "");
-    setCountry(user.country ?? "");
     setAddress(user.address ?? "");
     setApartment(user.address_complement ?? "");
     setCity(user.city ?? "");
@@ -49,10 +41,59 @@ export default function Checkout() {
     setContact(user.email || user.phone || "");
   }, [user]);
 
-  const discount = 10;
-  const shippingCost = 10;
-  const taxCost = 10;
-  const orderTotal = totalPrice ? totalPrice - discount + shippingCost + taxCost : 0;
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!state) {
+        setCities([]);
+        return;
+      }
+      setLoadingCities(true);
+      try {
+        const list = await fetchBrazilCitiesByUF(state);
+        if (!cancelled) setCities(list);
+      } catch {
+        if (!cancelled) setCities([]);
+      } finally {
+        if (!cancelled) setLoadingCities(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [state]);
+
+  const handleZipcodeChange = async (e) => {
+    const nextMasked = formatCep(e.target.value);
+    setZipcode(nextMasked);
+
+    const digits = onlyDigits(nextMasked);
+    if (digits.length !== 8) return;
+
+    setLoadingCep(true);
+    try {
+      const found = await fetchAddressByCep(digits);
+      if (!found) return;
+      if (found.state) {
+        setState(found.state);
+        setCity("");
+      }
+      if (found.city) setCity(found.city);
+      if (found.street) setAddress(found.street);
+      if (found.complement && !apartment) setApartment(found.complement);
+    } catch {
+      // silencioso
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  const discount = 0;
+  const FREE_SHIPPING_THRESHOLD = 250;
+  const shippingCost = totalPrice > FREE_SHIPPING_THRESHOLD ? 0 : 10;
+  const taxCost = 0;
+  const orderTotal = totalPrice ? totalPrice + shippingCost : 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,10 +121,10 @@ export default function Checkout() {
           zipcode: zipcode.trim() || null,
           city: city.trim() || null,
           state: state || null,
-          country: country.trim() || null,
+          country: COUNTRY_BR_LABEL,
           phone: phone.trim() || user.phone,
         });
-        const updatedUser = { ...user, name, address: address.trim(), address_complement: apartment.trim(), zipcode: zipcode.trim(), city: city.trim(), state, country: country.trim(), phone: phone.trim() };
+        const updatedUser = { ...user, name, address: address.trim(), address_complement: apartment.trim(), zipcode: zipcode.trim(), city: city.trim(), state, country: COUNTRY_BR_LABEL, phone: phone.trim() };
         setUser(updatedUser);
       }
       await createOrder({
@@ -98,7 +139,7 @@ export default function Checkout() {
         shipping_city: city.trim(),
         shipping_state: state || null,
         shipping_zipcode: zipcode.trim() || null,
-        shipping_country: country.trim() || null,
+        shipping_country: COUNTRY_BR_LABEL,
         shipping_phone: phone.trim(),
         payment_method: "cash_delivery",
       });
@@ -149,17 +190,6 @@ export default function Checkout() {
                   <fieldset className="tf-field style-2 style-3 mb_16">
                     <input
                       className="tf-field-input tf-input"
-                      id="country"
-                      type="text"
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                      placeholder=""
-                    />
-                    <label className="tf-field-label" htmlFor="country">País</label>
-                  </fieldset>
-                  <fieldset className="tf-field style-2 style-3 mb_16">
-                    <input
-                      className="tf-field-input tf-input"
                       id="address"
                       type="text"
                       value={address}
@@ -178,19 +208,33 @@ export default function Checkout() {
                     />
                   </fieldset>
                   <div className="grid-3 mb_16">
-                    <fieldset className="tf-field style-2 style-3">
-                      <input
-                        className="tf-field-input tf-input"
+                    <div className="tf-select select-square">
+                      <select
                         id="city"
-                        type="text"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        placeholder=""
-                      />
-                      <label className="tf-field-label" htmlFor="city">Cidade</label>
-                    </fieldset>
+                        disabled={!state || loadingCities}
+                      >
+                        <option value="">
+                          {!state ? "Cidade" : loadingCities ? "Carregando cidades…" : "Cidade"}
+                        </option>
+                        {cities.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="tf-select select-square">
-                      <select id="state" value={state} onChange={(e) => setState(e.target.value)}>
+                      <select
+                        id="state"
+                        value={state}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setState(next);
+                          setCity("");
+                        }}
+                      >
                         {BR_STATES.map((opt) => (
                           <option key={opt.value || "empty"} value={opt.value}>{opt.label}</option>
                         ))}
@@ -202,10 +246,15 @@ export default function Checkout() {
                         id="code"
                         type="text"
                         value={zipcode}
-                        onChange={(e) => setZipcode(e.target.value)}
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                        maxLength={9}
+                        onChange={handleZipcodeChange}
                         placeholder=""
                       />
-                      <label className="tf-field-label" htmlFor="code">CEP/Postal</label>
+                      <label className="tf-field-label" htmlFor="code">
+                        {loadingCep ? "Buscando CEP…" : "CEP"}
+                      </label>
                     </fieldset>
                   </div>
                   <fieldset className="tf-field style-2 style-3 mb_16">
@@ -223,7 +272,11 @@ export default function Checkout() {
                 <div className="box-ip-contact">
                   <div className="title">
                     <div className="text-xl fw-medium">Informações de contato</div>
-                    <Link to="/login" className="text-sm link">Entrar</Link>
+                    {!user && (
+                      <Link to="/login" className="text-sm link">
+                        Entrar
+                      </Link>
+                    )}
                   </div>
                   <input
                     className="style-2"
@@ -313,26 +366,18 @@ export default function Checkout() {
                     </span>
                   </li>
                   <li className="total-item text-sm d-flex justify-content-between">
-                    <span>Desconto:</span>
-                    <span className="price-discount fw-medium">
-                      {totalPrice ? "R$-10" : "R$0"}
-                    </span>
-                  </li>
-                  <li className="total-item text-sm d-flex justify-content-between">
                     <span>Frete:</span>
                     <span className="price-ship fw-medium">
-                      {totalPrice ? "R$10.00" : "R$0"}
-                    </span>
-                  </li>
-                  <li className="total-item text-sm d-flex justify-content-between">
-                    <span>Imposto:</span>
-                    <span className="price-tax fw-medium">
-                      {totalPrice ? "R$10.00" : "R$0"}
+                      {!totalPrice
+                        ? "R$ 0,00"
+                        : shippingCost === 0
+                          ? "Grátis"
+                          : `R$ ${shippingCost.toFixed(2)}`}
                     </span>
                   </li>
                 </ul>
                 <div className="subtotal text-lg fw-medium d-flex justify-content-between">
-                  <span>Subtotal:</span>
+                  <span>Total:</span>
                   <span className="total-price-order">
                     R$ {totalPrice ? orderTotal.toFixed(2) : "0.00"}
                   </span>

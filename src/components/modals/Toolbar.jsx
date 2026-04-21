@@ -60,7 +60,7 @@ export default function Toolbar() {
         </a>
       </div>
       <div className="toolbar-item">
-        <Link to={`/shop-default`}>
+        <Link to={`/catalogo`}>
           <div className="toolbar-icon">
             <svg
               width={20}

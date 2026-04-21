@@ -68,6 +68,7 @@ import AdminOrderDetailPage from "./pages/dashboard/admin-panel/AdminOrderDetail
 import AdminAccessPage from "./pages/dashboard/admin-panel/AdminAccessPage";
 import CatalogPage from "./pages/catalog";
 import PerfumePage from "./pages/perfume/PerfumePage";
+import SearchPage from "./pages/buscar";
 import ProductDetailPage from "./pages/product-details/product-detail";
 import ProductDetailPageRightThumbnail from "./pages/product-details/product-right-thumbnail";
 import ProductDetailPageBottomThumbnail from "./pages/product-details/product-bottom-thumbnail";
@@ -266,6 +267,7 @@ function App() {
             <Route path="home-skincare2" element={<HomePageSkincare2 />} />
 
             <Route path="catalogo" element={<CatalogPage />} />
+            <Route path="buscar" element={<SearchPage />} />
             <Route path="perfume/:id" element={<PerfumePage />} />
             <Route path="shop-default" element={<ProductPageDefault />} />
             <Route

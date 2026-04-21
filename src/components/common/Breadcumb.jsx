@@ -12,7 +12,7 @@ export default function Breadcumb({
           <h4 className="title">{pageTitle}</h4>
           <div className="breadcrumb-list">
             <Link className="breadcrumb-item" to={`/`}>
-              Home
+              Início
             </Link>
             <div className="breadcrumb-item dot">
               <span />
