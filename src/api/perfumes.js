@@ -1,10 +1,6 @@
 import { apiFetch, getApiBase } from "./apiFetch";
 const BLOB_HOST = "blob.vercel-storage.com";
 
-function getApiBase() {
-  return getApiBase();
-}
-
 function toProxyUrl(imageUrl) {
   if (!imageUrl || typeof imageUrl !== "string") return imageUrl;
   if (!imageUrl.includes(BLOB_HOST)) return imageUrl;
