@@ -15,12 +15,16 @@ import { generateOtpCode, hashResetCode, constantTimeEqualHex } from "../lib/pas
 
 const MAX_AVATAR_SIZE = 4 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+// Base64 aumenta ~33% o tamanho do payload. Mantemos 3MB aqui para evitar 413.
+const MAX_PERFUME_IMAGE_SIZE = 3 * 1024 * 1024;
+const ALLOWED_PERFUME_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({ origin: true }));
-app.use(express.json());
+// Upload via dataURL (base64) precisa de limite maior que o default (~100kb)
+app.use(express.json({ limit: "8mb" }));
 
 function getMailTransport() {
   const host = process.env.SMTP_HOST;
@@ -41,6 +45,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.post("/api/contact", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
     const body = req.body || {};
     const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -53,31 +58,18 @@ app.post("/api/contact", async (req, res) => {
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "E-mail inválido." });
     }
-    const transport = getMailTransport();
-    if (!transport) {
-      return res.status(503).json({ error: "Envio de e-mail não está configurado no servidor." });
-    }
-    const to = (process.env.CONTACT_TO_EMAIL || "contato@aromaexpresso.com").trim();
-    const from = (process.env.SMTP_FROM || process.env.SMTP_USER || "no-reply@aromaexpresso.com").trim();
-    const subject = `Contato do site Aroma - ${name}`;
-    const text = `Nova mensagem de contato do site Aroma:
-
-Nome: ${name}
-E-mail: ${email}
-
-Mensagem:
-${message}
-`;
-    const html = `<p><strong>Nova mensagem de contato do site Aroma</strong></p>
-                  <p><strong>Nome:</strong> ${name}</p>
-                  <p><strong>E-mail:</strong> ${email}</p>
-                  <p><strong>Mensagem:</strong><br/>${message.replace(/\n/g, "<br/>")}</p>`;
-
-    await transport.sendMail({ from, to, subject, text, html });
-    return res.status(200).json({ ok: true });
+    const [row] = await sql`
+      INSERT INTO contact_messages (name, email, message)
+      VALUES (${name}, ${email}, ${message})
+      RETURNING id, created_at
+    `;
+    return res.status(200).json({ ok: true, id: row?.id, created_at: row?.created_at });
   } catch (err) {
     console.error("POST /api/contact error:", err);
-    return res.status(500).json({ error: "Erro ao enviar mensagem. Tente novamente mais tarde." });
+    if (err?.code === "42P01") {
+      return res.status(503).json({ error: "Tabela de mensagens não disponível. Execute as migrations." });
+    }
+    return res.status(500).json({ error: "Erro ao salvar mensagem. Tente novamente mais tarde." });
   }
 });
 
@@ -351,6 +343,180 @@ app.get("/api/perfumes", async (req, res) => {
   }
 });
 
+// Busca (página /buscar): top produtos + top marcas + resultados
+app.get("/api/search", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const rawQ = typeof req.query?.q === "string" ? req.query.q.trim() : "";
+    const q = rawQ ? rawQ.slice(0, 80) : "";
+
+    const getImagesByPerfumeIds = async (perfumeIds) => {
+      if (!perfumeIds.length) return new Map();
+      const rows = await sql`
+        SELECT perfume_id, url, position
+        FROM perfume_images
+        WHERE perfume_id = ANY(${perfumeIds})
+        ORDER BY perfume_id, position
+      `;
+      const map = new Map();
+      for (const r of rows || []) {
+        const pid = toUuidKey(r.perfume_id ?? r.perfumeId);
+        if (!pid) continue;
+        const url = r.url != null ? String(r.url).trim() : "";
+        if (!url) continue;
+        const list = map.get(pid) || [];
+        list.push(url);
+        map.set(pid, list);
+      }
+      return map;
+    };
+
+    const toPerfumeCardRow = (p, imagesByPerfume) => {
+      const pid = toUuidKey(p.id);
+      let images = imagesByPerfume.get(pid) ?? [];
+      if ((!images || images.length === 0) && p.image_2_url) {
+        const u = String(p.image_2_url).trim();
+        if (u) images = [u.startsWith("//") ? "https:" + u : u];
+      }
+      return {
+        id: pid || String(p.id ?? ""),
+        url: p.external_url,
+        title: p.title,
+        description: p.description ?? "",
+        catalogSource: p.catalog_source,
+        brand: p.brand_name ?? "",
+        notes: p.notes ?? {},
+        variants: p.variants ?? [],
+        images,
+        ativo: p.ativo === true || p.ativo == null,
+        esgotado: p.esgotado === true,
+      };
+    };
+
+    const getTopProducts = async (limit = 4) => {
+      try {
+        const rows = await sql`
+          SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants,
+                 p.image_2_url, p.ativo, p.esgotado,
+                 b.name AS brand_name,
+                 SUM(oi.quantity)::int AS qty
+          FROM order_items oi
+          JOIN orders o ON o.id = oi.order_id
+          JOIN perfumes p ON p.id = oi.perfume_id
+          JOIN brands b ON b.id = p.brand_id
+          WHERE COALESCE(o.status, '') <> 'canceled'
+          GROUP BY p.id, b.name
+          ORDER BY qty DESC
+          LIMIT ${limit}
+        `;
+        return rows || [];
+      } catch (err) {
+        // Se ainda não houver pedidos/tabelas, cai no fallback aleatório
+        if (err?.code === "42P01" || err?.code === "42703") return [];
+        throw err;
+      }
+    };
+
+    const getRandomProducts = async (limit = 4, excludeIds = []) => {
+      const rows = await sql`
+        SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants,
+               p.image_2_url, p.ativo, p.esgotado,
+               b.name AS brand_name
+        FROM perfumes p
+        JOIN brands b ON b.id = p.brand_id
+        WHERE COALESCE(p.ativo, true) = true
+          AND (${excludeIds}::uuid[] IS NULL OR p.id <> ALL(${excludeIds}))
+        ORDER BY random()
+        LIMIT ${limit}
+      `;
+      return rows || [];
+    };
+
+    const getTopBrands = async (limit = 4) => {
+      try {
+        const rows = await sql`
+          SELECT b.id, b.name, SUM(oi.quantity)::int AS qty
+          FROM order_items oi
+          JOIN orders o ON o.id = oi.order_id
+          JOIN perfumes p ON p.id = oi.perfume_id
+          JOIN brands b ON b.id = p.brand_id
+          WHERE COALESCE(o.status, '') <> 'canceled'
+          GROUP BY b.id, b.name
+          ORDER BY qty DESC
+          LIMIT ${limit}
+        `;
+        return rows || [];
+      } catch (err) {
+        if (err?.code === "42P01" || err?.code === "42703") return [];
+        throw err;
+      }
+    };
+
+    const getRandomBrands = async (limit = 4) => {
+      const rows = await sql`
+        SELECT id, name
+        FROM brands
+        ORDER BY random()
+        LIMIT ${limit}
+      `;
+      return rows || [];
+    };
+
+    let topProducts = await getTopProducts(4);
+    if (topProducts.length < 4) {
+      const exclude = topProducts.map((p) => p.id).filter(Boolean);
+      const fill = await getRandomProducts(4 - topProducts.length, exclude);
+      topProducts = topProducts.concat(fill);
+    }
+
+    let topBrands = await getTopBrands(4);
+    if (topBrands.length < 4) {
+      const fill = await getRandomBrands(4 - topBrands.length);
+      topBrands = topBrands.concat(fill);
+    }
+
+    let results = [];
+    if (q) {
+      results = await sql`
+        SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants,
+               p.image_2_url, p.ativo, p.esgotado,
+               b.name AS brand_name
+        FROM perfumes p
+        JOIN brands b ON b.id = p.brand_id
+        WHERE COALESCE(p.ativo, true) = true
+          AND (
+            p.title ILIKE ${"%" + q + "%"}
+            OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+            OR b.name ILIKE ${"%" + q + "%"}
+          )
+        ORDER BY p.title
+        LIMIT 48
+      `;
+    }
+
+    const allForImages = [...topProducts, ...results];
+    const ids = [...new Set(allForImages.map((p) => toUuidKey(p.id)).filter(Boolean))];
+    const imagesByPerfume = await getImagesByPerfumeIds(ids);
+
+    return res.status(200).json({
+      q,
+      topBrands: (topBrands || []).map((b) => ({
+        id: toUuidKey(b.id) || String(b.id ?? ""),
+        name: b.name,
+        qty: b.qty ?? null,
+      })),
+      topProducts: (topProducts || []).map((p) => toPerfumeCardRow(p, imagesByPerfume)),
+      results: (results || []).map((p) => toPerfumeCardRow(p, imagesByPerfume)),
+    });
+  } catch (err) {
+    console.error("GET /api/search error:", err);
+    if (err?.code === "42P01") {
+      return res.status(503).json({ error: "Tabelas não disponíveis. Execute as migrations." });
+    }
+    return res.status(500).json({ error: "Erro ao carregar busca" });
+  }
+});
+
 app.get("/api/perfumes/:id", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
@@ -431,6 +597,37 @@ async function requireAdmin(req, res) {
   return payload;
 }
 
+function normalizeBrandKey(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function extractBrandFromTitle(title) {
+  const t = String(title || "").trim();
+  if (!t) return { name: "Sem marca", key: "sem marca" };
+  const dashIdx = t.indexOf("-");
+  let brand = dashIdx > 0 ? t.slice(0, dashIdx) : t.split(/\s+/)[0];
+  brand = String(brand || "").trim();
+  if (!brand) brand = "Sem marca";
+  const key = normalizeBrandKey(brand);
+  return { name: brand, key: key || "sem marca" };
+}
+
+async function upsertBrandIdByTitle(title) {
+  const brand = extractBrandFromTitle(title);
+  const [row] = await sql`
+    INSERT INTO brands (name, name_key)
+    VALUES (${brand.name}, ${brand.key})
+    ON CONFLICT (name_key) DO UPDATE SET name = EXCLUDED.name
+    RETURNING id
+  `;
+  return row?.id ?? null;
+}
+
 app.post("/api/perfumes", async (req, res) => {
   const payload = await requireAdmin(req, res);
   if (!payload) return;
@@ -453,9 +650,12 @@ app.post("/api/perfumes", async (req, res) => {
     const ativo = body.ativo !== false && body.ativo !== "false";
     const esgotado = body.esgotado === true || body.esgotado === "true";
 
+    const brandId = await upsertBrandIdByTitle(title);
+    if (!brandId) return res.status(500).json({ error: "Erro ao definir marca" });
+
     const [inserted] = await sql`
-      INSERT INTO perfumes (external_url, title, description, catalog_source, notes, variants, ativo, esgotado)
-      VALUES (${externalUrl}, ${title}, ${description}, ${catalogSource}, ${JSON.stringify(notes)}, ${JSON.stringify(variants)}, ${ativo}, ${esgotado})
+      INSERT INTO perfumes (brand_id, external_url, title, description, catalog_source, notes, variants, ativo, esgotado)
+      VALUES (${brandId}, ${externalUrl}, ${title}, ${description}, ${catalogSource}, ${JSON.stringify(notes)}, ${JSON.stringify(variants)}, ${ativo}, ${esgotado})
       RETURNING id, external_url, title, description, catalog_source, notes, variants, ativo, esgotado
     `;
     if (!inserted) return res.status(500).json({ error: "Erro ao criar perfume" });
@@ -509,9 +709,12 @@ app.put("/api/perfumes/:id", async (req, res) => {
     const ativo = body.ativo !== false && body.ativo !== "false";
     const esgotado = body.esgotado === true || body.esgotado === "true";
 
+    const brandId = await upsertBrandIdByTitle(title);
+    if (!brandId) return res.status(500).json({ error: "Erro ao definir marca" });
+
     await sql`
       UPDATE perfumes
-      SET external_url = ${externalUrl}, title = ${title}, description = ${description}, catalog_source = ${catalogSource}, notes = ${JSON.stringify(notes)}, variants = ${JSON.stringify(variants)}, ativo = ${ativo}, esgotado = ${esgotado}, updated_at = now()
+      SET brand_id = ${brandId}, external_url = ${externalUrl}, title = ${title}, description = ${description}, catalog_source = ${catalogSource}, notes = ${JSON.stringify(notes)}, variants = ${JSON.stringify(variants)}, ativo = ${ativo}, esgotado = ${esgotado}, updated_at = now()
       WHERE id = ${id}
     `;
     await sql`DELETE FROM perfume_images WHERE perfume_id = ${id}`;
@@ -877,6 +1080,44 @@ app.get("/api/admin/users/:id", async (req, res) => {
   } catch (err) {
     console.error("GET /api/admin/users/:id error:", err);
     return res.status(500).json({ error: "Erro ao buscar usuário" });
+  }
+});
+
+app.get("/api/admin/contact-messages", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const limitRaw = typeof req.query?.limit === "string" ? Number(req.query.limit) : 50;
+    const offsetRaw = typeof req.query?.offset === "string" ? Number(req.query.offset) : 0;
+    const limit = Number.isFinite(limitRaw) ? Math.min(200, Math.max(1, Math.floor(limitRaw))) : 50;
+    const offset = Number.isFinite(offsetRaw) ? Math.max(0, Math.floor(offsetRaw)) : 0;
+
+    const rows = await sql`
+      SELECT id, name, email, message, created_at
+      FROM contact_messages
+      ORDER BY created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+    const [countRow] = await sql`SELECT COUNT(*)::int AS count FROM contact_messages`;
+    return res.status(200).json({
+      items: (rows || []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        message: r.message,
+        created_at: r.created_at,
+      })),
+      total: countRow?.count ?? 0,
+      limit,
+      offset,
+    });
+  } catch (err) {
+    console.error("GET /api/admin/contact-messages error:", err);
+    if (err?.code === "42P01") {
+      return res.status(503).json({ error: "Tabela de mensagens não disponível. Execute as migrations." });
+    }
+    return res.status(500).json({ error: "Erro ao listar mensagens" });
   }
 });
 
@@ -1542,7 +1783,7 @@ app.get("/api/cart", async (req, res) => {
       return res.status(200).json({ items: [] });
     }
     const items = await sql`
-      SELECT ci.perfume_id, ci.quantity, p.title, p.variants
+      SELECT ci.id AS cart_item_id, ci.perfume_id, ci.variant_option, ci.unit_price, ci.quantity, p.title, p.variants
       FROM cart_items ci
       JOIN perfumes p ON p.id = ci.perfume_id
       WHERE ci.cart_id = ${cart.id}
@@ -1564,12 +1805,21 @@ app.get("/api/cart", async (req, res) => {
     const out = items.map((i) => {
       const pid = i.perfume_id ?? i.perfumeId;
       const variants = i.variants || [];
-      const firstPrice = variants.find((v) => v && (v.price_number != null || v.price_short));
-      const priceNumber = firstPrice?.price_number ?? null;
-      const priceShort = firstPrice?.price_short ?? (priceNumber != null ? `R$ ${Number(priceNumber).toFixed(2)}` : "");
+      const selectedOpt = (i.variant_option ?? "").toString();
+      const match = selectedOpt
+        ? variants.find((v) => v && String(v.option0 || "").trim() === selectedOpt)
+        : variants.find((v) => v && (v.price_number != null || v.price_short));
+      const dbUnit = i.unit_price != null ? Number(i.unit_price) : null;
+      const priceNumber = dbUnit != null && !Number.isNaN(dbUnit)
+        ? dbUnit
+        : match?.price_number != null
+          ? Number(match.price_number)
+          : 0;
+      const priceShort = match?.price_short ?? (priceNumber ? `R$ ${Number(priceNumber).toFixed(2)}` : "");
       return {
-        id: pid,
+        id: i.cart_item_id ?? pid,
         perfume_id: pid,
+        variant_option: selectedOpt || null,
         quantity: Number(i.quantity) || 1,
         title: i.title ?? "",
         imageUrl: imageByPerfume.get(pid) ?? null,
@@ -1591,6 +1841,8 @@ app.post("/api/cart/items", async (req, res) => {
     const body = req.body || {};
     const perfumeId = (body.perfume_id ?? body.perfumeId ?? "").toString().trim();
     const quantity = Math.max(1, parseInt(body.quantity, 10) || 1);
+    const variantOption = typeof body.variant_option === "string" ? body.variant_option.trim() : "";
+    const unitPrice = body.unit_price != null && !Number.isNaN(Number(body.unit_price)) ? Number(body.unit_price) : 0;
     if (!perfumeId) return res.status(400).json({ error: "perfume_id é obrigatório" });
     const [perfume] = await sql`SELECT id FROM perfumes WHERE id = ${perfumeId}`;
     if (!perfume) return res.status(404).json({ error: "Perfume não encontrado" });
@@ -1603,16 +1855,17 @@ app.post("/api/cart/items", async (req, res) => {
       cart = created;
     }
     await sql`
-      INSERT INTO cart_items (cart_id, perfume_id, quantity)
-      VALUES (${cart.id}, ${perfumeId}, ${quantity})
-      ON CONFLICT (cart_id, perfume_id)
-      DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+      INSERT INTO cart_items (cart_id, perfume_id, variant_option, unit_price, quantity)
+      VALUES (${cart.id}, ${perfumeId}, ${variantOption}, ${unitPrice}, ${quantity})
+      ON CONFLICT (cart_id, perfume_id, variant_option)
+      DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity,
+                    unit_price = EXCLUDED.unit_price
     `;
     const [updated] = await sql`
-      SELECT quantity FROM cart_items WHERE cart_id = ${cart.id} AND perfume_id = ${perfumeId}
+      SELECT id, quantity FROM cart_items WHERE cart_id = ${cart.id} AND perfume_id = ${perfumeId} AND variant_option = ${variantOption}
     `;
     await sql`UPDATE carts SET updated_at = now() WHERE id = ${cart.id}`;
-    return res.status(200).json({ perfume_id: perfumeId, quantity: updated?.quantity ?? quantity });
+    return res.status(200).json({ id: updated?.id, perfume_id: perfumeId, variant_option: variantOption || null, quantity: updated?.quantity ?? quantity });
   } catch (err) {
     if (err?.code === "23503") return res.status(404).json({ error: "Perfume não encontrado" });
     console.error("POST /api/cart/items error:", err);
@@ -1620,22 +1873,22 @@ app.post("/api/cart/items", async (req, res) => {
   }
 });
 
-app.patch("/api/cart/items/:perfumeId", async (req, res) => {
+app.patch("/api/cart/items/:id", async (req, res) => {
   const cartUser = await getCartUser(req, res);
   if (!cartUser) return;
   try {
-    const perfumeId = (req.params.perfumeId ?? "").toString().trim();
+    const id = (req.params.id ?? "").toString().trim();
     const body = req.body || {};
     const quantity = Math.max(0, parseInt(body.quantity, 10));
-    if (!perfumeId) return res.status(400).json({ error: "perfume_id é obrigatório" });
+    if (!id) return res.status(400).json({ error: "id é obrigatório" });
     const [cart] = await sql`SELECT id FROM carts WHERE user_phone = ${cartUser.userPhone}`;
     if (!cart) return res.status(200).json({ ok: true });
     if (quantity === 0) {
-      await sql`DELETE FROM cart_items WHERE cart_id = ${cart.id} AND perfume_id = ${perfumeId}`;
+      await sql`DELETE FROM cart_items WHERE cart_id = ${cart.id} AND id = ${id}`;
     } else {
       await sql`
         UPDATE cart_items SET quantity = ${quantity}
-        WHERE cart_id = ${cart.id} AND perfume_id = ${perfumeId}
+        WHERE cart_id = ${cart.id} AND id = ${id}
       `;
     }
     await sql`UPDATE carts SET updated_at = now() WHERE id = ${cart.id}`;
@@ -1646,15 +1899,15 @@ app.patch("/api/cart/items/:perfumeId", async (req, res) => {
   }
 });
 
-app.delete("/api/cart/items/:perfumeId", async (req, res) => {
+app.delete("/api/cart/items/:id", async (req, res) => {
   const cartUser = await getCartUser(req, res);
   if (!cartUser) return;
   try {
-    const perfumeId = (req.params.perfumeId ?? "").toString().trim();
-    if (!perfumeId) return res.status(400).json({ error: "perfume_id é obrigatório" });
+    const id = (req.params.id ?? "").toString().trim();
+    if (!id) return res.status(400).json({ error: "id é obrigatório" });
     const [cart] = await sql`SELECT id FROM carts WHERE user_phone = ${cartUser.userPhone}`;
     if (cart) {
-      await sql`DELETE FROM cart_items WHERE cart_id = ${cart.id} AND perfume_id = ${perfumeId}`;
+      await sql`DELETE FROM cart_items WHERE cart_id = ${cart.id} AND id = ${id}`;
       await sql`UPDATE carts SET updated_at = now() WHERE id = ${cart.id}`;
     }
     return res.status(200).json({ ok: true });
@@ -1673,7 +1926,7 @@ app.post("/api/orders", async (req, res) => {
     const [cart] = await sql`SELECT id FROM carts WHERE user_phone = ${cartUser.userPhone}`;
     if (!cart) return res.status(400).json({ error: "Carrinho vazio" });
     const cartItems = await sql`
-      SELECT ci.perfume_id, ci.quantity, p.title, p.variants
+      SELECT ci.perfume_id, ci.variant_option, ci.unit_price, ci.quantity, p.title, p.variants
       FROM cart_items ci
       JOIN perfumes p ON p.id = ci.perfume_id
       WHERE ci.cart_id = ${cart.id}
@@ -1718,13 +1971,22 @@ app.post("/api/orders", async (req, res) => {
       const perfumeId = item.perfume_id ?? item.perfumeId;
       const quantity = Number(item.quantity) || 1;
       const variants = item.variants || [];
-      const firstPrice = variants.find((v) => v && (v.price_number != null || v.price_short));
-      const unitPrice = firstPrice?.price_number != null ? Number(firstPrice.price_number) : 0;
+      const selectedOpt = (item.variant_option ?? "").toString();
+      const match = selectedOpt
+        ? variants.find((v) => v && String(v.option0 || "").trim() === selectedOpt)
+        : variants.find((v) => v && (v.price_number != null || v.price_short));
+      const dbUnit = item.unit_price != null ? Number(item.unit_price) : null;
+      const unitPrice =
+        dbUnit != null && !Number.isNaN(dbUnit)
+          ? dbUnit
+          : match?.price_number != null
+            ? Number(match.price_number)
+            : 0;
       const totalPrice = unitPrice * quantity;
       const title = (item.title ?? "").toString() || "Produto";
       await sql`
-        INSERT INTO order_items (order_id, perfume_id, title, quantity, unit_price, total_price)
-        VALUES (${orderId}, ${perfumeId}, ${title}, ${quantity}, ${unitPrice}, ${totalPrice})
+        INSERT INTO order_items (order_id, perfume_id, title, variant_option, quantity, unit_price, total_price)
+        VALUES (${orderId}, ${perfumeId}, ${title}, ${selectedOpt || null}, ${quantity}, ${unitPrice}, ${totalPrice})
       `;
     }
 
@@ -2085,6 +2347,47 @@ app.post("/api/upload-avatar", async (req, res) => {
   } catch (err) {
     console.error("Upload avatar error:", err);
     return res.status(500).json({ error: "Erro ao fazer upload da foto" });
+  }
+});
+
+app.post("/api/upload-perfume-image", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return res.status(503).json({ error: "Upload não configurado (BLOB_READ_WRITE_TOKEN)" });
+  }
+  try {
+    const dataUrl = req.body?.dataUrl || req.body?.image;
+    const filename = typeof req.body?.filename === "string" ? req.body.filename.trim() : "";
+    if (!dataUrl || typeof dataUrl !== "string") {
+      return res.status(400).json({ error: "Envie dataUrl com a imagem em base64" });
+    }
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) {
+      return res.status(400).json({ error: "Formato inválido. Use data:image/...;base64,..." });
+    }
+    const contentType = match[1].trim().toLowerCase();
+    if (!ALLOWED_PERFUME_IMAGE_TYPES.includes(contentType)) {
+      return res.status(400).json({ error: "Tipo de imagem não permitido. Use JPEG, PNG, WebP ou GIF." });
+    }
+    const base64 = match[2];
+    const buffer = Buffer.from(base64, "base64");
+    if (buffer.length > MAX_PERFUME_IMAGE_SIZE) {
+      return res.status(400).json({ error: "Imagem muito grande. Máximo 3 MB." });
+    }
+    const ext = contentType.split("/")[1] === "jpeg" ? "jpg" : contentType.split("/")[1];
+    const safeName = (filename || "perfume").slice(0, 80).replace(/[^\w.-]+/g, "-");
+    const pathname = `perfumes/${safeName}-${Date.now()}.${ext}`;
+    const blob = await put(pathname, buffer, {
+      access: "public",
+      contentType,
+      addRandomSuffix: true,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
+    return res.status(200).json({ url: blob.url });
+  } catch (err) {
+    console.error("Upload perfume image error:", err);
+    return res.status(500).json({ error: "Erro ao fazer upload da imagem" });
   }
 });
 

@@ -20,6 +20,7 @@ import ShareModal from "@/components/modals/ShareModal";
 import WOW from "@/utlis/wow";
 import CartComponent from "@/components/modals/CartComponent";
 import DbSidebar from "@/components/modals/DbSidebar";
+import AppErrorBoundary from "@/components/common/AppErrorBoundary";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import ScrollTopBehaviour from "./components/common/ScrollToTopBehaviour";
 import HomePage from "./pages";
@@ -66,6 +67,7 @@ import AdminUserDetailPage from "./pages/dashboard/admin-panel/AdminUserDetailPa
 import AdminOrdersPage from "./pages/dashboard/admin-panel/AdminOrdersPage";
 import AdminOrderDetailPage from "./pages/dashboard/admin-panel/AdminOrderDetailPage";
 import AdminAccessPage from "./pages/dashboard/admin-panel/AdminAccessPage";
+import AdminContactMessagesPage from "./pages/dashboard/admin-panel/AdminContactMessagesPage";
 import CatalogPage from "./pages/catalog";
 import PerfumePage from "./pages/perfume/PerfumePage";
 import SearchPage from "./pages/buscar";
@@ -229,8 +231,9 @@ function App() {
   return (
     <>
       <Context>
-        <Routes>
-          <Route path="/">
+        <AppErrorBoundary>
+          <Routes>
+            <Route path="/">
             <Route index element={<HomePage />} />
             <Route path="home-fashion-02" element={<HomePageFashion2 />} />
             <Route path="home-electronic" element={<HomePageElectronic />} />
@@ -339,6 +342,7 @@ function App() {
               <Route path="usuarios/:id" element={<AdminUserDetailPage />} />
               <Route path="pedidos" element={<AdminOrdersPage />} />
               <Route path="pedidos/:id" element={<AdminOrderDetailPage />} />
+              <Route path="mensagens" element={<AdminContactMessagesPage />} />
               <Route path="acesso" element={<AdminAccessPage />} />
             </Route>
 
@@ -492,8 +496,9 @@ function App() {
             <Route path="wish-list" element={<WishlistPage />} />
             <Route path="account-addresses" element={<AccountAddressPage />} />
             <Route path="*" element={<NotFoundPage />} />
-          </Route>
-        </Routes>
+            </Route>
+          </Routes>
+        </AppErrorBoundary>
         <DemoModal />
         <CartComponent />
         <Compare />

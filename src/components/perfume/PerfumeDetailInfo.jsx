@@ -17,9 +17,12 @@ export default function PerfumeDetailInfo({
   onAddToCart,
 }) {
   const [quantity, setQuantity] = useState(1);
+  const [selectedOption, setSelectedOption] = useState(() => {
+    const first = variantsWithPrice?.[0];
+    return typeof first?.option0 === "string" ? first.option0 : "";
+  });
   const {
     addProductToCart,
-    isAddedToCartProducts,
     cartProducts,
     updateQuantity,
     addToWishlist,
@@ -30,19 +33,35 @@ export default function PerfumeDetailInfo({
   } = useContextElement();
 
   const inWishlist = isAddedtoWishlist(perfume?.id);
-  const inCart = isAddedToCartProducts(perfume?.id);
-  const cartQty = inCart ? (cartProducts.find((p) => p.id === perfume?.id)?.quantity ?? 1) : quantity;
+  const cartItemForSelection = cartProducts.find(
+    (p) =>
+      String(p.perfume_id) === String(perfume?.id) &&
+      String(p.variant_option || "") === String(selectedOption || ""),
+  );
+  const inCart = Boolean(cartItemForSelection);
+  const cartQty = inCart ? (cartItemForSelection?.quantity ?? 1) : quantity;
   const indisponivel = perfume && (!perfume.ativo || perfume.esgotado);
+
+  const selectedVariant =
+    variantsWithPrice.find((v) => String(v?.option0 || "") === String(selectedOption || "")) ||
+    variantsWithPrice[0] ||
+    null;
+
+  const displayPriceShort = selectedVariant?.price_short || displayData.priceShort;
+  const displayPriceNumber =
+    selectedVariant?.price_number != null ? Number(selectedVariant.price_number) : displayData.priceMin ?? 0;
 
   const handleAddToCart = () => {
     if (!perfume?.id) return;
     const snapshot = {
-      id: perfume.id,
-      title: displayData.title,
+      id: `${perfume.id}:${selectedOption || ""}`,
+      perfume_id: perfume.id,
+      variant_option: selectedOption || null,
+      title: selectedOption ? `${displayData.title} (${selectedOption})` : displayData.title,
       imgSrc: mainImage || "",
-      price: displayData.priceMin ?? 0,
+      price: displayPriceNumber ?? 0,
     };
-    addProductToCart(perfume.id, inCart ? cartQty : quantity, true, snapshot);
+    addProductToCart(perfume.id, inCart ? cartQty : quantity, true, snapshot, selectedVariant);
   };
 
   return (
@@ -54,7 +73,7 @@ export default function PerfumeDetailInfo({
         <h5 className="product-name fw-medium">{displayData.title}</h5>
         <div className="product-price">
           <div className="display-sm price-new price-on-sale text-primary">
-            {displayData.priceShort}
+            {displayPriceShort}
           </div>
         </div>
         <div className="product-stock">
@@ -68,16 +87,25 @@ export default function PerfumeDetailInfo({
         <div className="tf-product-variant">
           <div className="variant-option mb-3">
             <span className="label text-main-2 d-block mb-2">Opções:</span>
-            <ul className="list-unstyled text-md mb-0">
-              {variantsWithPrice.slice(0, 15).map((v, i) => (
-                <li key={i} className="py-1">
-                  {v.option0 || "—"} — {v.price_short || ""}
-                </li>
+            <select
+              className="form-select"
+              value={selectedOption}
+              onChange={(e) => {
+                setSelectedOption(e.target.value);
+                setQuantity(1);
+              }}
+            >
+              {variantsWithPrice.slice(0, 40).map((v, i) => (
+                <option key={`${v.option0 || i}`} value={v.option0 || ""}>
+                  {(v.option0 || "Opção")} {v.price_short ? `— ${v.price_short}` : ""}
+                </option>
               ))}
-              {variantsWithPrice.length > 15 && (
-                <li className="text-muted">+ {variantsWithPrice.length - 15} opções</li>
-              )}
-            </ul>
+            </select>
+            {variantsWithPrice.length > 40 && (
+              <div className="text-sm text-muted mt-2">
+                + {variantsWithPrice.length - 40} opções (edite no painel)
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -88,7 +116,7 @@ export default function PerfumeDetailInfo({
             <QuantitySelect
               quantity={cartQty}
               setQuantity={(qty) => {
-                if (inCart) updateQuantity(perfume.id, qty);
+                if (inCart) updateQuantity(cartItemForSelection.id, qty);
                 else setQuantity(qty);
               }}
             />

@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import React from "react";
 const accountLinks = [
-  { href: "/account-page", label: "Dashboard" },
-  { href: "/account-orders", label: "My Orders" },
-  { href: "/wish-list", label: "My Wishlist" },
-  { href: "/account-addresses", label: "Addresses" },
+  { href: "/account-page", label: "Painel" },
+  { href: "/account-orders", label: "Meus pedidos" },
+  { href: "/wish-list", label: "Lista de desejos" },
+  { href: "/account-addresses", label: "Endereços" },
 ];
 export default function DbSidebar() {
   const { pathname } = useLocation();
@@ -17,11 +17,11 @@ export default function DbSidebar() {
     >
       <div className="canvas-wrapper">
         <div className="canvas-header">
-          <span className="title">SIDEBAR ACCOUNT</span>
+            <span className="title">Minha conta</span>
           <button
             className="icon-close icon-close-popup"
             data-bs-dismiss="offcanvas"
-            aria-label="Close"
+              aria-label="Fechar"
           />
         </div>
         <div className="canvas-body">

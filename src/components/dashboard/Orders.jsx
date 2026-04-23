@@ -5,6 +5,7 @@ import { getMyOrders } from "@/api/orders";
 
 const STATUS_LABELS = {
   pending: "Pedido realizado",
+  confirmed: "Pedido confirmado",
   shipped: "Enviado",
   completed: "Finalizado",
   canceled: "Cancelado",
@@ -101,7 +102,11 @@ export default function Orders() {
                     </thead>
                     <tbody>
                       {orders.map((o) => {
-                        const status = STATUS_LABELS[o.status] || "—";
+                        const statusKeyRaw = (o?.status ?? "pending")
+                          .toString()
+                          .trim()
+                          .toLowerCase();
+                        const status = STATUS_LABELS[statusKeyRaw] || "Pedido realizado";
                         const created = o.created_at
                           ? new Date(o.created_at)
                           : null;
@@ -114,7 +119,7 @@ export default function Orders() {
                           : "—";
                         const total = typeof o.total === "number" ? o.total : Number(o.total || 0);
                         const totalStr = `R$ ${total.toFixed(2).replace(".", ",")}`;
-                        const statusKey = o.status || "pending";
+                        const statusKey = statusKeyRaw || "pending";
                         return (
                           <tr className="tf-order-item" key={o.id}>
                             <td className="text-md">#{o.id}</td>

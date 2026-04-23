@@ -3,7 +3,7 @@
 import { useContextElement } from "@/context/Context";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { updateProfile } from "@/api/auth";
+import { getMe, login, register, setStoredToken, updateProfile } from "@/api/auth";
 import { createOrder } from "@/api/orders";
 import { getCart } from "@/api/cart";
 import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLocations";
@@ -24,6 +24,8 @@ export default function Checkout() {
   const [loadingCep, setLoadingCep] = useState(false);
   const [phone, setPhone] = useState("");
   const [contact, setContact] = useState("");
+  const [accountPassword, setAccountPassword] = useState("");
+  const [accountMode, setAccountMode] = useState("auto");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -83,7 +85,6 @@ export default function Checkout() {
       if (found.street) setAddress(found.street);
       if (found.complement && !apartment) setApartment(found.complement);
     } catch {
-      // silencioso
     } finally {
       setLoadingCep(false);
     }
@@ -102,31 +103,95 @@ export default function Checkout() {
       setError("Seu carrinho está vazio.");
       return;
     }
-    if (!user) {
-      setError("Faça login para finalizar o pedido.");
-      return;
-    }
     const name = [firstname, lastname].filter(Boolean).join(" ").trim();
     if (!name || !address?.trim() || !city?.trim() || !phone?.trim()) {
       setError("Preencha nome, endereço, cidade e telefone.");
       return;
     }
+    if (!user) {
+      const pass = accountPassword;
+      if (!pass || pass.length < 6) {
+        setError("Crie/insira uma senha com no mínimo 6 caracteres para finalizar a compra.");
+        return;
+      }
+    }
     setSubmitting(true);
     try {
-      if (user) {
-        await updateProfile({
-          name: name || user.name,
-          address: address.trim() || null,
-          address_complement: apartment.trim() || null,
-          zipcode: zipcode.trim() || null,
-          city: city.trim() || null,
-          state: state || null,
-          country: COUNTRY_BR_LABEL,
-          phone: phone.trim() || user.phone,
-        });
-        const updatedUser = { ...user, name, address: address.trim(), address_complement: apartment.trim(), zipcode: zipcode.trim(), city: city.trim(), state, country: COUNTRY_BR_LABEL, phone: phone.trim() };
-        setUser(updatedUser);
+      let nextUser = user;
+
+      // Se não estiver logado: cria conta automaticamente (ou pede senha se já existir).
+      if (!nextUser) {
+        const emailMaybe = typeof contact === "string" && contact.includes("@") ? contact.trim() : undefined;
+        const pass = accountPassword;
+
+        if (accountMode === "login") {
+          const auth = await login({ phone, password: pass, country: "BR" });
+          if (auth?.token) setStoredToken(auth.token);
+          nextUser = auth?.user || null;
+        } else {
+          try {
+            const created = await register({
+              phone,
+              password: pass,
+              name,
+              email: emailMaybe,
+              country: "BR",
+            });
+            if (created?.token) setStoredToken(created.token);
+            nextUser = created?.user || null;
+          } catch (regErr) {
+            const msg = regErr?.message || "";
+            // Se o telefone já existe, muda para modo login e pede a senha.
+            if (msg.toLowerCase().includes("telefone") && msg.toLowerCase().includes("uso")) {
+              setAccountMode("login");
+              setError("Já existe uma conta com este telefone. Para finalizar, informe a senha dessa conta.");
+              setSubmitting(false);
+              return;
+            }
+            throw regErr;
+          }
+        }
+
+        // garante estado do app atualizado com o usuário autenticado
+        if (nextUser) {
+          try {
+            const me = await getMe();
+            if (me) nextUser = me;
+          } catch {
+            // silencioso: segue com o payload retornado do login/register
+          }
+          setUser(nextUser);
+        } else {
+          setError("Não foi possível autenticar sua conta. Tente novamente.");
+          setSubmitting(false);
+          return;
+        }
       }
+
+      // Atualiza perfil com endereço/telefone antes de criar o pedido
+      await updateProfile({
+        name: name || nextUser.name,
+        address: address.trim() || null,
+        address_complement: apartment.trim() || null,
+        zipcode: zipcode.trim() || null,
+        city: city.trim() || null,
+        state: state || null,
+        country: COUNTRY_BR_LABEL,
+        phone: phone.trim() || nextUser.phone,
+      });
+      const updatedUser = {
+        ...nextUser,
+        name,
+        address: address.trim(),
+        address_complement: apartment.trim(),
+        zipcode: zipcode.trim(),
+        city: city.trim(),
+        state,
+        country: COUNTRY_BR_LABEL,
+        phone: phone.trim(),
+      };
+      setUser(updatedUser);
+
       await createOrder({
         subtotal: totalPrice,
         discount,
@@ -287,6 +352,25 @@ export default function Checkout() {
                     onChange={(e) => setContact(e.target.value)}
                   />
                 </div>
+                {!user && (
+                  <div className="box-ip-contact mt_16">
+                    <div className="title">
+                      <div className="text-xl fw-medium">Conta</div>
+                    </div>
+                    <p className="text-sm text-main mb_8">
+                      Para finalizar a compra, será criada uma conta com seu telefone. Se você já tiver uma conta, informe sua senha para entrar.
+                    </p>
+                    <input
+                      className="style-2"
+                      id="accountPassword"
+                      placeholder={accountMode === "login" ? "Senha da sua conta" : "Crie uma senha (mín. 6 caracteres)"}
+                      type="password"
+                      value={accountPassword}
+                      onChange={(e) => setAccountPassword(e.target.value)}
+                      autoComplete={accountMode === "login" ? "current-password" : "new-password"}
+                    />
+                  </div>
+                )}
               <div className="box-ip-shipping">
                 <div className="title text-xl fw-medium">Entrega</div>
                 <p className="text-sm text-main mb_8">

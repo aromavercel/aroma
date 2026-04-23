@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PerfumeFormModal from "@/components/catalog/PerfumeFormModal";
 import { getPerfumesList, deletePerfume } from "@/api/perfumes";
 import { getPerfumeDisplayData } from "@/data/perfumes";
+import { CATALOG_SOURCE_OPTIONS, getBrandOptions, normalizeBrandKey } from "@/data/perfumes";
 import Skeleton from "@/components/common/Skeleton";
 
 export default function AdminCatalogPage() {
@@ -12,6 +13,11 @@ export default function AdminCatalogPage() {
   const [loadError, setLoadError] = useState(null);
   const [formModalPerfume, setFormModalPerfume] = useState(undefined);
   const [deletingId, setDeletingId] = useState(null);
+  const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // all | active | inactive
+  const [stockFilter, setStockFilter] = useState("all"); // all | in_stock | out_of_stock
+  const [brandKey, setBrandKey] = useState("all");
+  const [catalogSource, setCatalogSource] = useState("all");
 
   const loadPerfumes = useCallback(() => {
     setLoading(true);
@@ -23,6 +29,36 @@ export default function AdminCatalogPage() {
   }, []);
 
   useEffect(() => { loadPerfumes(); }, [loadPerfumes]);
+
+  const brandOptions = useMemo(() => getBrandOptions(perfumesList), [perfumesList]);
+
+  const filteredList = useMemo(() => {
+    const term = String(q || "").trim().toLowerCase();
+    const hasTerm = term.length >= 2;
+    return (perfumesList || []).filter((p) => {
+      if (statusFilter === "active" && p?.ativo === false) return false;
+      if (statusFilter === "inactive" && p?.ativo !== false) return false;
+
+      if (stockFilter === "out_of_stock" && p?.esgotado !== true) return false;
+      if (stockFilter === "in_stock" && p?.esgotado === true) return false;
+
+      if (catalogSource !== "all") {
+        const src = (p?.catalogSource || "normal").toString().toLowerCase();
+        if (src !== catalogSource) return false;
+      }
+
+      if (brandKey !== "all") {
+        const display = getPerfumeDisplayData(p);
+        const key = normalizeBrandKey(display?.brand);
+        if (key !== brandKey) return false;
+      }
+
+      if (!hasTerm) return true;
+      const display = getPerfumeDisplayData(p);
+      const hay = `${display?.title || ""} ${display?.brand || ""} ${p?.external_url || ""}`.toLowerCase();
+      return hay.includes(term);
+    });
+  }, [perfumesList, q, statusFilter, stockFilter, brandKey, catalogSource]);
 
   const handleDelete = useCallback(async (perfume, e) => {
     if (e) e.stopPropagation();
@@ -53,8 +89,13 @@ export default function AdminCatalogPage() {
       <div className="account-dashboard">
         <h5 className="title-account mb-3">Catálogo de perfumes</h5>
         <p className="text-muted mb-4">Clique em um item para ver os detalhes. Use Editar ou Excluir na linha.</p>
-        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-          <span className="text-sm text-main-2">{perfumesList.length} itens</span>
+        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+          <span className="text-sm text-main-2">
+            {filteredList.length} item{filteredList.length === 1 ? "" : "s"}
+            {filteredList.length !== perfumesList.length ? (
+              <span className="text-muted"> (de {perfumesList.length})</span>
+            ) : null}
+          </span>
           <button
             type="button"
             className="subscribe-button tf-btn animate-btn bg-dark-2 text-white"
@@ -67,6 +108,51 @@ export default function AdminCatalogPage() {
             /> */}
             <span style={{ lineHeight: 1 }}>Adicionar item</span>
           </button>
+        </div>
+
+        <div className="row g-2 align-items-end mb-4">
+          <div className="col-12 col-lg-4">
+            <label className="form-label text-sm text-main-2 mb-1">Buscar</label>
+            <input
+              className="form-control"
+              placeholder="Buscar por título, marca…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+          <div className="col-6 col-lg-2">
+            <label className="form-label text-sm text-main-2 mb-1">Status</label>
+            <select className="form-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">Todos</option>
+              <option value="active">Ativo</option>
+              <option value="inactive">Inativo</option>
+            </select>
+          </div>
+          <div className="col-6 col-lg-2">
+            <label className="form-label text-sm text-main-2 mb-1">Estoque</label>
+            <select className="form-select" value={stockFilter} onChange={(e) => setStockFilter(e.target.value)}>
+              <option value="all">Todos</option>
+              <option value="in_stock">Em estoque</option>
+              <option value="out_of_stock">Esgotado</option>
+            </select>
+          </div>
+          <div className="col-6 col-lg-2">
+            <label className="form-label text-sm text-main-2 mb-1">Marca</label>
+            <select className="form-select" value={brandKey} onChange={(e) => setBrandKey(e.target.value)}>
+              {brandOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-6 col-lg-2">
+            <label className="form-label text-sm text-main-2 mb-1">Catálogo</label>
+            <select className="form-select" value={catalogSource} onChange={(e) => setCatalogSource(e.target.value)}>
+              <option value="all">Todos</option>
+              {CATALOG_SOURCE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {loading ? (
@@ -114,6 +200,23 @@ export default function AdminCatalogPage() {
             <p className="text-muted mb-3">Nenhum item no catálogo ainda.</p>
             <button type="button" className="subscribe-button tf-btn animate-btn bg-dark-2 text-white" onClick={openAdd}>Adicionar primeiro item</button>
           </div>
+        ) : filteredList.length === 0 ? (
+          <div className="p-4 rounded bg-light text-center">
+            <p className="text-muted mb-3">Nenhum item encontrado com os filtros atuais.</p>
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => {
+                setQ("");
+                setStatusFilter("all");
+                setStockFilter("all");
+                setBrandKey("all");
+                setCatalogSource("all");
+              }}
+            >
+              Limpar filtros
+            </button>
+          </div>
         ) : (
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
@@ -127,7 +230,7 @@ export default function AdminCatalogPage() {
                 </tr>
               </thead>
               <tbody>
-                {perfumesList.map((perfume, i) => {
+                {filteredList.map((perfume, i) => {
                   const d = getPerfumeDisplayData(perfume);
                   return (
                     <tr key={perfume.id ?? `p-${i}`} role="button" tabIndex={0} onClick={() => openDetail(perfume)} onKeyDown={(e) => e.key === "Enter" && openDetail(perfume)} style={{ cursor: "pointer" }}>
@@ -136,7 +239,10 @@ export default function AdminCatalogPage() {
                           {d.imageUrl ? <img src={d.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} /> : <span className="icon icon-user text-muted" style={{ fontSize: "1.5rem" }} />}
                         </div>
                       </td>
-                      <td className="fw-medium">{d.title || "—"}</td>
+                      <td className="fw-medium">
+                        <div>{d.title || "—"}</div>
+                        {d.brand ? <div className="text-sm text-muted">{d.brand}</div> : null}
+                      </td>
                       <td><span className="badge bg-primary">{d.catalogLabel || d.catalogSource || "—"}</span></td>
                       <td>
                         <span className={`badge me-1 ${perfume.ativo !== false ? "bg-success" : "bg-secondary"}`}>{perfume.ativo !== false ? "Ativo" : "Inativo"}</span>

@@ -1,22 +1,14 @@
-const BASE = import.meta.env.VITE_API_URL || "";
+import { apiFetch, getApiBase } from "./apiFetch";
 const BLOB_HOST = "blob.vercel-storage.com";
 
 function getBase() {
-  const b = (BASE || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
-  return b || "";
+  return getApiBase();
 }
 
 function toProxyUrl(imageUrl) {
   if (!imageUrl || typeof imageUrl !== "string") return imageUrl;
   if (!imageUrl.includes(BLOB_HOST)) return imageUrl;
   return `${getBase()}/api/perfume-image?url=${encodeURIComponent(imageUrl)}`;
-}
-
-function getAuthHeaders() {
-  const token = typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
 }
 
 /**
@@ -29,7 +21,8 @@ function mapCartItem(item) {
   const rawImg = item.imageUrl ?? "";
   return {
     id,
-    perfume_id: id,
+    perfume_id: item.perfume_id ?? id,
+    variant_option: item.variant_option ?? null,
     title: item.title ?? "",
     imgSrc: rawImg ? toProxyUrl(rawImg) : "",
     priceShort: item.priceShort ?? "",
@@ -40,47 +33,43 @@ function mapCartItem(item) {
 
 /** Retorna o carrinho do usuário logado. Se não logado ou sem telefone, retorna { items: [] }. */
 export async function getCart() {
-  const res = await fetch(`${getBase()}/api/cart`, { headers: getAuthHeaders() });
-  const data = res.headers.get("content-type")?.includes("application/json") ? await res.json().catch(() => ({})) : {};
-  if (!res.ok) {
-    if (res.status === 401 || res.status === 400) return { items: [] };
-    throw new Error(data.error || "Erro ao carregar carrinho");
+  try {
+    const data = await apiFetch("/api/cart", { method: "GET", auth: true });
+    const items = (data?.items || []).map(mapCartItem);
+    return { items };
+  } catch (err) {
+    if (err?.status === 401 || err?.status === 400) return { items: [] };
+    throw err;
   }
-  const items = (data.items || []).map(mapCartItem);
-  return { items };
 }
 
 /** Adiciona ou soma quantidade de um perfume no carrinho. Requer login com telefone. */
-export async function addCartItem(perfumeId, quantity = 1) {
-  const res = await fetch(`${getBase()}/api/cart/items`, {
+export async function addCartItem(perfumeId, quantity = 1, variant = null) {
+  return apiFetch("/api/cart/items", {
     method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ perfume_id: perfumeId, quantity }),
+    auth: true,
+    body: {
+      perfume_id: perfumeId,
+      quantity,
+      variant_option: variant?.option0 || variant?.variant_option || "",
+      unit_price: variant?.price_number ?? variant?.price ?? 0,
+    },
   });
-  const data = res.headers.get("content-type")?.includes("application/json") ? await res.json().catch(() => ({})) : {};
-  if (!res.ok) throw new Error(data.error || "Erro ao adicionar ao carrinho");
-  return data;
 }
 
 /** Atualiza a quantidade de um item. quantity 0 remove o item. */
-export async function updateCartItem(perfumeId, quantity) {
-  const res = await fetch(`${getBase()}/api/cart/items/${encodeURIComponent(perfumeId)}`, {
+export async function updateCartItem(cartItemId, quantity) {
+  return apiFetch(`/api/cart/items/${encodeURIComponent(cartItemId)}`, {
     method: "PATCH",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ quantity }),
+    auth: true,
+    body: { quantity },
   });
-  const data = res.headers.get("content-type")?.includes("application/json") ? await res.json().catch(() => ({})) : {};
-  if (!res.ok) throw new Error(data.error || "Erro ao atualizar carrinho");
-  return data;
 }
 
 /** Remove um item do carrinho. */
-export async function removeCartItem(perfumeId) {
-  const res = await fetch(`${getBase()}/api/cart/items/${encodeURIComponent(perfumeId)}`, {
+export async function removeCartItem(cartItemId) {
+  return apiFetch(`/api/cart/items/${encodeURIComponent(cartItemId)}`, {
     method: "DELETE",
-    headers: getAuthHeaders(),
+    auth: true,
   });
-  const data = res.headers.get("content-type")?.includes("application/json") ? await res.json().catch(() => ({})) : {};
-  if (!res.ok) throw new Error(data.error || "Erro ao remover do carrinho");
-  return data;
 }

@@ -92,7 +92,7 @@ export default function AboutUsPage() {
               <div className="col-md-6">
                 <div className="position-relative overflow-hidden rounded-4 shadow-sm">
                   <img
-                    src="/images/products/fashion/product-3.jpg"
+                    src="/images/about/sobre-nos-perfume.png"
                     alt="Detalhe de frasco de perfume"
                     className="w-100"
                     style={{ maxHeight: 420, objectFit: "cover" }}

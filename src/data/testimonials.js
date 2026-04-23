@@ -4,7 +4,7 @@ export const testimonials = [
     review:
       "O perfume é simplesmente maravilhoso! Fixação excelente e uma projeção que chama atenção por onde passo. Valeu cada centavo!",
     product: "Elysium Intense",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-01.png",
     delay: "",
     price: 350,
   },
@@ -13,7 +13,7 @@ export const testimonials = [
     review:
       "A fragrância é deliciosa e super elegante. Recebi vários elogios logo no primeiro uso. Sem dúvidas comprarei novamente!",
     product: "Arabian Oud Kalemat",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-02.png",
     delay: "0.1s",
     price: 280,
   },
@@ -22,7 +22,7 @@ export const testimonials = [
     review:
       "Entrega rápida e o perfume chegou super bem embalado. A qualidade do aroma me surpreendeu muito. Experiência excelente!",
     product: "Lattafa Khamrah",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-03.png",
     delay: "0.2s",
     price: 220,
   },
@@ -31,7 +31,7 @@ export const testimonials = [
     review:
       "Que perfume incrível! Doce na medida certa, super sofisticado e com ótima fixação na pele. Recomendo demais!",
     product: "Swiss Arabian Shaghaf Oud",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-04.png",
     delay: "",
     price: 260,
   },
@@ -40,7 +40,7 @@ export const testimonials = [
     review:
       "Cheiro envolvente e marcante. Me surpreendi com a qualidade e com a durabilidade. Já virou um dos meus favoritos!",
     product: "Lattafa Ana Abiyedh",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-05.png",
     delay: "",
     price: 190,
   },
@@ -49,7 +49,7 @@ export const testimonials = [
     review:
       "Simplesmente apaixonada! Perfume extremamente elegante e perfeito para ocasiões especiais. Recebi elogios o dia inteiro.",
     product: "Maison Alhambra Bright Peach",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-06.png",
     delay: "0.1s",
     price: 230,
   },
@@ -58,7 +58,7 @@ export const testimonials = [
     review:
       "A fragrância é intensa, sedutora e muito bem construída. O melhor perfume árabe que já comprei até hoje!",
     product: "Rasasi Hawas for Her",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-07.png",
     delay: "0.2s",
     price: 240,
   },
@@ -67,7 +67,7 @@ export const testimonials = [
     review:
       "Amei demais! Perfume delicioso, doce e duradouro. O custo-benefício é perfeito, me surpreendeu real.",
     product: "Lattafa Yara",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-08.png",
     delay: "0.3s",
     price: 180,
   },
@@ -76,7 +76,7 @@ export const testimonials = [
     review:
       "Muito sofisticado, cheiro de perfume caro! Excelente projeção e fixação. Me senti super confiante usando.",
     product: "Armaf Club de Nuit Woman",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-09.png",
     delay: "",
     price: 200,
   },
@@ -85,7 +85,7 @@ export const testimonials = [
     review:
       "Perfume marcante e extremamente agradável. Ideal para usar à noite. Sem dúvidas se tornou assinatura!",
     product: "Al Haramain Amber Oud Rouge",
-    image: "/images/testimonial/author/author-fs1.jpg",
+    image: "/images/testimonial/author/aroma-10.png",
     delay: "0.1s",
     price: 310,
   },

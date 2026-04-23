@@ -6,9 +6,12 @@ import { handleUploadAvatar } from "../lib/api/uploadAvatar.js";
 import { handlePerfumes } from "../lib/api/perfumes.js";
 import { handleAdminUsers } from "../lib/api/adminUsers.js";
 import { handleAdminOrders } from "../lib/api/adminOrders.js";
+import { handleAdminContactMessages } from "../lib/api/adminContactMessages.js";
 import { handleMyOrders } from "../lib/api/myOrders.js";
+import { handleContact } from "../lib/api/contact.js";
 import { handlePasswordResetRequest } from "../lib/api/passwordResetRequest.js";
 import { handlePasswordResetConfirm } from "../lib/api/passwordResetConfirm.js";
+import { handleUploadPerfumeImage } from "../lib/api/uploadPerfumeImage.js";
 
 function getPathSegments(req) {
   let segments = [];
@@ -75,6 +78,10 @@ export default async function handler(req, res) {
         return await handleMe(req, res);
       case "upload-avatar":
         return await handleUploadAvatar(req, res);
+      case "upload-perfume-image":
+        return await handleUploadPerfumeImage(req, res);
+      case "contact":
+        return await handleContact(req, res);
       case "perfumes":
         return await handlePerfumes(rest, req, res);
       case "my-orders":
@@ -86,6 +93,9 @@ export default async function handler(req, res) {
         }
         if (section === "orders") {
           return await handleAdminOrders(adminRest, req, res);
+        }
+        if (section === "contact-messages") {
+          return await handleAdminContactMessages(adminRest, req, res);
         }
         break;
       }
