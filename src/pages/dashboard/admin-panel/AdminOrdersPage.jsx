@@ -72,6 +72,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
 
   const loadOrders = () => {
@@ -90,7 +91,29 @@ export default function AdminOrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
-  const hasOrders = useMemo(() => orders && orders.length > 0, [orders]);
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return orders || [];
+    return (orders || []).filter((o) => {
+      const id = String(o?.id || "").toLowerCase();
+      const name = (o?.customer_name || "").toString().toLowerCase();
+      const email = (o?.customer_email || "").toString().toLowerCase();
+      const phone = (o?.customer_phone || "").toString().toLowerCase();
+      const status = (o?.status || "").toString().toLowerCase();
+      const total = String(o?.total ?? "").toLowerCase();
+      return (
+        id.includes(q) ||
+        id.slice(0, 8).includes(q) ||
+        name.includes(q) ||
+        email.includes(q) ||
+        phone.includes(q) ||
+        status.includes(q) ||
+        total.includes(q)
+      );
+    });
+  }, [orders, search]);
+
+  const hasOrders = useMemo(() => filteredOrders && filteredOrders.length > 0, [filteredOrders]);
 
   const handleChangeStatus = async (order, nextStatus) => {
     if (!order?.id || !nextStatus || nextStatus === order.status) return;
@@ -119,7 +142,7 @@ export default function AdminOrdersPage() {
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div className="d-flex flex-wrap align-items-center gap-3">
           <span className="text-sm text-main-2">
-            {orders.length} pedido{orders.length === 1 ? "" : "s"}
+            {filteredOrders.length} pedido{filteredOrders.length === 1 ? "" : "s"}
           </span>
           <select
             className="form-select form-select-sm"
@@ -133,6 +156,13 @@ export default function AdminOrdersPage() {
               </option>
             ))}
           </select>
+          <input
+            className="form-control form-control-sm"
+            style={{ minWidth: 260 }}
+            placeholder="Buscar por código, cliente, contato..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
         <button
           type="button"
@@ -165,7 +195,7 @@ export default function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((o) => (
+              {filteredOrders.map((o) => (
                 <tr key={o.id}>
                   <td className="text-sm font-monospace">
                     {String(o.id).slice(0, 8)}

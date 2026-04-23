@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAdminUsers } from "@/api/admin";
 import Skeleton from "@/components/common/Skeleton";
@@ -13,6 +13,7 @@ export default function AdminUsersPage() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -20,10 +21,42 @@ export default function AdminUsersPage() {
     getAdminUsers().then(setList).catch((err) => setError(err.message || "Erro ao carregar usuários")).finally(() => setLoading(false));
   }, []);
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return (list || []).filter((u) => {
+      const name = (u?.name || "").toString().toLowerCase();
+      const email = (u?.email || "").toString().toLowerCase();
+      const phone = (u?.phone || "").toString().toLowerCase();
+      const role = (u?.role || "").toString().toLowerCase();
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        phone.includes(q) ||
+        role.includes(q) ||
+        String(u?.id || "").toLowerCase().includes(q)
+      );
+    });
+  }, [list, search]);
+
   return (
     <div className="account-dashboard">
       <h5 className="title-account mb-3">Usuários cadastrados</h5>
       <p className="text-muted mb-4">Lista de usuários com acesso ao site.</p>
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+        <div className="d-flex align-items-center gap-2">
+          <span className="text-sm text-main-2">
+            {filtered.length} usuário{filtered.length === 1 ? "" : "s"}
+          </span>
+        </div>
+        <input
+          className="form-control form-control-sm"
+          style={{ maxWidth: 360 }}
+          placeholder="Buscar por nome, e-mail, telefone..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
       {loading ? (
         <div className="py-3">
           {Array.from({ length: 8 }).map((_, idx) => (
@@ -39,7 +72,7 @@ export default function AdminUsersPage() {
         </div>
       ) : error ? (
         <p className="text-muted">{error}</p>
-      ) : list.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <p className="text-muted">Nenhum usuário cadastrado.</p>
       ) : (
         <div className="table-responsive">
@@ -55,7 +88,7 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {list.map((u) => (
+              {filtered.map((u) => (
                 <tr key={u.id}>
                   <td className="fw-medium">{u.name || "—"}</td>
                   <td>{u.phone || "—"}</td>

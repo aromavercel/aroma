@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { getAdminContactMessages } from "@/api/admin";
 
 function formatDate(val) {
@@ -22,6 +22,7 @@ export default function AdminContactMessagesPage() {
   const [error, setError] = useState(null);
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState(null);
+  const [search, setSearch] = useState("");
   const limit = 50;
 
   const load = async (nextOffset = 0) => {
@@ -46,6 +47,18 @@ export default function AdminContactMessagesPage() {
 
   const canPrev = offset > 0;
   const canNext = offset + limit < total;
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items || [];
+    return (items || []).filter((m) => {
+      const name = (m?.name || "").toString().toLowerCase();
+      const email = (m?.email || "").toString().toLowerCase();
+      const message = (m?.message || "").toString().toLowerCase();
+      const id = String(m?.id || "").toLowerCase();
+      return name.includes(q) || email.includes(q) || message.includes(q) || id.includes(q);
+    });
+  }, [items, search]);
 
   const openMessage = async (m) => {
     setSelected(m);
@@ -82,9 +95,21 @@ export default function AdminContactMessagesPage() {
       </p>
 
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-        <span className="text-sm text-main-2">
-          {total} mensagem{total === 1 ? "" : "s"}
-        </span>
+        <div className="d-flex flex-wrap align-items-center gap-3">
+          <span className="text-sm text-main-2">
+            {filteredItems.length} mensagem{filteredItems.length === 1 ? "" : "s"}
+            {search.trim() ? (
+              <span className="text-muted"> (filtrado)</span>
+            ) : null}
+          </span>
+          <input
+            className="form-control form-control-sm"
+            style={{ minWidth: 280 }}
+            placeholder="Buscar por nome, e-mail, mensagem..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <button
           type="button"
           className="btn btn-outline-secondary btn-sm"
@@ -108,7 +133,7 @@ export default function AdminContactMessagesPage() {
             Tentar novamente
           </button>
         </div>
-      ) : items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <div className="p-4 rounded bg-light text-center">
           <p className="text-muted mb-0">Nenhuma mensagem ainda.</p>
         </div>
@@ -126,7 +151,7 @@ export default function AdminContactMessagesPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((m) => (
+                {filteredItems.map((m) => (
                   <tr key={m.id}>
                     <td className="text-sm text-main-2" style={{ whiteSpace: "nowrap" }}>
                       {formatDate(m.created_at)}
