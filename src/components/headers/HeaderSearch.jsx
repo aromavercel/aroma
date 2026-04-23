@@ -23,7 +23,7 @@ export default function HeaderSearch() {
       <form className="form-search">
         <input
           type="text"
-          placeholder="Search product"
+          placeholder="Buscar produto"
           tabIndex={0}
           aria-required="true"
           required
@@ -37,7 +37,7 @@ export default function HeaderSearch() {
         <div className="search-suggests-results-inner">
           {!searchResult.length ? (
             <div className="text-center py-1">
-              No results found for{" "}
+              Nenhum resultado para{" "}
               <span className="fw-bold">"{searchQuery}"</span>
             </div>
           ) : (

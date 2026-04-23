@@ -259,6 +259,49 @@
   filter: grayscale(0.2);
 }
 
+/* Status no histórico de pedidos (garante contraste/legibilidade) */
+.account-orders {
+  .badge[class*="status-"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.05);
+    color: #111 !important;
+    text-transform: none;
+  }
+
+  .badge.status-pending {
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.25);
+    color: rgb(146, 64, 14) !important;
+  }
+  .badge.status-confirmed {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: rgba(59, 130, 246, 0.25);
+    color: rgb(30, 64, 175) !important;
+  }
+  .badge.status-shipped {
+    background: rgba(99, 102, 241, 0.14);
+    border-color: rgba(99, 102, 241, 0.25);
+    color: rgb(55, 48, 163) !important;
+  }
+  .badge.status-completed {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(16, 185, 129, 0.25);
+    color: rgb(6, 95, 70) !important;
+  }
+  .badge.status-canceled {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.25);
+    color: rgb(153, 27, 27) !important;
+  }
+}
+
 /* Página de pedido recebido */
 .thankyou-page {
   .thankyou-wrap {

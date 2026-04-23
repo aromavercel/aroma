@@ -55,21 +55,6 @@ export default function MobileMenu() {
       <div className="mb-canvas-content">
         <div className="mb-body">
           <div className="mb-content-top">
-            <form className="form-search">
-              <input
-                type="text"
-                placeholder="Procurar produto"
-                className=""
-                name="text"
-                tabIndex={0}
-                defaultValue=""
-                aria-required="true"
-                required
-              />
-              <button type="submit">
-                <i className="icon icon-search" />
-              </button>
-            </form>
             <ul className="nav-ul-mb" id="wrapper-menu-navigation">
               <li className="nav-mb-item">
                 <Link

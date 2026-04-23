@@ -15,19 +15,19 @@ export default function SearchModal() {
             <button
               className="icon-close icon-close-popup"
               data-bs-dismiss="modal"
-              aria-label="Close"
+              aria-label="Fechar"
             />
           </div>
           <div className="container">
             <div className="row justify-content-center">
               <div className="col-lg-8">
                 <div className="looking-for-wrap">
-                  <div className="heading">What are you looking for?</div>
+                  <div className="heading">O que você está procurando?</div>
                   <form className="form-search">
                     <fieldset className="text">
                       <input
                         type="text"
-                        placeholder="Search"
+                        placeholder="Buscar"
                         className=""
                         name="text"
                         tabIndex={0}
@@ -41,26 +41,26 @@ export default function SearchModal() {
                     </button>
                   </form>
                   <div className="popular-searches justify-content-md-center">
-                    <div className="text fw-medium">Popular searches:</div>
+                    <div className="text fw-medium">Buscas populares:</div>
                     <ul>
                       <li>
                         <a className="link" href="#">
-                          Featured
+                          Destaques
                         </a>
                       </li>
                       <li>
                         <a className="link" href="#">
-                          Trendy
+                          Tendências
                         </a>
                       </li>
                       <li>
                         <a className="link" href="#">
-                          New
+                          Novidades
                         </a>
                       </li>
                       <li>
                         <a className="link" href="#">
-                          Sale
+                          Promoções
                         </a>
                       </li>
                     </ul>
@@ -70,7 +70,7 @@ export default function SearchModal() {
               <div className="col-lg-10">
                 <div className="featured-product">
                   <div className="text-xl-2 fw-medium featured-product-heading">
-                    Featured product
+                    Produtos em destaque
                   </div>
                   <Swiper
                     dir="ltr"

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Footer1 from "@/components/footers/Footer1";
 import Header1 from "@/components/headers/Header1";
 import Topbar from "@/components/headers/Topbar";
@@ -30,6 +31,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function CatalogPage() {
+  const location = useLocation();
   const [perfumesList, setPerfumesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -55,6 +57,17 @@ export default function CatalogPage() {
         setLoading(false);
       });
   }, []);
+
+  // Permite abrir /catalogo?q=termo já com a busca aplicada
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || "");
+    const q = (params.get("q") || "").trim();
+    if (q) {
+      setSearchValue(q);
+      setCurrentPage(1);
+    }
+    // Se não houver q, não sobrescreve o que o usuário já digitou no catálogo.
+  }, [location.search]);
 
   const brandOptions = useMemo(() => getBrandOptions(perfumesList), [perfumesList]);
 

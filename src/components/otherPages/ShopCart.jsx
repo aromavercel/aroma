@@ -7,7 +7,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Link } from "react-router-dom";
 import { useContextElement } from "@/context/Context";
 import QuantitySelect from "../common/QuantitySelect";
-import { getShippingEstimate } from "@/api/shipping";
 
 export default function ShopCart() {
   const {
@@ -16,31 +15,6 @@ export default function ShopCart() {
     updateQuantity,
     removeFromCart,
   } = useContextElement();
-  const [shippingCep, setShippingCep] = useState("");
-  const [shippingLoading, setShippingLoading] = useState(false);
-  const [shippingResult, setShippingResult] = useState(null);
-  const [shippingError, setShippingError] = useState(null);
-
-  const handleShippingEstimate = async (e) => {
-    e.preventDefault();
-    const cep = shippingCep.replace(/\D/g, "").trim();
-    if (cep.length < 8) {
-      setShippingError("Informe um CEP válido (8 dígitos).");
-      setShippingResult(null);
-      return;
-    }
-    setShippingLoading(true);
-    setShippingError(null);
-    setShippingResult(null);
-    try {
-      const data = await getShippingEstimate({ cep });
-      setShippingResult(data);
-    } catch (err) {
-      setShippingError(err.message || "Erro ao estimar entrega.");
-    } finally {
-      setShippingLoading(false);
-    }
-  };
 
   const removeItem = (id) => {
     removeFromCart(id);
@@ -210,43 +184,6 @@ export default function ShopCart() {
           </div>
           <div className="col-xl-4">
             <div className="tf-page-cart-sidebar">
-              <form className="cart-box shipping-cart-box" onSubmit={handleShippingEstimate}>
-                <div className="text-lg title fw-medium">
-                  Estimativa de entrega
-                </div>
-                <p className="text-sm text-dark-4 mb-2">
-                  Envio via Correios (PAC). Informe seu CEP para ver o prazo e o valor do frete.
-                </p>
-                <fieldset className="field">
-                  <label htmlFor="shipping-cep" className="text-sm">
-                    CEP
-                  </label>
-                  <input
-                    type="text"
-                    id="shipping-cep"
-                    placeholder="00000-000"
-                    value={shippingCep}
-                    onChange={(e) => setShippingCep(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                    maxLength={8}
-                  />
-                </fieldset>
-                <button
-                  type="submit"
-                  className="tf-btn btn-dark2 animate-btn w-100"
-                  disabled={shippingLoading}
-                >
-                  {shippingLoading ? "Calculando…" : "Estimar"}
-                </button>
-                {shippingError && (
-                  <p className="text-sm text-danger mt-2 mb-0">{shippingError}</p>
-                )}
-                {shippingResult && !shippingError && (
-                  <div className="mt-2 p-2 rounded bg-light text-sm">
-                    <p className="fw-medium mb-1">{shippingResult.mensagem}</p>
-                    <p className="mb-0 text-dark-4">Frete {shippingResult.servico}: {shippingResult.valorFormatado}</p>
-                  </div>
-                )}
-              </form>
               <form
                 onSubmit={(e) => e.preventDefault()}
                 className="cart-box checkout-cart-box"

@@ -29,17 +29,21 @@ export default function Context({ children }) {
     setTotalPrice(subtotal);
   }, [cartProducts]);
 
-  const isAddedToCartProducts = (id) => {
-    return cartProducts.some((elm) => String(elm.id) === String(id));
+  const isAddedToCartProducts = (perfumeId, variantOption = "") => {
+    return cartProducts.some(
+      (elm) =>
+        String(elm.perfume_id ?? elm.id) === String(perfumeId) &&
+        String(elm.variant_option || "") === String(variantOption || ""),
+    );
   };
 
   /** Adiciona perfume ao carrinho. Se logado, persiste no backend; se não, usa snapshot (objeto com id, title, imgSrc, price) em memória/localStorage. */
-  const addProductToCart = async (id, qty = 1, isModal = true, snapshot = null) => {
+  const addProductToCart = async (id, qty = 1, isModal = true, snapshot = null, variant = null) => {
     const quantity = Math.max(1, parseInt(qty, 10) || 1);
     if (user) {
       setCartLoading(true);
       try {
-        await addCartItem(id, quantity);
+        await addCartItem(id, quantity, variant);
         const { items } = await getCart();
         setCartProducts(items);
         if (isModal) openCartModal();
@@ -52,9 +56,11 @@ export default function Context({ children }) {
       return;
     }
     if (!snapshot) return;
-    if (isAddedToCartProducts(id)) return;
+    if (isAddedToCartProducts(snapshot.perfume_id ?? id, snapshot.variant_option || "")) return;
     const item = {
       id: snapshot.id ?? id,
+      perfume_id: snapshot.perfume_id ?? id,
+      variant_option: snapshot.variant_option ?? null,
       title: snapshot.title ?? "",
       imgSrc: snapshot.imgSrc ?? "",
       price: Number(snapshot.price) || 0,
@@ -155,11 +161,26 @@ export default function Context({ children }) {
   };
   useEffect(() => {
     if (user?.id) {
+      // Primeiro restaura do localStorage (UX instantânea),
+      // depois sincroniza com o backend (fonte da verdade do usuário logado).
+      try {
+        const stored = JSON.parse(localStorage.getItem("cartList") || "null");
+        if (Array.isArray(stored) && stored.length) setCartProducts(stored);
+      } catch {
+        // ignora
+      }
       getCart()
         .then((r) => setCartProducts(r.items))
         .catch(() => setCartProducts([]));
     } else {
-      setCartProducts([]);
+      // Usuário não logado: restaura do localStorage (se houver)
+      try {
+        const stored = JSON.parse(localStorage.getItem("cartList") || "null");
+        if (Array.isArray(stored) && stored.length) setCartProducts(stored);
+        else setCartProducts([]);
+      } catch {
+        setCartProducts([]);
+      }
     }
   }, [user?.id]);
 
@@ -183,14 +204,22 @@ export default function Context({ children }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!user && cartProducts.length) {
-      localStorage.setItem("cartList", JSON.stringify(cartProducts));
+    // Persiste SEMPRE o carrinho localmente (logado e visitante)
+    try {
+      localStorage.setItem("cartList", JSON.stringify(cartProducts || []));
+    } catch {
+      // ignora quota/privacidade
     }
   }, [user, cartProducts]);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("cartList"));
-    if (!user && stored?.length) setCartProducts(stored);
+    // Restaura no primeiro carregamento (antes do getMe / backend)
+    try {
+      const stored = JSON.parse(localStorage.getItem("cartList") || "null");
+      if (Array.isArray(stored) && stored.length) setCartProducts(stored);
+    } catch {
+      // ignora
+    }
   }, []);
 
   useEffect(() => {

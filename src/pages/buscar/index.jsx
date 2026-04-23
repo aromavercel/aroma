@@ -4,6 +4,7 @@ import MetaComponent from "@/components/common/MetaComponent";
 import PerfumeCard from "@/components/catalog/PerfumeCard";
 import Skeleton from "@/components/common/Skeleton";
 import { getSearchData } from "@/api/search";
+import { toTitleCase } from "@/data/perfumes";
 import { Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
@@ -41,6 +42,12 @@ export default function SearchPage() {
   }, [debounced]);
 
   const showResults = useMemo(() => debounced.length > 0, [debounced]);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const term = q.trim();
+    const url = term ? `/catalogo?q=${encodeURIComponent(term)}` : "/catalogo";
+    navigate(url);
+  };
 
   return (
     <>
@@ -52,7 +59,7 @@ export default function SearchPage() {
             <div className="header">
               <button
                 className="icon-close icon-close-popup"
-                aria-label="Close"
+                aria-label="Fechar"
                 onClick={() => navigate(-1)}
               />
             </div>
@@ -60,12 +67,12 @@ export default function SearchPage() {
               <div className="row justify-content-center">
                 <div className="col-lg-8">
                   <div className="looking-for-wrap">
-                    <div className="heading">What are you looking for?</div>
-                    <form className="form-search" onSubmit={(e) => e.preventDefault()}>
+                    <div className="heading">O que você está procurando?</div>
+                    <form className="form-search" onSubmit={handleSubmit}>
                       <fieldset className="text">
                         <input
                           type="text"
-                          placeholder="Search"
+                          placeholder="Buscar"
                           className=""
                           name="text"
                           tabIndex={0}
@@ -80,17 +87,20 @@ export default function SearchPage() {
                       </button>
                     </form>
                     <div className="popular-searches justify-content-md-center">
-                      <div className="text fw-medium">Popular searches:</div>
+                      <div className="text fw-medium">Buscas populares:</div>
                       <ul>
                         {(topBrands || []).slice(0, 4).map((b) => (
                           <li key={b.id || b.name}>
-                            <button
-                              type="button"
-                              className="link bg-transparent border-0 p-0"
-                              onClick={() => setQ(b.name || "")}
+                            <a
+                              className="link"
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setQ(b.name || "");
+                              }}
                             >
-                              {b.name}
-                            </button>
+                              {toTitleCase(b.name)}
+                            </a>
                           </li>
                         ))}
                       </ul>
@@ -100,7 +110,7 @@ export default function SearchPage() {
                 <div className="col-lg-10">
                   <div className="featured-product">
                     <div className="text-xl-2 fw-medium featured-product-heading">
-                      Featured product
+                      Produtos em destaque
                     </div>
                     {error ? (
                       <div className="text-center py-5">

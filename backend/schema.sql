@@ -79,12 +79,15 @@ CREATE TABLE IF NOT EXISTS cart_items (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cart_id    UUID NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
   perfume_id UUID NOT NULL REFERENCES perfumes(id) ON DELETE CASCADE,
+  variant_option TEXT NOT NULL DEFAULT '',
   quantity   INT NOT NULL DEFAULT 1 CHECK (quantity >= 1),
-  UNIQUE(cart_id, perfume_id)
+  unit_price DECIMAL(12,2) NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items (cart_id);
 CREATE INDEX IF NOT EXISTS idx_cart_items_perfume_id ON cart_items (perfume_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cart_items_unique_perfume_variant
+  ON cart_items (cart_id, perfume_id, variant_option);
 
 CREATE TABLE IF NOT EXISTS wishlists (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -112,6 +115,17 @@ CREATE TABLE IF NOT EXISTS promo_alerts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_promo_alerts_user_id ON promo_alerts (user_id);
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       TEXT NOT NULL,
+  email      TEXT NOT NULL,
+  message    TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at
+  ON contact_messages (created_at);
 
 CREATE TABLE IF NOT EXISTS orders (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -145,12 +159,14 @@ CREATE TABLE IF NOT EXISTS order_items (
   order_id    UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   perfume_id  UUID NOT NULL REFERENCES perfumes(id) ON DELETE CASCADE,
   title       TEXT NOT NULL,
+  variant_option TEXT,
   quantity    INT NOT NULL DEFAULT 1 CHECK (quantity >= 1),
   unit_price  DECIMAL(12,2) NOT NULL DEFAULT 0,
   total_price DECIMAL(12,2) NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_variant_option ON order_items (variant_option);
 
 -- Tokens para redefinição de senha por telefone (SMS OTP)
 -- Segurança: armazenamos apenas o hash do código, nunca o OTP em texto puro.
