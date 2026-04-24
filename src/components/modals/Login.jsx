@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { login as apiLogin, setStoredToken, getMe } from "@/api/auth";
 import { useContextElement } from "@/context/Context";
 import { COUNTRY_OPTIONS } from "@/constants/countries";
@@ -10,6 +10,24 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const el = document.getElementById("login");
+    if (!el) return;
+    const onShow = () => {
+      try {
+        const fromCheckout = sessionStorage.getItem("checkoutAuthPhone");
+        if (fromCheckout) {
+          setPhone(fromCheckout);
+          sessionStorage.removeItem("checkoutAuthPhone");
+        }
+      } catch {
+        // ignora
+      }
+    };
+    el.addEventListener("show.bs.offcanvas", onShow);
+    return () => el.removeEventListener("show.bs.offcanvas", onShow);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -109,6 +127,13 @@ export default function Login() {
                   data-bs-target="#register"
                   data-bs-toggle="offcanvas"
                   className="tf-btn btn-out-line-dark2 w-100"
+                  onClick={() => {
+                    try {
+                      sessionStorage.setItem("checkoutAuthPhone", phone.trim());
+                    } catch {
+                      // ignora
+                    }
+                  }}
                 >
                   Criar conta
                 </button>

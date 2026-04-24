@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { register as apiRegister, setStoredToken, getMe } from "@/api/auth";
 import { useContextElement } from "@/context/Context";
 import { COUNTRY_OPTIONS } from "@/constants/countries";
@@ -13,6 +13,24 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const el = document.getElementById("register");
+    if (!el) return;
+    const onShow = () => {
+      try {
+        const fromCheckout = sessionStorage.getItem("checkoutAuthPhone");
+        if (fromCheckout) {
+          setPhone(fromCheckout);
+          sessionStorage.removeItem("checkoutAuthPhone");
+        }
+      } catch {
+        // ignora
+      }
+    };
+    el.addEventListener("show.bs.offcanvas", onShow);
+    return () => el.removeEventListener("show.bs.offcanvas", onShow);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -145,6 +163,13 @@ export default function Register() {
                   data-bs-target="#login"
                   data-bs-toggle="offcanvas"
                   className="tf-btn btn-out-line-dark2 w-100 mb_8"
+                  onClick={() => {
+                    try {
+                      sessionStorage.setItem("checkoutAuthPhone", phone.trim());
+                    } catch {
+                      // ignora
+                    }
+                  }}
                 >
                   Já tenho conta
                 </button>
