@@ -11,6 +11,7 @@ import {
   verifyToken,
 } from "./lib/auth.js";
 import { normalizePhone } from "./lib/phone.js";
+import { cartPhoneCandidateKeys, resolveCartsUserPhoneFromCandidates } from "../lib/cartPhoneResolve.js";
 import { generateOtpCode, hashResetCode, constantTimeEqualHex } from "../lib/passwordReset.js";
 
 const MAX_AVATAR_SIZE = 4 * 1024 * 1024;
@@ -2068,6 +2069,49 @@ app.patch("/api/me", async (req, res) => {
     const address = body.address !== undefined ? (typeof body.address === "string" ? body.address.trim() || null : null) : current.address;
     const address_complement = body.address_complement !== undefined ? (typeof body.address_complement === "string" ? body.address_complement.trim() || null : null) : current.address_complement;
     const zipcode = body.zipcode !== undefined ? (typeof body.zipcode === "string" ? body.zipcode.trim() || null : null) : current.zipcode;
+    let phone =
+      body.phone !== undefined
+        ? typeof body.phone === "string"
+          ? body.phone.trim() || null
+          : current.phone
+        : current.phone;
+    if (body.phone !== undefined && typeof body.phone === "string") {
+      const raw = body.phone.trim();
+      if (raw === "") {
+        phone = null;
+      } else {
+        const cc = String(country ?? current.country ?? "BR");
+        const isBr =
+          cc.toUpperCase().includes("BR") ||
+          cc.toLowerCase().includes("brasil") ||
+          cc.toLowerCase().includes("brazil");
+        if (isBr) {
+          try {
+            const nextPhone = normalizePhone(raw, "BR");
+            if (current.phone && nextPhone) {
+              for (const oldk of cartPhoneCandidateKeys(current.phone)) {
+                if (oldk === nextPhone) continue;
+                try {
+                  await sql`UPDATE carts SET user_phone = ${nextPhone} WHERE user_phone = ${oldk}`;
+                } catch {
+                  /* ignora */
+                }
+                try {
+                  await sql`UPDATE wishlists SET user_phone = ${nextPhone} WHERE user_phone = ${oldk}`;
+                } catch {
+                  /* ignora */
+                }
+              }
+            }
+            phone = nextPhone;
+          } catch {
+            return res.status(400).json({ error: "Telefone inválido" });
+          }
+        } else {
+          phone = raw;
+        }
+      }
+    }
     let updated;
     try {
       [updated] = await sql`
@@ -2075,6 +2119,7 @@ app.patch("/api/me", async (req, res) => {
         SET name = ${name}, avatar_url = ${avatar_url}, birth_date = ${birth_date},
             city = ${city}, state = ${state}, country = ${country}, email = ${email},
             address = ${address}, address_complement = ${address_complement}, zipcode = ${zipcode},
+            phone = ${phone},
             updated_at = now()
         WHERE id = ${payload.userId}
         RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, address, address_complement, zipcode, role, created_at, updated_at
@@ -2085,6 +2130,7 @@ app.patch("/api/me", async (req, res) => {
         UPDATE users
         SET name = ${name}, avatar_url = ${avatar_url}, birth_date = ${birth_date},
             city = ${city}, state = ${state}, country = ${country}, email = ${email},
+            phone = ${phone},
             updated_at = now()
         WHERE id = ${payload.userId}
         RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
@@ -2138,23 +2184,28 @@ async function getCartUser(req, res) {
     res.status(404).json({ error: "Usuário não encontrado" });
     return null;
   }
-  let phone = user.phone != null ? String(user.phone).trim() : "";
-  if (!phone && payload.phone) {
-    phone = String(payload.phone).trim();
+  const dbPhone = user.phone != null ? String(user.phone).trim() : "";
+  const jwtPhone = payload.phone != null ? String(payload.phone).trim() : "";
+  if (!dbPhone && jwtPhone) {
     try {
       await sql`
-        UPDATE users SET phone = ${phone}
+        UPDATE users SET phone = ${jwtPhone}
         WHERE id = ${user.id} AND (phone IS NULL OR TRIM(phone) = '')
       `;
     } catch {
       // coluna phone ausente ou falha de sync — segue com telefone do token
     }
   }
-  if (!phone) {
+  if (!String(dbPhone || jwtPhone).trim()) {
     res.status(400).json({ error: "Carrinho disponível apenas para usuários com telefone cadastrado" });
     return null;
   }
-  return { userId: user.id, userPhone: phone };
+  const userPhone = await resolveCartsUserPhoneFromCandidates(sql, dbPhone || jwtPhone, jwtPhone);
+  if (!userPhone) {
+    res.status(400).json({ error: "Carrinho disponível apenas para usuários com telefone cadastrado" });
+    return null;
+  }
+  return { userId: user.id, userPhone };
 }
 
 app.get("/api/cart", async (req, res) => {
