@@ -8,4 +8,4 @@ export const WHATSAPP_CHAT_URL =
 /** Perfil oficial no Instagram. Sobrescreva com VITE_SOCIAL_INSTAGRAM_URL. */
 export const INSTAGRAM_PROFILE_URL =
   trim(import.meta.env.VITE_SOCIAL_INSTAGRAM_URL) ||
-  "https://www.instagram.com/aromaexpresso/";
+  "https://www.instagram.com/aromaexpressofsa/";

@@ -10,7 +10,9 @@ export default function InstagramPosts() {
   return (
     <section className="flat-spacing-3 px-30 pe-0">
       <div className="flat-title wow fadeInUp">
-        <h3 className="title fw-normal font-9 letter-0">Follow @Vineta</h3>
+        <h3 className="title fw-normal font-9 letter-0">
+          Siga @aromaexpressofsa
+        </h3>
       </div>
       <Swiper
         dir="ltr"

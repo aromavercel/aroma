@@ -10,7 +10,7 @@ export default function ShopGram() {
     <section className="flat-spacing-2 bg-light-orange-4">
       <div className="container">
         <div className="flat-title wow fadeInUp">
-          <h4 className="title">Follow our gram @Vineta</h4>
+          <h4 className="title">Siga no Instagram @aromaexpressofsa</h4>
         </div>
         <Swiper
           dir="ltr"

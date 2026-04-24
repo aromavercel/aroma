@@ -4,12 +4,13 @@ import { furnitureGallery } from "@/data/products";
 import React from "react";
 import { Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { INSTAGRAM_PROFILE_URL } from "@/data/socialLinks";
 
 export default function InstagramPosts() {
   return (
     <section className="">
       <div className="flat-title wow fadeInUp">
-        <h3 className="title fw-normal font-11">FOLLOW OUR GRAM</h3>
+        <h3 className="title fw-normal font-11">SIGA NO INSTAGRAM</h3>
       </div>
       <div className="wrap-gallery">
         <Swiper
@@ -49,8 +50,11 @@ export default function InstagramPosts() {
           <span className="d-flex d-xl-none sw-dot-default sw-pagination-gallery justify-content-center" />
         </Swiper>
         <a
-          href="https://www.instagram.com/"
+          href={INSTAGRAM_PROFILE_URL}
           className="social-item social-instagram wrap-gallery-icon"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram"
         >
           <i className="icon icon-instagram" />
         </a>

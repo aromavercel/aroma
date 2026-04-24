@@ -10,7 +10,7 @@ export default function Shopgram() {
     <section className="flat-spacing pb-0">
       <div className="container">
         <div className="flat-title wow fadeInUp">
-          <h4 className="title letter-0 font-3">Shop by @Vineta</h4>
+          <h4 className="title letter-0 font-3">Siga @aromaexpressofsa</h4>
         </div>
         <Swiper
           dir="ltr"

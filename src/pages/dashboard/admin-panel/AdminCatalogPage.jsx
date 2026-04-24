@@ -1,16 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PerfumeFormModal from "@/components/catalog/PerfumeFormModal";
-import { getPerfumesList, deletePerfume } from "@/api/perfumes";
+import { getPerfumesList, getPerfumeFacets, deletePerfume } from "@/api/perfumes";
 import { getPerfumeDisplayData } from "@/data/perfumes";
-import { CATALOG_SOURCE_OPTIONS, getBrandOptions, normalizeBrandKey } from "@/data/perfumes";
+import { CATALOG_SOURCE_OPTIONS } from "@/data/perfumes";
 import Skeleton from "@/components/common/Skeleton";
+
+const ITEMS_PER_PAGE = 50;
 
 export default function AdminCatalogPage() {
   const navigate = useNavigate();
   const [perfumesList, setPerfumesList] = useState([]);
+  const [totalCount, setTotalCount] = useState(null);
+  const [hasNextPage, setHasNextPage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [loadingTotal, setLoadingTotal] = useState(false);
   const [formModalPerfume, setFormModalPerfume] = useState(undefined);
   const [deletingId, setDeletingId] = useState(null);
   const [q, setQ] = useState("");
@@ -18,47 +23,114 @@ export default function AdminCatalogPage() {
   const [stockFilter, setStockFilter] = useState("all"); // all | in_stock | out_of_stock
   const [brandKey, setBrandKey] = useState("all");
   const [catalogSource, setCatalogSource] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [brandOptions, setBrandOptions] = useState([{ value: "all", label: "Todas" }]);
+
+  const pageIndex = Math.max(1, currentPage);
+  const totalPages = totalCount ? Math.max(1, Math.ceil((Number(totalCount) || 0) / ITEMS_PER_PAGE)) : null;
+
+  const ensureTotalCount = async () => {
+    if (totalCount != null) return totalCount;
+    if (loadingTotal) return null;
+    setLoadingTotal(true);
+    try {
+      const term = String(q || "").trim();
+      const hasTerm = term.length >= 2;
+      const data = await getPerfumesList({
+        all: true,
+        limit: 1,
+        offset: 0,
+        q: hasTerm ? term : "",
+        status: statusFilter,
+        stock: stockFilter,
+        brandKey: brandKey !== "all" ? brandKey : null,
+        catalog: catalogSource !== "all" ? catalogSource : null,
+        sort: "title-asc",
+        compact: true,
+        noTotal: false,
+      });
+      if (data && typeof data === "object" && Array.isArray(data.items)) {
+        const t = data.total == null ? null : Number(data.total || 0);
+        setTotalCount(t);
+        return t;
+      }
+      const list = Array.isArray(data) ? data : [];
+      setTotalCount(list.length);
+      return list.length;
+    } catch {
+      return null;
+    } finally {
+      setLoadingTotal(false);
+    }
+  };
 
   const loadPerfumes = useCallback(() => {
     setLoading(true);
     setLoadError(null);
-    getPerfumesList({ all: true })
-      .then(setPerfumesList)
+    const term = String(q || "").trim();
+    const hasTerm = term.length >= 2;
+    const offset = (pageIndex - 1) * ITEMS_PER_PAGE;
+    getPerfumesList({
+      all: true,
+      limit: ITEMS_PER_PAGE,
+      offset,
+      q: hasTerm ? term : "",
+      status: statusFilter,
+      stock: stockFilter,
+      brandKey: brandKey !== "all" ? brandKey : null,
+      catalog: catalogSource !== "all" ? catalogSource : null,
+      sort: "title-asc",
+      compact: true,
+      noTotal: true,
+    })
+      .then((data) => {
+        if (data && typeof data === "object" && Array.isArray(data.items)) {
+          setPerfumesList(data.items);
+          setHasNextPage(Boolean(data.hasNext));
+          setTotalCount(data.total == null ? null : Number(data.total || 0));
+        } else {
+          const list = Array.isArray(data) ? data : [];
+          setPerfumesList(list);
+          setHasNextPage(list.length >= ITEMS_PER_PAGE);
+          setTotalCount(list.length);
+        }
+      })
       .catch((err) => setLoadError(err.message || "Erro ao carregar catálogo."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [pageIndex, q, statusFilter, stockFilter, brandKey, catalogSource]);
 
   useEffect(() => { loadPerfumes(); }, [loadPerfumes]);
 
-  const brandOptions = useMemo(() => getBrandOptions(perfumesList), [perfumesList]);
-
-  const filteredList = useMemo(() => {
-    const term = String(q || "").trim().toLowerCase();
+  // Opções de marca com contagens, respeitando filtros (exceto marca).
+  useEffect(() => {
+    let cancelled = false;
+    const term = String(q || "").trim();
     const hasTerm = term.length >= 2;
-    return (perfumesList || []).filter((p) => {
-      if (statusFilter === "active" && p?.ativo === false) return false;
-      if (statusFilter === "inactive" && p?.ativo !== false) return false;
+    getPerfumeFacets({
+      all: true,
+      q: hasTerm ? term : "",
+      status: statusFilter,
+      stock: stockFilter,
+      catalog: catalogSource !== "all" ? catalogSource : null,
+    })
+      .then((data) => {
+        if (cancelled) return;
+        const brands = Array.isArray(data?.brands) ? data.brands : [];
+        const opts = [{ value: "all", label: "Todas" }].concat(
+          brands.map((b) => ({ value: b.key, label: b.label })),
+        );
+        setBrandOptions(opts);
+      })
+      .catch(() => {
+        // não bloqueia a tela se falhar
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [q, statusFilter, stockFilter, catalogSource]);
 
-      if (stockFilter === "out_of_stock" && p?.esgotado !== true) return false;
-      if (stockFilter === "in_stock" && p?.esgotado === true) return false;
-
-      if (catalogSource !== "all") {
-        const src = (p?.catalogSource || "normal").toString().toLowerCase();
-        if (src !== catalogSource) return false;
-      }
-
-      if (brandKey !== "all") {
-        const display = getPerfumeDisplayData(p);
-        const key = normalizeBrandKey(display?.brand);
-        if (key !== brandKey) return false;
-      }
-
-      if (!hasTerm) return true;
-      const display = getPerfumeDisplayData(p);
-      const hay = `${display?.title || ""} ${display?.brand || ""} ${p?.external_url || ""}`.toLowerCase();
-      return hay.includes(term);
-    });
-  }, [perfumesList, q, statusFilter, stockFilter, brandKey, catalogSource]);
+  // Lista já vem filtrada/paginada do backend
+  const filteredList = useMemo(() => perfumesList || [], [perfumesList]);
 
   const handleDelete = useCallback(async (perfume, e) => {
     if (e) e.stopPropagation();
@@ -91,10 +163,15 @@ export default function AdminCatalogPage() {
         <p className="text-muted mb-4">Clique em um item para ver os detalhes. Use Editar ou Excluir na linha.</p>
         <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
           <span className="text-sm text-main-2">
-            {filteredList.length} item{filteredList.length === 1 ? "" : "s"}
-            {filteredList.length !== perfumesList.length ? (
-              <span className="text-muted"> (de {perfumesList.length})</span>
-            ) : null}
+            {totalCount != null ? (
+              <>
+                {totalCount} item{totalCount === 1 ? "" : "s"}
+              </>
+            ) : (
+              <>
+                {filteredList.length} item{filteredList.length === 1 ? "" : "s"}
+              </>
+            )}
           </span>
           <button
             type="button"
@@ -117,12 +194,22 @@ export default function AdminCatalogPage() {
               className="form-control"
               placeholder="Buscar por título, marca…"
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
           <div className="col-6 col-lg-2">
             <label className="form-label text-sm text-main-2 mb-1">Status</label>
-            <select className="form-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select
+              className="form-select"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
               <option value="all">Todos</option>
               <option value="active">Ativo</option>
               <option value="inactive">Inativo</option>
@@ -130,7 +217,14 @@ export default function AdminCatalogPage() {
           </div>
           <div className="col-6 col-lg-2">
             <label className="form-label text-sm text-main-2 mb-1">Estoque</label>
-            <select className="form-select" value={stockFilter} onChange={(e) => setStockFilter(e.target.value)}>
+            <select
+              className="form-select"
+              value={stockFilter}
+              onChange={(e) => {
+                setStockFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
               <option value="all">Todos</option>
               <option value="in_stock">Em estoque</option>
               <option value="out_of_stock">Esgotado</option>
@@ -138,7 +232,14 @@ export default function AdminCatalogPage() {
           </div>
           <div className="col-6 col-lg-2">
             <label className="form-label text-sm text-main-2 mb-1">Marca</label>
-            <select className="form-select" value={brandKey} onChange={(e) => setBrandKey(e.target.value)}>
+            <select
+              className="form-select"
+              value={brandKey}
+              onChange={(e) => {
+                setBrandKey(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
               {brandOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -146,7 +247,14 @@ export default function AdminCatalogPage() {
           </div>
           <div className="col-6 col-lg-2">
             <label className="form-label text-sm text-main-2 mb-1">Catálogo</label>
-            <select className="form-select" value={catalogSource} onChange={(e) => setCatalogSource(e.target.value)}>
+            <select
+              className="form-select"
+              value={catalogSource}
+              onChange={(e) => {
+                setCatalogSource(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
               <option value="all">Todos</option>
               {CATALOG_SOURCE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -195,11 +303,6 @@ export default function AdminCatalogPage() {
             <p className="text-muted">{loadError}</p>
             <button type="button" className="btn btn-outline-primary mt-2" onClick={loadPerfumes}>Tentar novamente</button>
           </div>
-        ) : perfumesList.length === 0 ? (
-          <div className="p-4 rounded bg-light text-center">
-            <p className="text-muted mb-3">Nenhum item no catálogo ainda.</p>
-            <button type="button" className="subscribe-button tf-btn animate-btn bg-dark-2 text-white" onClick={openAdd}>Adicionar primeiro item</button>
-          </div>
         ) : filteredList.length === 0 ? (
           <div className="p-4 rounded bg-light text-center">
             <p className="text-muted mb-3">Nenhum item encontrado com os filtros atuais.</p>
@@ -212,6 +315,7 @@ export default function AdminCatalogPage() {
                 setStockFilter("all");
                 setBrandKey("all");
                 setCatalogSource("all");
+                setCurrentPage(1);
               }}
             >
               Limpar filtros
@@ -261,6 +365,48 @@ export default function AdminCatalogPage() {
             </table>
           </div>
         )}
+
+        {/* Paginação: visível quando há itens ou quando dá para navegar */}
+        {!loading &&
+        !loadError &&
+        (filteredList.length > 0 ||
+          pageIndex > 1 ||
+          hasNextPage ||
+          (totalPages != null && totalPages > 1)) ? (
+          <nav className="d-flex align-items-center justify-content-center gap-2 mt-4 flex-wrap" aria-label="Paginação do admin catálogo">
+            <button type="button" className="btn btn-outline-secondary btn-sm" disabled={pageIndex <= 1} onClick={() => setCurrentPage(1)}>
+              Primeira
+            </button>
+            <button type="button" className="btn btn-outline-secondary btn-sm" disabled={pageIndex <= 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
+              Anterior
+            </button>
+            <span className="text-sm text-muted mx-2">
+              Página {pageIndex}{totalPages ? ` de ${totalPages}` : ""}
+            </span>
+            <button type="button" className="btn btn-outline-secondary btn-sm" disabled={totalPages ? pageIndex >= totalPages : !hasNextPage} onClick={() => setCurrentPage((p) => (totalPages ? Math.min(totalPages, p + 1) : p + 1))}>
+              Próxima
+            </button>
+            {totalPages ? (
+              <button type="button" className="btn btn-outline-secondary btn-sm" disabled={pageIndex >= totalPages} onClick={() => setCurrentPage(totalPages)}>
+                Última
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                disabled={loadingTotal}
+                onClick={async () => {
+                  const t = await ensureTotalCount();
+                  if (t == null) return;
+                  const last = Math.max(1, Math.ceil(t / ITEMS_PER_PAGE));
+                  setCurrentPage(last);
+                }}
+              >
+                {loadingTotal ? "Carregando…" : "Última"}
+              </button>
+            )}
+          </nav>
+        ) : null}
       </div>
       <PerfumeFormModal perfume={formModalPerfume} onClose={closeForm} onSaved={loadPerfumes} />
     </>
