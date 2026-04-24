@@ -236,7 +236,41 @@ export default function Context({ children }) {
         // ignora
       }
       getCart()
-        .then((r) => setCartProducts(r.items))
+        .then(async (r) => {
+          if (r.items?.length) {
+            setCartProducts(r.items);
+            return;
+          }
+          let guest = [];
+          try {
+            guest = JSON.parse(localStorage.getItem("cartList") || "null");
+          } catch {
+            guest = [];
+          }
+          if (!Array.isArray(guest) || guest.length === 0) {
+            setCartProducts([]);
+            return;
+          }
+          for (const row of guest) {
+            const pid = row.perfume_id ?? row.id;
+            if (!pid) continue;
+            try {
+              await addCartItem(String(pid), Math.max(1, Number(row.quantity) || 1), {
+                variant_option: row.variant_option ?? "",
+                price_number: row.price,
+                price: row.price,
+              });
+            } catch {
+              // item indisponível ou erro de rede
+            }
+          }
+          try {
+            const next = await getCart();
+            setCartProducts(next.items || []);
+          } catch {
+            setCartProducts(guest);
+          }
+        })
         .catch(() => setCartProducts([]));
     } else {
       // Usuário não logado: restaura do localStorage (se houver)

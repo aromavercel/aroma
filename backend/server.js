@@ -1607,6 +1607,30 @@ app.get("/api/auth-facebook-callback", async (req, res) => {
   }
 });
 
+app.post("/api/auth/check-phone", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const { phone, country } = req.body || {};
+    const countryCode =
+      typeof country === "string" && country.trim() ? country.trim().toUpperCase().slice(0, 2) : "BR";
+    const phoneRaw = typeof phone === "string" ? phone.trim().replace(/\s/g, "") : "";
+    if (!phoneRaw) {
+      return res.status(400).json({ error: "Telefone é obrigatório", exists: false });
+    }
+    let phoneE164;
+    try {
+      phoneE164 = normalizePhone(phone, countryCode);
+    } catch (err) {
+      return res.status(400).json({ error: err.message || "Telefone inválido", exists: false });
+    }
+    const rows = await sql`SELECT id FROM users WHERE phone = ${phoneE164}`;
+    return res.json({ exists: rows.length > 0 });
+  } catch (err) {
+    console.error("check-phone error:", err);
+    return res.status(500).json({ error: "Erro ao verificar telefone" });
+  }
+});
+
 app.post("/api/register", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {

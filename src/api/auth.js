@@ -49,6 +49,25 @@ export async function register({ phone, password, name, email, country }) {
   return data;
 }
 
+/** Verifica se já existe conta com o telefone (normalizado no servidor). */
+export async function checkPhoneRegistered({ phone, country = "BR" }) {
+  const res = await fetch(`${getBase()}/api/auth/check-phone`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      phone: phone?.trim().replace(/\s/g, "") || "",
+      country: country || "BR",
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || "Não foi possível verificar o telefone");
+    err.status = res.status;
+    throw err;
+  }
+  return { exists: Boolean(data.exists) };
+}
+
 export async function login({ phone, password, country }) {
   const res = await fetch(`${getBase()}/api/login`, {
     method: "POST",

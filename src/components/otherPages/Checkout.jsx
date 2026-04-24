@@ -3,11 +3,14 @@
 import { useContextElement } from "@/context/Context";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { getMe, login, register, setStoredToken, updateProfile } from "@/api/auth";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { checkPhoneRegistered, getMe, updateProfile } from "@/api/auth";
 import { createOrder } from "@/api/orders";
 import { getCart } from "@/api/cart";
 import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLocations";
 import { fetchAddressByCep, formatCep, onlyDigits } from "@/utils/cep";
+
+const CHECKOUT_DRAFT_KEY = "aroma_checkout_draft_v1";
 
 export default function Checkout() {
   const { user, cartProducts, totalPrice, setCartProducts, setUser } = useContextElement();
@@ -23,25 +26,108 @@ export default function Checkout() {
   const [zipcode, setZipcode] = useState("");
   const [loadingCep, setLoadingCep] = useState(false);
   const [phone, setPhone] = useState("");
-  const [contact, setContact] = useState("");
-  const [accountPassword, setAccountPassword] = useState("");
-  const [accountMode, setAccountMode] = useState("auto");
+  /** idle | checking | exists | absent | invalid — só visitante */
+  const [phoneRegistry, setPhoneRegistry] = useState("idle");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (!d || typeof d !== "object") return;
+      if (typeof d.firstname === "string") setFirstname(d.firstname);
+      if (typeof d.lastname === "string") setLastname(d.lastname);
+      if (typeof d.address === "string") setAddress(d.address);
+      if (typeof d.apartment === "string") setApartment(d.apartment);
+      if (typeof d.city === "string") setCity(d.city);
+      if (typeof d.state === "string") setState(d.state);
+      if (typeof d.zipcode === "string") setZipcode(d.zipcode);
+      if (typeof d.phone === "string") setPhone(d.phone);
+    } catch {
+      // ignora
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        CHECKOUT_DRAFT_KEY,
+        JSON.stringify({
+          firstname,
+          lastname,
+          address,
+          apartment,
+          city,
+          state,
+          zipcode,
+          phone,
+        }),
+      );
+    } catch {
+      // ignora
+    }
+  }, [firstname, lastname, address, apartment, city, state, zipcode, phone]);
+
+  useEffect(() => {
     if (!user) return;
+    let draft = null;
+    try {
+      draft = JSON.parse(sessionStorage.getItem(CHECKOUT_DRAFT_KEY) || "null");
+    } catch {
+      draft = null;
+    }
+    const pickStr = (key, ...fallbacks) => {
+      const v = draft?.[key];
+      if (typeof v === "string" && v.trim()) return v;
+      for (const f of fallbacks) {
+        if (typeof f === "string" && f.trim()) return f;
+      }
+      return "";
+    };
     const nameParts = (user.name || "").trim().split(/\s+/);
-    setFirstname(nameParts[0] || "");
-    setLastname(nameParts.slice(1).join(" ") || "");
-    setAddress(user.address ?? "");
-    setApartment(user.address_complement ?? "");
-    setCity(user.city ?? "");
-    setState(user.state ?? "");
-    setZipcode(user.zipcode ?? "");
-    setPhone(user.phone ?? "");
-    setContact(user.email || user.phone || "");
+    setFirstname(pickStr("firstname", nameParts[0] || ""));
+    setLastname(pickStr("lastname", nameParts.slice(1).join(" ") || ""));
+    setAddress(pickStr("address", user.address ?? ""));
+    setApartment(pickStr("apartment", user.address_complement ?? ""));
+    setCity(pickStr("city", user.city ?? ""));
+    setState(pickStr("state", user.state ?? ""));
+    setZipcode(pickStr("zipcode", user.zipcode ?? ""));
+    setPhone(pickStr("phone", user.phone ?? ""));
   }, [user]);
+
+  useEffect(() => {
+    if (user?.id) {
+      setPhoneRegistry("idle");
+      return;
+    }
+    const trimmed = phone.trim();
+    if (!trimmed) {
+      setPhoneRegistry("idle");
+      return;
+    }
+    const parsed = parsePhoneNumberFromString(trimmed.replace(/\s/g, " "), "BR");
+    if (!parsed?.isValid()) {
+      setPhoneRegistry("invalid");
+      return;
+    }
+    let cancelled = false;
+    setPhoneRegistry("checking");
+    const t = setTimeout(() => {
+      checkPhoneRegistered({ phone: trimmed, country: "BR" })
+        .then(({ exists }) => {
+          if (!cancelled) setPhoneRegistry(exists ? "exists" : "absent");
+        })
+        .catch(() => {
+          if (!cancelled) setPhoneRegistry("invalid");
+        });
+    }, 550);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [phone, user?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +182,22 @@ export default function Checkout() {
   const taxCost = 0;
   const orderTotal = totalPrice ? totalPrice + shippingCost : 0;
 
+  const stashPhoneAndOpenAuth = async (targetId) => {
+    try {
+      sessionStorage.setItem("checkoutAuthPhone", phone.trim());
+    } catch {
+      // ignora
+    }
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    try {
+      const bootstrap = await import("bootstrap");
+      bootstrap.Offcanvas.getOrCreateInstance(el).show();
+    } catch {
+      // ignora
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -103,72 +205,30 @@ export default function Checkout() {
       setError("Seu carrinho está vazio.");
       return;
     }
+    if (!user?.id) {
+      setError(
+        "Para finalizar, entre na sua conta ou crie uma conta usando as opções que aparecem após informar seu telefone.",
+      );
+      return;
+    }
     const name = [firstname, lastname].filter(Boolean).join(" ").trim();
     if (!name || !address?.trim() || !city?.trim() || !phone?.trim()) {
       setError("Preencha nome, endereço, cidade e telefone.");
       return;
     }
-    if (!user) {
-      const pass = accountPassword;
-      if (!pass || pass.length < 6) {
-        setError("Crie/insira uma senha com no mínimo 6 caracteres para finalizar a compra.");
-        return;
-      }
-    }
     setSubmitting(true);
     try {
-      let nextUser = user;
-
-      // Se não estiver logado: cria conta automaticamente (ou pede senha se já existir).
-      if (!nextUser) {
-        const emailMaybe = typeof contact === "string" && contact.includes("@") ? contact.trim() : undefined;
-        const pass = accountPassword;
-
-        if (accountMode === "login") {
-          const auth = await login({ phone, password: pass, country: "BR" });
-          if (auth?.token) setStoredToken(auth.token);
-          nextUser = auth?.user || null;
-        } else {
-          try {
-            const created = await register({
-              phone,
-              password: pass,
-              name,
-              email: emailMaybe,
-              country: "BR",
-            });
-            if (created?.token) setStoredToken(created.token);
-            nextUser = created?.user || null;
-          } catch (regErr) {
-            const msg = regErr?.message || "";
-            // Se o telefone já existe, muda para modo login e pede a senha.
-            if (msg.toLowerCase().includes("telefone") && msg.toLowerCase().includes("uso")) {
-              setAccountMode("login");
-              setError("Já existe uma conta com este telefone. Para finalizar, informe a senha dessa conta.");
-              setSubmitting(false);
-              return;
-            }
-            throw regErr;
-          }
-        }
-
-        // garante estado do app atualizado com o usuário autenticado
-        if (nextUser) {
-          try {
-            const me = await getMe();
-            if (me) nextUser = me;
-          } catch {
-            // silencioso: segue com o payload retornado do login/register
-          }
-          setUser(nextUser);
-        } else {
-          setError("Não foi possível autenticar sua conta. Tente novamente.");
-          setSubmitting(false);
-          return;
-        }
+      const sessionUser = await getMe();
+      if (!sessionUser?.id) {
+        setUser(null);
+        setError(
+          "Sua sessão não está mais ativa ou você não está logado. Entre novamente na sua conta para finalizar o pedido.",
+        );
+        return;
       }
+      setUser(sessionUser);
+      const nextUser = sessionUser;
 
-      // Atualiza perfil com endereço/telefone antes de criar o pedido
       await updateProfile({
         name: name || nextUser.name,
         address: address.trim() || null,
@@ -228,6 +288,59 @@ export default function Checkout() {
                 <div className="box-ip-checkout">
                   <div className="title text-xl fw-medium">Checkout</div>
                   {error && <div className="alert alert-danger mb_16">{error}</div>}
+                  <fieldset className="tf-field style-2 style-3 mb_16">
+                    <input
+                      className="tf-field-input tf-input"
+                      id="phone"
+                      type="tel"
+                      autoComplete="tel-national"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder=""
+                    />
+                    <label className="tf-field-label" htmlFor="phone">Telefone</label>
+                  </fieldset>
+                  {!user?.id && (
+                    <>
+                      <p className="text-sm text-dark-4 mb_8">
+                        Informe seu celular com DDD. Vamos verificar se já existe cadastro com este número.
+                      </p>
+                      {phoneRegistry === "checking" && (
+                        <div className="alert alert-secondary text-sm py-2 mb_12">Verificando telefone…</div>
+                      )}
+                      {phoneRegistry === "exists" && (
+                        <div className="alert alert-info text-sm mb_12" role="status">
+                          Este número já possui conta. Faça login{" "}
+                          <button
+                            type="button"
+                            className="btn p-0 border-0 bg-transparent align-baseline link text-dark fw-medium text-decoration-underline"
+                            onClick={() => stashPhoneAndOpenAuth("login")}
+                          >
+                            clicando aqui
+                          </button>
+                          .
+                        </div>
+                      )}
+                      {phoneRegistry === "absent" && (
+                        <div className="alert alert-info text-sm mb_12" role="status">
+                          Este número ainda não tem cadastro. Crie uma conta para comprar{" "}
+                          <button
+                            type="button"
+                            className="btn p-0 border-0 bg-transparent align-baseline link text-dark fw-medium text-decoration-underline"
+                            onClick={() => stashPhoneAndOpenAuth("register")}
+                          >
+                            clicando aqui
+                          </button>
+                          .
+                        </div>
+                      )}
+                      {phoneRegistry === "invalid" && phone.trim().length > 0 && (
+                        <div className="alert alert-warning text-sm mb_12" role="status">
+                          Digite um celular válido com DDD (Brasil).
+                        </div>
+                      )}
+                    </>
+                  )}
                   <div className="grid-2 mb_16">
                     <div className="tf-field style-2 style-3">
                       <input
@@ -322,55 +435,7 @@ export default function Checkout() {
                       </label>
                     </fieldset>
                   </div>
-                  <fieldset className="tf-field style-2 style-3 mb_16">
-                    <input
-                      className="tf-field-input tf-input"
-                      id="phone"
-                      type="text"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder=""
-                    />
-                    <label className="tf-field-label" htmlFor="phone">Telefone</label>
-                  </fieldset>
                 </div>
-                <div className="box-ip-contact">
-                  <div className="title">
-                    <div className="text-xl fw-medium">Informações de contato</div>
-                    {!user && (
-                      <Link to="/login" className="text-sm link">
-                        Entrar
-                      </Link>
-                    )}
-                  </div>
-                  <input
-                    className="style-2"
-                    id="contact"
-                    placeholder="Email ou número de telefone"
-                    type="text"
-                    value={contact}
-                    onChange={(e) => setContact(e.target.value)}
-                  />
-                </div>
-                {!user && (
-                  <div className="box-ip-contact mt_16">
-                    <div className="title">
-                      <div className="text-xl fw-medium">Conta</div>
-                    </div>
-                    <p className="text-sm text-main mb_8">
-                      Para finalizar a compra, será criada uma conta com seu telefone. Se você já tiver uma conta, informe sua senha para entrar.
-                    </p>
-                    <input
-                      className="style-2"
-                      id="accountPassword"
-                      placeholder={accountMode === "login" ? "Senha da sua conta" : "Crie uma senha (mín. 6 caracteres)"}
-                      type="password"
-                      value={accountPassword}
-                      onChange={(e) => setAccountPassword(e.target.value)}
-                      autoComplete={accountMode === "login" ? "current-password" : "new-password"}
-                    />
-                  </div>
-                )}
               <div className="box-ip-shipping">
                 <div className="title text-xl fw-medium">Entrega</div>
                 <p className="text-sm text-main mb_8">
