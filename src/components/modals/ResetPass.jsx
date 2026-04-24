@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import PasswordFieldWithToggle from "@/components/common/PasswordFieldWithToggle";
 import {
   requestPasswordResetEmail,
   confirmPasswordResetEmail,
@@ -142,13 +143,13 @@ export default function ResetPass() {
                 </fieldset>
 
                 <fieldset className="password">
-                  <input
-                    type="password"
+                  <PasswordFieldWithToggle
                     placeholder="Nova senha*"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                     minLength={6}
+                    autoComplete="new-password"
                   />
                 </fieldset>
               </div>

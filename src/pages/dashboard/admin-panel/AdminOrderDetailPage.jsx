@@ -187,12 +187,18 @@ export default function AdminOrderDetailPage() {
                 </p>
                 <p className="mb-1 text-sm">
                   <strong>Endereço:</strong>{" "}
-                  {order.shipping_address || "—"}
+                  {[order.shipping_address, order.shipping_street_number].filter(Boolean).join(", ") || "—"}
                 </p>
                 <p className="mb-1 text-sm">
                   <strong>Complemento:</strong>{" "}
                   {order.shipping_complement || "—"}
                 </p>
+                {order.shipping_delivery_instructions ? (
+                  <p className="mb-1 text-sm">
+                    <strong>Instruções ao entregador:</strong>{" "}
+                    {order.shipping_delivery_instructions}
+                  </p>
+                ) : null}
                 <p className="mb-1 text-sm">
                   <strong>Cidade/UF:</strong>{" "}
                   {order.shipping_city || order.shipping_state

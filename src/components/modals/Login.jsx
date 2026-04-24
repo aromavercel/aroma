@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { login as apiLogin, setStoredToken, getMe } from "@/api/auth";
-import { filterPhoneDigitsInput } from "@/utils/brPhone";
+import { brazilPhoneNationalDigits, formatBrazilPhoneDisplay } from "@/utils/brPhone";
+import PasswordFieldWithToggle from "@/components/common/PasswordFieldWithToggle";
 import { useContextElement } from "@/context/Context";
 import { COUNTRY_OPTIONS } from "@/constants/countries";
 
@@ -19,7 +20,7 @@ export default function Login() {
       try {
         const fromCheckout = sessionStorage.getItem("checkoutAuthPhone");
         if (fromCheckout) {
-          setPhone(filterPhoneDigitsInput(fromCheckout));
+          setPhone(brazilPhoneNationalDigits(fromCheckout));
           sessionStorage.removeItem("checkoutAuthPhone");
         }
       } catch {
@@ -90,21 +91,28 @@ export default function Login() {
               </fieldset>
               <fieldset className="email mb_12">
                 <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="DDD + número (somente dígitos)*"
-                  value={phone}
-                  onChange={(e) => setPhone(filterPhoneDigitsInput(e.target.value))}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  placeholder="+55 (11) 9 9999-9999"
+                  value={country === "BR" ? formatBrazilPhoneDisplay(phone) : phone}
+                  onChange={(e) => {
+                    if (country === "BR") {
+                      setPhone(brazilPhoneNationalDigits(e.target.value));
+                    } else {
+                      setPhone(String(e.target.value ?? "").replace(/\D/g, "").slice(0, 16));
+                    }
+                  }}
                   required
                 />
               </fieldset>
               <fieldset className="password">
-                <input
-                  type="password"
+                <PasswordFieldWithToggle
                   placeholder="Senha*"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                 />
               </fieldset>
             </div>
@@ -131,7 +139,7 @@ export default function Login() {
                   className="tf-btn btn-out-line-dark2 w-100"
                   onClick={() => {
                     try {
-                      sessionStorage.setItem("checkoutAuthPhone", filterPhoneDigitsInput(phone));
+                      sessionStorage.setItem("checkoutAuthPhone", brazilPhoneNationalDigits(phone));
                     } catch {
                       // ignora
                     }
