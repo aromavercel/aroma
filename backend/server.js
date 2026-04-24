@@ -1282,7 +1282,9 @@ app.get("/api/admin/orders/:id", async (req, res) => {
              o.total,
              o.shipping_name,
              o.shipping_address,
+             o.shipping_street_number,
              o.shipping_complement,
+             o.shipping_delivery_instructions,
              o.shipping_city,
              o.shipping_state,
              o.shipping_zipcode,
@@ -1328,7 +1330,9 @@ app.get("/api/admin/orders/:id", async (req, res) => {
         total: Number(order.total || 0),
         shipping_name: order.shipping_name ?? null,
         shipping_address: order.shipping_address ?? null,
+        shipping_street_number: order.shipping_street_number ?? null,
         shipping_complement: order.shipping_complement ?? null,
+        shipping_delivery_instructions: order.shipping_delivery_instructions ?? null,
         shipping_city: order.shipping_city ?? null,
         shipping_state: order.shipping_state ?? null,
         shipping_zipcode: order.shipping_zipcode ?? null,
@@ -1978,7 +1982,9 @@ app.get("/api/me", async (req, res) => {
     let rows;
     try {
       rows = await sql`
-        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, address, address_complement, zipcode, role, created_at, updated_at, last_activity_at
+        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone,
+          address, address_number, address_complement, zipcode, delivery_instructions,
+          role, created_at, updated_at, last_activity_at
         FROM users WHERE id = ${payload.userId}
       `;
     } catch (schemaErr) {
@@ -1995,8 +2001,10 @@ app.get("/api/me", async (req, res) => {
         rows[0].country = null;
         rows[0].phone = null;
         rows[0].address = null;
+        rows[0].address_number = null;
         rows[0].address_complement = null;
         rows[0].zipcode = null;
+        rows[0].delivery_instructions = null;
         rows[0].role = "user";
         rows[0].last_activity_at = rows[0].updated_at;
       }
@@ -2015,8 +2023,10 @@ app.get("/api/me", async (req, res) => {
         country: u.country ?? null,
         phone: u.phone ?? null,
         address: u.address ?? null,
+        address_number: u.address_number ?? null,
         address_complement: u.address_complement ?? null,
         zipcode: u.zipcode ?? null,
+        delivery_instructions: u.delivery_instructions ?? null,
         role: u.role ?? "user",
         created_at: u.created_at,
         updated_at: u.updated_at ?? u.created_at,
@@ -2042,7 +2052,9 @@ app.patch("/api/me", async (req, res) => {
     let current;
     try {
       [current] = await sql`
-        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, address, address_complement, zipcode, role, created_at, updated_at
+        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone,
+          address, address_number, address_complement, zipcode, delivery_instructions,
+          role, created_at, updated_at
         FROM users WHERE id = ${payload.userId}
       `;
     } catch (schemaErr) {
@@ -2053,8 +2065,10 @@ app.patch("/api/me", async (req, res) => {
       `;
       if (current) {
         current.address = null;
+        current.address_number = null;
         current.address_complement = null;
         current.zipcode = null;
+        current.delivery_instructions = null;
       }
     }
     if (!current) return res.status(404).json({ error: "Usuário não encontrado" });
@@ -2067,8 +2081,20 @@ app.patch("/api/me", async (req, res) => {
     const country = body.country !== undefined ? (typeof body.country === "string" ? body.country.trim() || null : null) : current.country;
     const email = body.email !== undefined ? (typeof body.email === "string" ? body.email.trim().toLowerCase() || null : null) : current.email;
     const address = body.address !== undefined ? (typeof body.address === "string" ? body.address.trim() || null : null) : current.address;
+    const address_number =
+      body.address_number !== undefined
+        ? typeof body.address_number === "string"
+          ? body.address_number.trim() || null
+          : null
+        : current.address_number;
     const address_complement = body.address_complement !== undefined ? (typeof body.address_complement === "string" ? body.address_complement.trim() || null : null) : current.address_complement;
     const zipcode = body.zipcode !== undefined ? (typeof body.zipcode === "string" ? body.zipcode.trim() || null : null) : current.zipcode;
+    const delivery_instructions =
+      body.delivery_instructions !== undefined
+        ? typeof body.delivery_instructions === "string"
+          ? body.delivery_instructions.trim() || null
+          : null
+        : current.delivery_instructions;
     let phone =
       body.phone !== undefined
         ? typeof body.phone === "string"
@@ -2118,11 +2144,14 @@ app.patch("/api/me", async (req, res) => {
         UPDATE users
         SET name = ${name}, avatar_url = ${avatar_url}, birth_date = ${birth_date},
             city = ${city}, state = ${state}, country = ${country}, email = ${email},
-            address = ${address}, address_complement = ${address_complement}, zipcode = ${zipcode},
+            address = ${address}, address_number = ${address_number}, address_complement = ${address_complement},
+            zipcode = ${zipcode}, delivery_instructions = ${delivery_instructions},
             phone = ${phone},
             updated_at = now()
         WHERE id = ${payload.userId}
-        RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, address, address_complement, zipcode, role, created_at, updated_at
+        RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone,
+          address, address_number, address_complement, zipcode, delivery_instructions,
+          role, created_at, updated_at
       `;
     } catch (updateErr) {
       if (updateErr?.code !== "42703") throw updateErr;
@@ -2137,8 +2166,10 @@ app.patch("/api/me", async (req, res) => {
       `;
       if (updated) {
         updated.address = address ?? null;
+        updated.address_number = address_number ?? null;
         updated.address_complement = address_complement ?? null;
         updated.zipcode = zipcode ?? null;
+        updated.delivery_instructions = delivery_instructions ?? null;
       }
     }
     const u = updated;
@@ -2154,8 +2185,10 @@ app.patch("/api/me", async (req, res) => {
         country: u.country ?? null,
         phone: u.phone ?? null,
         address: u.address ?? null,
+        address_number: u.address_number ?? null,
         address_complement: u.address_complement ?? null,
         zipcode: u.zipcode ?? null,
+        delivery_instructions: u.delivery_instructions ?? null,
         role: u.role ?? "user",
         created_at: u.created_at,
         updated_at: u.updated_at ?? u.created_at,
@@ -2374,7 +2407,15 @@ app.post("/api/orders", async (req, res) => {
     const body = req.body || {};
     const shippingName = typeof body.shipping_name === "string" ? body.shipping_name.trim() || null : null;
     const shippingAddress = typeof body.shipping_address === "string" ? body.shipping_address.trim() || null : null;
+    const shippingStreetNumber =
+      typeof body.shipping_street_number === "string"
+        ? body.shipping_street_number.trim() || null
+        : null;
     const shippingComplement = typeof body.shipping_complement === "string" ? body.shipping_complement.trim() || null : null;
+    const shippingDeliveryInstructions =
+      typeof body.shipping_delivery_instructions === "string"
+        ? body.shipping_delivery_instructions.trim() || null
+        : null;
     const shippingCity = typeof body.shipping_city === "string" ? body.shipping_city.trim() || null : null;
     const shippingState = typeof body.shipping_state === "string" ? body.shipping_state.trim() || null : null;
     const shippingZipcode = typeof body.shipping_zipcode === "string" ? body.shipping_zipcode.trim() || null : null;
@@ -2393,9 +2434,11 @@ app.post("/api/orders", async (req, res) => {
     try {
       const [order] = await sql`
         INSERT INTO orders (user_id, user_phone, status, subtotal, discount, shipping, tax, total,
-          shipping_name, shipping_address, shipping_complement, shipping_city, shipping_state, shipping_zipcode, shipping_country, shipping_phone, payment_method)
+          shipping_name, shipping_address, shipping_street_number, shipping_complement, shipping_delivery_instructions,
+          shipping_city, shipping_state, shipping_zipcode, shipping_country, shipping_phone, payment_method)
         VALUES (${cartUser.userId}, ${cartUser.userPhone}, 'pending', ${subtotal}, ${discount}, ${shipping}, ${tax}, ${total},
-          ${shippingName}, ${shippingAddress}, ${shippingComplement}, ${shippingCity}, ${shippingState}, ${shippingZipcode}, ${shippingCountry}, ${shippingPhone}, ${paymentMethod})
+          ${shippingName}, ${shippingAddress}, ${shippingStreetNumber}, ${shippingComplement}, ${shippingDeliveryInstructions},
+          ${shippingCity}, ${shippingState}, ${shippingZipcode}, ${shippingCountry}, ${shippingPhone}, ${paymentMethod})
         RETURNING id
       `;
       orderId = order?.id;
@@ -2494,7 +2537,9 @@ app.get("/api/my-orders/:id", async (req, res) => {
              total,
              shipping_name,
              shipping_address,
+             shipping_street_number,
              shipping_complement,
+             shipping_delivery_instructions,
              shipping_city,
              shipping_state,
              shipping_zipcode,
@@ -2539,7 +2584,9 @@ app.get("/api/my-orders/:id", async (req, res) => {
         total: Number(order.total || 0),
         shipping_name: order.shipping_name ?? null,
         shipping_address: order.shipping_address ?? null,
+        shipping_street_number: order.shipping_street_number ?? null,
         shipping_complement: order.shipping_complement ?? null,
+        shipping_delivery_instructions: order.shipping_delivery_instructions ?? null,
         shipping_city: order.shipping_city ?? null,
         shipping_state: order.shipping_state ?? null,
         shipping_zipcode: order.shipping_zipcode ?? null,

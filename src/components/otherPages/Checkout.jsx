@@ -4,7 +4,11 @@ import { useContextElement } from "@/context/Context";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { checkPhoneRegistered, getMe, updateProfile } from "@/api/auth";
-import { filterPhoneDigitsInput, isValidBrazilPhoneInput } from "@/utils/brPhone";
+import {
+  brazilPhoneNationalDigits,
+  formatBrazilPhoneDisplay,
+  isValidBrazilPhoneInput,
+} from "@/utils/brPhone";
 import { createOrder } from "@/api/orders";
 import { getCart } from "@/api/cart";
 import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLocations";
@@ -18,7 +22,9 @@ export default function Checkout() {
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
   const [address, setAddress] = useState("");
-  const [apartment, setApartment] = useState("");
+  const [addressNumber, setAddressNumber] = useState("");
+  const [complement, setComplement] = useState("");
+  const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [cities, setCities] = useState([]);
@@ -40,11 +46,14 @@ export default function Checkout() {
       if (typeof d.firstname === "string") setFirstname(d.firstname);
       if (typeof d.lastname === "string") setLastname(d.lastname);
       if (typeof d.address === "string") setAddress(d.address);
-      if (typeof d.apartment === "string") setApartment(d.apartment);
+      if (typeof d.addressNumber === "string") setAddressNumber(d.addressNumber);
+      if (typeof d.complement === "string") setComplement(d.complement);
+      else if (typeof d.apartment === "string") setComplement(d.apartment);
+      if (typeof d.deliveryInstructions === "string") setDeliveryInstructions(d.deliveryInstructions);
       if (typeof d.city === "string") setCity(d.city);
       if (typeof d.state === "string") setState(d.state);
       if (typeof d.zipcode === "string") setZipcode(d.zipcode);
-      if (typeof d.phone === "string") setPhone(filterPhoneDigitsInput(d.phone));
+      if (typeof d.phone === "string") setPhone(brazilPhoneNationalDigits(d.phone));
     } catch {
       // ignora
     }
@@ -58,7 +67,9 @@ export default function Checkout() {
           firstname,
           lastname,
           address,
-          apartment,
+          addressNumber,
+          complement,
+          deliveryInstructions,
           city,
           state,
           zipcode,
@@ -68,7 +79,7 @@ export default function Checkout() {
     } catch {
       // ignora
     }
-  }, [firstname, lastname, address, apartment, city, state, zipcode, phone]);
+  }, [firstname, lastname, address, addressNumber, complement, deliveryInstructions, city, state, zipcode, phone]);
 
   useEffect(() => {
     if (!user) return;
@@ -90,11 +101,13 @@ export default function Checkout() {
     setFirstname(pickStr("firstname", nameParts[0] || ""));
     setLastname(pickStr("lastname", nameParts.slice(1).join(" ") || ""));
     setAddress(pickStr("address", user.address ?? ""));
-    setApartment(pickStr("apartment", user.address_complement ?? ""));
+    setAddressNumber(pickStr("addressNumber", user.address_number ?? ""));
+    setComplement(pickStr("complement", pickStr("apartment", user.address_complement ?? "")));
+    setDeliveryInstructions(pickStr("deliveryInstructions", user.delivery_instructions ?? ""));
     setCity(pickStr("city", user.city ?? ""));
     setState(pickStr("state", user.state ?? ""));
     setZipcode(pickStr("zipcode", user.zipcode ?? ""));
-    setPhone(filterPhoneDigitsInput(pickStr("phone", user.phone ?? "")));
+    setPhone(brazilPhoneNationalDigits(pickStr("phone", user.phone ?? "")));
   }, [user]);
 
   useEffect(() => {
@@ -182,7 +195,7 @@ export default function Checkout() {
 
   const stashPhoneAndOpenAuth = async (targetId) => {
     try {
-      sessionStorage.setItem("checkoutAuthPhone", filterPhoneDigitsInput(phone));
+      sessionStorage.setItem("checkoutAuthPhone", brazilPhoneNationalDigits(phone));
     } catch {
       // ignora
     }
@@ -210,8 +223,8 @@ export default function Checkout() {
       return;
     }
     const name = [firstname, lastname].filter(Boolean).join(" ").trim();
-    if (!name || !address?.trim() || !city?.trim()) {
-      setError("Preencha nome, endereço e cidade.");
+    if (!name || !address?.trim() || !addressNumber?.trim() || !city?.trim()) {
+      setError("Preencha nome, logradouro, número e cidade.");
       return;
     }
     setSubmitting(true);
@@ -236,21 +249,25 @@ export default function Checkout() {
       await updateProfile({
         name: name || nextUser.name,
         address: address.trim() || null,
-        address_complement: apartment.trim() || null,
+        address_number: addressNumber.trim() || null,
+        address_complement: complement.trim() || null,
         zipcode: zipcode.trim() || null,
         city: city.trim() || null,
         state: state || null,
         country: COUNTRY_BR_LABEL,
+        delivery_instructions: deliveryInstructions.trim() || null,
       });
       const updatedUser = {
         ...nextUser,
         name,
         address: address.trim(),
-        address_complement: apartment.trim(),
+        address_number: addressNumber.trim(),
+        address_complement: complement.trim(),
         zipcode: zipcode.trim(),
         city: city.trim(),
         state,
         country: COUNTRY_BR_LABEL,
+        delivery_instructions: deliveryInstructions.trim(),
         phone: nextUser.phone,
       };
       setUser(updatedUser);
@@ -263,7 +280,9 @@ export default function Checkout() {
         total: orderTotal,
         shipping_name: name,
         shipping_address: address.trim(),
-        shipping_complement: apartment.trim() || null,
+        shipping_street_number: addressNumber.trim(),
+        shipping_complement: complement.trim() || null,
+        shipping_delivery_instructions: deliveryInstructions.trim() || null,
         shipping_city: city.trim(),
         shipping_state: state || null,
         shipping_zipcode: zipcode.trim() || null,
@@ -293,22 +312,28 @@ export default function Checkout() {
                   {error && <div className="alert alert-danger mb_16">{error}</div>}
                   <fieldset className="tf-field style-2 style-3 mb_16">
                     <input
-                      className="tf-field-input tf-input"
+                      className={`tf-field-input tf-input${user?.id ? " bg-light" : ""}`}
                       id="phone"
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="tel-national"
-                      value={phone}
-                      onChange={(e) => setPhone(filterPhoneDigitsInput(e.target.value))}
-                      placeholder=""
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete={user?.id ? "off" : "tel-national"}
+                      value={formatBrazilPhoneDisplay(phone)}
+                      onChange={
+                        user?.id
+                          ? undefined
+                          : (e) => setPhone(brazilPhoneNationalDigits(e.target.value))
+                      }
+                      readOnly={Boolean(user?.id)}
+                      aria-readonly={user?.id ? "true" : undefined}
+                      placeholder="+55 (11) 9 9999-9999"
                     />
                     <label className="tf-field-label" htmlFor="phone">
-                      {user?.id ? "Telefone para contato na entrega" : "Telefone"}
+                      {user?.id ? "Telefone (cadastro)" : "Telefone"}
                     </label>
                   </fieldset>
                   {user?.id && (
                     <p className="text-sm text-dark-4 mb_12">
-                      O pedido fica na sua conta atual. Se preferir, informe outro número só para a entrega; o telefone do cadastro não é alterado aqui.
+                      O telefone da sua conta não pode ser alterado nesta etapa. O pedido será associado a este número.
                     </p>
                   )}
                   {!user?.id && (
@@ -426,26 +451,59 @@ export default function Checkout() {
                       </select>
                     </div>
                   </div>
+                  <div className="grid-2 mb_16" style={{ gap: "12px" }}>
+                    <fieldset className="tf-field style-2 style-3 mb-0">
+                      <input
+                        className="tf-field-input tf-input"
+                        id="address"
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder=""
+                        autoComplete="street-address"
+                      />
+                      <label className="tf-field-label" htmlFor="address">
+                        Endereço (logradouro)
+                      </label>
+                    </fieldset>
+                    <fieldset className="tf-field style-2 style-3 mb-0">
+                      <input
+                        className="tf-field-input tf-input"
+                        id="addressNumber"
+                        type="text"
+                        value={addressNumber}
+                        onChange={(e) => setAddressNumber(e.target.value)}
+                        placeholder=""
+                        autoComplete="off"
+                        maxLength={30}
+                      />
+                      <label className="tf-field-label" htmlFor="addressNumber">Número</label>
+                    </fieldset>
+                  </div>
                   <fieldset className="tf-field style-2 style-3 mb_16">
                     <input
                       className="tf-field-input tf-input"
-                      id="address"
+                      id="complement"
                       type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
+                      value={complement}
+                      onChange={(e) => setComplement(e.target.value)}
                       placeholder=""
                     />
-                    <label className="tf-field-label" htmlFor="address">Endereço</label>
+                    <label className="tf-field-label" htmlFor="complement">Complemento</label>
                   </fieldset>
-                  <fieldset className="mb_16">
-                    <input
-                      type="text"
-                      className="style-2"
-                      placeholder="Apartamento, suite, etc (opcional)"
-                      value={apartment}
-                      onChange={(e) => setApartment(e.target.value)}
+                  <div className="mb_16">
+                    <label className="text-sm fw-medium d-block mb_8" htmlFor="deliveryInstructions">
+                      Instruções para o entregador
+                    </label>
+                    <textarea
+                      id="deliveryInstructions"
+                      className="form-control rounded-0"
+                      rows={3}
+                      value={deliveryInstructions}
+                      onChange={(e) => setDeliveryInstructions(e.target.value)}
+                      placeholder="Opcional: portaria, referência, melhor horário…"
                     />
-                  </fieldset>
+                  </div>
                 </div>
               <div className="box-ip-shipping">
                 <div className="title text-xl fw-medium">Entrega</div>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useContextElement } from "@/context/Context";
 import { updateProfile, uploadAvatar } from "@/api/auth";
 import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLocations";
+import { formatBrazilPhoneDisplay } from "@/utils/brPhone";
 
 function ageFromBirthDate(birthDate) {
   if (!birthDate) return null;
@@ -184,7 +185,8 @@ export default function UserMenu() {
                 ) : null}
                 {user.phone && (
                   <p className="text-sm text-main-2 mb_8">
-                    <span className="text-muted">Telefone:</span> {user.phone}
+                    <span className="text-muted">Telefone:</span>{" "}
+                    {formatBrazilPhoneDisplay(user.phone)}
                   </p>
                 )}
                 {user.email && (
