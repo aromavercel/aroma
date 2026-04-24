@@ -3,8 +3,8 @@
 import { useContextElement } from "@/context/Context";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { checkPhoneRegistered, getMe, updateProfile } from "@/api/auth";
+import { isValidBrazilPhoneInput } from "@/utils/brPhone";
 import { createOrder } from "@/api/orders";
 import { getCart } from "@/api/cart";
 import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLocations";
@@ -107,8 +107,7 @@ export default function Checkout() {
       setPhoneRegistry("idle");
       return;
     }
-    const parsed = parsePhoneNumberFromString(trimmed.replace(/\s/g, " "), "BR");
-    if (!parsed?.isValid()) {
+    if (!isValidBrazilPhoneInput(trimmed)) {
       setPhoneRegistry("invalid");
       return;
     }

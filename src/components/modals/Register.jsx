@@ -39,7 +39,7 @@ export default function Register() {
     try {
       const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") || undefined;
       const data = await apiRegister({
-        phone: phone.trim().replace(/\s/g, ""),
+        phone: phone.trim(),
         password,
         name,
         email: email.trim() || undefined,

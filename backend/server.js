@@ -1607,7 +1607,7 @@ app.get("/api/auth-facebook-callback", async (req, res) => {
   }
 });
 
-app.post("/api/auth/check-phone", async (req, res) => {
+async function routePostCheckPhone(req, res) {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
     const { phone, country } = req.body || {};
@@ -1629,7 +1629,10 @@ app.post("/api/auth/check-phone", async (req, res) => {
     console.error("check-phone error:", err);
     return res.status(500).json({ error: "Erro ao verificar telefone" });
   }
-});
+}
+
+app.post("/api/auth/check-phone", routePostCheckPhone);
+app.post("/api/check-phone", routePostCheckPhone);
 
 app.post("/api/register", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });

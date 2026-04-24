@@ -1,3 +1,5 @@
+import { prepareBrazilPhoneForParse } from "@/utils/brPhone";
+
 const BASE = import.meta.env.VITE_API_URL || "";
 
 /** Em produção (mesma origem), usa a URL atual para a API. Evita chamar outro backend por engano. */
@@ -25,7 +27,7 @@ export async function register({ phone, password, name, email, country }) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      phone: phone?.trim().replace(/\s/g, "") || "",
+      phone: prepareBrazilPhoneForParse(phone) || "",
       password,
       name: name || undefined,
       email: email?.trim() || undefined,
@@ -51,11 +53,11 @@ export async function register({ phone, password, name, email, country }) {
 
 /** Verifica se já existe conta com o telefone (normalizado no servidor). */
 export async function checkPhoneRegistered({ phone, country = "BR" }) {
-  const res = await fetch(`${getBase()}/api/auth/check-phone`, {
+  const res = await fetch(`${getBase()}/api/check-phone`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      phone: phone?.trim().replace(/\s/g, "") || "",
+      phone: prepareBrazilPhoneForParse(phone) || "",
       country: country || "BR",
     }),
   });
@@ -73,7 +75,7 @@ export async function login({ phone, password, country }) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      phone: phone?.trim().replace(/\s/g, "") || "",
+      phone: prepareBrazilPhoneForParse(phone) || "",
       password,
       country: country || "BR",
     }),
