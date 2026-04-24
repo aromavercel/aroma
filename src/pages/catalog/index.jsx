@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Footer1 from "@/components/footers/Footer1";
 import Header1 from "@/components/headers/Header1";
@@ -13,10 +13,11 @@ import PerfumeCardList from "@/components/catalog/PerfumeCardList";
 import LayoutHandler from "@/components/products/LayoutHandler";
 import Features from "@/components/products/Features";
 import { getPerfumesList, getPerfumeFacets } from "@/api/perfumes";
-import { getPerfumeDisplayData, normalizeBrandKey } from "@/data/perfumes";
 import Skeleton from "@/components/common/Skeleton";
 
 const ITEMS_PER_PAGE = 24;
+/** Quantas vezes o scroll ao fim pode carregar mais automaticamente; na próxima vez aparece "Mostrar mais". */
+const AUTO_SCROLL_LOAD_BATCHES = 2;
 const metadata = {
   title: "Catálogo de Perfumes | Aroma",
   description: "Navegue pelo catálogo de perfumes.",
@@ -37,19 +38,26 @@ export default function CatalogPage() {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [loadingTotal, setLoadingTotal] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [manualLoadMode, setManualLoadMode] = useState(false);
+  const [scrollLoadsDone, setScrollLoadsDone] = useState(0);
   const [brandValue, setBrandValue] = useState("all");
   const [searchValue, setSearchValue] = useState("");
   const [priceMinInput, setPriceMinInput] = useState("");
   const [priceMaxInput, setPriceMaxInput] = useState("");
   const [sortValue, setSortValue] = useState("default");
-  const [currentPage, setCurrentPage] = useState(1);
   const [activeLayout, setActiveLayout] = useState(3);
   const [reloadToken, setReloadToken] = useState(0);
   const [brandOptions, setBrandOptions] = useState([{ value: "all", label: "Todas" }]);
   const [countByBrand, setCountByBrand] = useState({ all: 0 });
 
-  const pageIndex = Math.max(1, currentPage);
+  const listRef = useRef([]);
+  const hasNextRef = useRef(false);
+  const loadingMoreRef = useRef(false);
+  listRef.current = perfumesList;
+  hasNextRef.current = hasNextPage;
+  loadingMoreRef.current = loadingMore;
 
   // Facets (marcas + contagens) — evita precisar carregar tudo.
   useEffect(() => {
@@ -79,15 +87,8 @@ export default function CatalogPage() {
     };
   }, [searchValue]);
 
-  // Lista paginada: busca apenas o necessário para a página aberta.
-  useEffect(() => {
-    let cancelled = false;
-    const offset = (pageIndex - 1) * ITEMS_PER_PAGE;
-    setLoading(true);
-    setLoadError(null);
-    getPerfumesList({
-      limit: ITEMS_PER_PAGE,
-      offset,
+  const listQueryParams = useMemo(
+    () => ({
       q: searchValue.trim(),
       brandKey: brandValue !== "all" ? brandValue : null,
       priceMin: priceMinInput,
@@ -95,6 +96,23 @@ export default function CatalogPage() {
       sort: sortValue,
       compact: true,
       noTotal: true,
+    }),
+    [brandValue, searchValue, priceMinInput, priceMaxInput, sortValue],
+  );
+
+  // Primeira página / reset ao mudar filtros ou ordenação.
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    setLoadMoreError(null);
+    setLoadingMore(false);
+    setManualLoadMode(false);
+    setScrollLoadsDone(0);
+    getPerfumesList({
+      limit: ITEMS_PER_PAGE,
+      offset: 0,
+      ...listQueryParams,
     })
       .then((data) => {
         if (cancelled) return;
@@ -123,7 +141,96 @@ export default function CatalogPage() {
     return () => {
       cancelled = true;
     };
-  }, [pageIndex, brandValue, searchValue, priceMinInput, priceMaxInput, sortValue, reloadToken]);
+  }, [listQueryParams, reloadToken]);
+
+  const appendItems = useCallback((prev, incoming) => {
+    if (!incoming?.length) return prev;
+    const seen = new Set(prev.map((p) => p?.id).filter(Boolean));
+    const out = prev.slice();
+    for (const p of incoming) {
+      const id = p?.id;
+      if (id != null && seen.has(id)) continue;
+      if (id != null) seen.add(id);
+      out.push(p);
+    }
+    return out;
+  }, []);
+
+  const loadMore = useCallback(
+    async (source) => {
+      if (loadingMoreRef.current || !hasNextRef.current) return;
+      loadingMoreRef.current = true;
+      setLoadingMore(true);
+      setLoadError(null);
+      setLoadMoreError(null);
+      const offset = listRef.current.length;
+      try {
+        const data = await getPerfumesList({
+          limit: ITEMS_PER_PAGE,
+          offset,
+          ...listQueryParams,
+        });
+        if (data && typeof data === "object" && Array.isArray(data.items)) {
+          const incoming = data.items;
+          setPerfumesList((prev) => appendItems(prev, incoming));
+          setHasNextPage(Boolean(data.hasNext));
+          if (data.total != null) setTotalCount(Number(data.total || 0));
+          if (source === "scroll" && incoming.length > 0) {
+            setScrollLoadsDone((n) => n + 1);
+          }
+        } else {
+          const list = Array.isArray(data) ? data : [];
+          setPerfumesList((prev) => appendItems(prev, list));
+          setHasNextPage(list.length >= ITEMS_PER_PAGE);
+          if (source === "scroll" && list.length > 0) {
+            setScrollLoadsDone((n) => n + 1);
+          }
+        }
+      } catch (err) {
+        setLoadMoreError(err.message || "Erro ao carregar mais itens.");
+      } finally {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
+    },
+    [appendItems, listQueryParams],
+  );
+
+  const sentinelRef = useRef(null);
+  useEffect(() => {
+    if (loading || loadError) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const hit = entries[0]?.isIntersecting;
+        if (!hit || loadingMoreRef.current || loading) return;
+        if (!hasNextRef.current) return;
+        if (manualLoadMode) return;
+        if (scrollLoadsDone >= AUTO_SCROLL_LOAD_BATCHES) {
+          setManualLoadMode(true);
+          return;
+        }
+        void loadMore("scroll");
+      },
+      { root: null, rootMargin: "80px", threshold: 0.01 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [
+    loading,
+    loadError,
+    manualLoadMode,
+    scrollLoadsDone,
+    loadMore,
+    perfumesList.length,
+    hasNextPage,
+  ]);
+
+  const handleLoadMoreClick = () => {
+    void loadMore("manual");
+  };
 
   // Permite abrir /catalogo?q=termo já com a busca aplicada
   useEffect(() => {
@@ -131,18 +238,9 @@ export default function CatalogPage() {
     const q = (params.get("q") || "").trim();
     if (q) {
       setSearchValue(q);
-      setCurrentPage(1);
     }
     // Se não houver q, não sobrescreve o que o usuário já digitou no catálogo.
   }, [location.search]);
-
-  const paginatedList = useMemo(() => perfumesList, [perfumesList]);
-  // Com noTotal, totalCount fica null: NÃO inferir total a partir do tamanho da página
-  // (ex.: 24 itens ≠ só 1 página — isso bloqueava Próxima/Última).
-  const totalPages =
-    totalCount != null
-      ? Math.max(1, Math.ceil(Number(totalCount) / ITEMS_PER_PAGE))
-      : null;
 
   const appliedFilterCount =
     (brandValue !== "all" ? 1 : 0) +
@@ -155,60 +253,22 @@ export default function CatalogPage() {
     setSearchValue("");
     setPriceMinInput("");
     setPriceMaxInput("");
-    setCurrentPage(1);
   };
 
   const setBrandAndPage = (v) => {
     setBrandValue(v);
-    setCurrentPage(1);
   };
   const setSearchAndPage = (v) => {
     setSearchValue(v);
-    setCurrentPage(1);
   };
   const setPriceMinAndPage = (v) => {
     setPriceMinInput(v);
-    setCurrentPage(1);
   };
   const setPriceMaxAndPage = (v) => {
     setPriceMaxInput(v);
-    setCurrentPage(1);
   };
   const setSortAndPage = (v) => {
     setSortValue(v);
-    setCurrentPage(1);
-  };
-
-  const ensureTotalCount = async () => {
-    if (totalCount != null) return totalCount;
-    if (loadingTotal) return null;
-    setLoadingTotal(true);
-    try {
-      const data = await getPerfumesList({
-        limit: 1,
-        offset: 0,
-        q: searchValue.trim(),
-        brandKey: brandValue !== "all" ? brandValue : null,
-        priceMin: priceMinInput,
-        priceMax: priceMaxInput,
-        sort: sortValue,
-        compact: true,
-        noTotal: false,
-      });
-      if (data && typeof data === "object" && Array.isArray(data.items)) {
-        const t = data.total == null ? null : Number(data.total || 0);
-        setTotalCount(t);
-        return t;
-      }
-      // fallback compat
-      const list = Array.isArray(data) ? data : [];
-      setTotalCount(list.length);
-      return list.length;
-    } catch {
-      return null;
-    } finally {
-      setLoadingTotal(false);
-    }
   };
 
   const sortLabel =
@@ -403,8 +463,8 @@ export default function CatalogPage() {
                   </div>
                 ) : activeLayout === 1 ? (
                   <div className="tf-list-layout wrapper-shop" id="listLayout">
-                    {paginatedList.length ? (
-                      paginatedList.map((perfume, i) => (
+                    {perfumesList.length ? (
+                      perfumesList.map((perfume, i) => (
                         <PerfumeCardList
                           key={perfume.id ?? `perfume-${i}`}
                           perfume={perfume}
@@ -430,8 +490,8 @@ export default function CatalogPage() {
                     className={`wrapper-shop tf-grid-layout tf-col-${activeLayout}`}
                     id="gridLayout"
                   >
-                    {paginatedList.length ? (
-                      paginatedList.map((perfume, i) => (
+                    {perfumesList.length ? (
+                      perfumesList.map((perfume, i) => (
                         <PerfumeCard
                           key={perfume.id ?? `perfume-${i}`}
                           perfume={perfume}
@@ -454,85 +514,38 @@ export default function CatalogPage() {
                   </div>
                 )}
 
-                {/* Paginação: visível quando há itens (catálogo paginado) ou quando dá para navegar */}
-                {(paginatedList.length > 0 ||
-                  pageIndex > 1 ||
-                  hasNextPage ||
-                  (totalPages != null && totalPages > 1)) && (
-                  <nav
-                    className="wg-pagination d-flex align-items-center justify-content-center gap-2 mt-4 flex-wrap"
-                    aria-label="Paginação do catálogo"
-                  >
-                    <ul className="d-flex flex-wrap align-items-center gap-1 list-unstyled mb-0">
-                      <li>
-                        <button
-                          type="button"
-                          className="pagination-item"
-                          disabled={pageIndex <= 1}
-                          onClick={() => setCurrentPage(1)}
-                        >
-                          Primeira
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          type="button"
-                          className="pagination-item"
-                          disabled={pageIndex <= 1}
-                          onClick={() =>
-                            setCurrentPage((p) => Math.max(1, p - 1))
-                          }
-                        >
-                          Anterior
-                        </button>
-                      </li>
-                      <li>
-                        <span className="pagination-status">
-                          Página {pageIndex}{totalPages ? ` de ${totalPages}` : ""}
-                        </span>
-                      </li>
-                      <li>
-                        <button
-                          type="button"
-                          className="pagination-item"
-                          disabled={totalPages ? pageIndex >= totalPages : !hasNextPage}
-                          onClick={() =>
-                            setCurrentPage((p) => (totalPages ? Math.min(totalPages, p + 1) : p + 1))
-                          }
-                        >
-                          Próxima
-                        </button>
-                      </li>
-                      {totalPages ? (
-                        <li>
-                          <button
-                            type="button"
-                            className="pagination-item"
-                            disabled={pageIndex >= totalPages}
-                            onClick={() => setCurrentPage(totalPages)}
-                          >
-                            Última
-                          </button>
-                        </li>
-                      ) : (
-                        <li>
-                          <button
-                            type="button"
-                            className="pagination-item"
-                            disabled={loadingTotal}
-                            onClick={async () => {
-                              const t = await ensureTotalCount();
-                              if (t == null) return;
-                              const last = Math.max(1, Math.ceil(t / ITEMS_PER_PAGE));
-                              setCurrentPage(last);
-                            }}
-                          >
-                            {loadingTotal ? "Carregando…" : "Última"}
-                          </button>
-                        </li>
-                      )}
-                    </ul>
-                  </nav>
+                {!loading && !loadError && perfumesList.length > 0 && (
+                  <div className="catalog-infinite-footer text-center py-4 mt-2">
+                    <div
+                      ref={sentinelRef}
+                      className="catalog-scroll-sentinel"
+                      style={{ height: 1, width: "100%" }}
+                      aria-hidden
+                    />
+                    {loadingMore && (
+                      <div className="d-flex justify-content-center gap-3 flex-wrap py-3">
+                        {Array.from({ length: 6 }).map((_, idx) => (
+                          <div key={`lm-${idx}`} style={{ width: 140 }}>
+                            <Skeleton style={{ width: "100%", height: 120 }} />
+                            <Skeleton variant="text" style={{ width: "80%", marginTop: 8 }} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {loadMoreError && (
+                      <p className="text-danger small mb-2">{loadMoreError}</p>
+                    )}
+                    {manualLoadMode && hasNextPage && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary px-4"
+                        disabled={loadingMore}
+                        onClick={handleLoadMoreClick}
+                      >
+                        {loadingMore ? "Carregando…" : "Mostrar mais"}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
