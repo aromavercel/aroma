@@ -9,6 +9,7 @@ import { getMyOrder } from "@/api/orders";
 
 const STATUS_LABELS = {
   pending: "Pedido realizado",
+  confirmed: "Pedido confirmado",
   shipped: "Enviado",
   completed: "Finalizado",
   canceled: "Cancelado",
@@ -39,6 +40,8 @@ function getStatusBadgeClass(status) {
   switch (status) {
     case "pending":
       return "bg-warning text-dark";
+    case "confirmed":
+      return "bg-primary";
     case "shipped":
       return "bg-info text-dark";
     case "completed":

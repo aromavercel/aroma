@@ -290,8 +290,17 @@ export default function Checkout() {
         shipping_phone: contactPhone,
         payment_method: "cash_delivery",
       });
-      const { items } = await getCart();
-      setCartProducts(items);
+      try {
+        localStorage.removeItem("cartList");
+      } catch {
+        // ignora
+      }
+      try {
+        const { items } = await getCart();
+        setCartProducts(Array.isArray(items) ? items : []);
+      } catch {
+        setCartProducts([]);
+      }
       navigate("/checkout/thank-you", { state: { orderSuccess: true } });
     } catch (err) {
       setError(err.message || "Erro ao finalizar pedido. Tente novamente.");
@@ -493,19 +502,19 @@ export default function Checkout() {
                     />
                     <label className="tf-field-label" htmlFor="complement">Complemento</label>
                   </fieldset>
-                  <div className="mb_16">
-                    <label className="text-sm fw-medium d-block mb_8" htmlFor="deliveryInstructions">
-                      Instruções para o entregador
-                    </label>
+                  <fieldset className="tf-field style-2 style-3 mb_16">
                     <textarea
                       id="deliveryInstructions"
-                      className="form-control rounded-0"
-                      rows={3}
+                      className="tf-field-input tf-input"
+                      rows={4}
+                      placeholder=" "
                       value={deliveryInstructions}
                       onChange={(e) => setDeliveryInstructions(e.target.value)}
-                      placeholder="Opcional: portaria, referência, melhor horário…"
                     />
-                  </div>
+                    <label className="tf-field-label" htmlFor="deliveryInstructions">
+                      Instruções para o entregador (opcional)
+                    </label>
+                  </fieldset>
                 </div>
               <div className="box-ip-shipping">
                 <div className="title text-xl fw-medium">Entrega</div>
