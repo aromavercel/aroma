@@ -62,11 +62,20 @@ const TEMPORARY_PERFUME_IMAGE = "/images/perfume1.webp";
 
 export function getPerfumeDisplayData(item) {
   const variants = item.variants || [];
-  const withPrice = variants.filter((v) => v.price_number != null);
-  const priceMin = withPrice.length ? Math.min(...withPrice.map((v) => v.price_number)) : null;
-  const firstVariant = variants.find((v) => v.image_url) || variants[0];
+  const withPrice = variants.filter((v) => v && v.price_number != null);
+  const variantsPriceMin = withPrice.length
+    ? Math.min(...withPrice.map((v) => Number(v.price_number)))
+    : null;
+  const priceMinFromApi =
+    item && item.priceMin != null && !Number.isNaN(Number(item.priceMin))
+      ? Number(item.priceMin)
+      : null;
+  const priceMin = variantsPriceMin ?? priceMinFromApi;
+  const firstVariant = variants.find((v) => v && v.image_url) || variants[0];
   const variantImage = firstVariant?.image_url
-    ? (String(firstVariant.image_url).startsWith("//") ? "https:" + firstVariant.image_url : firstVariant.image_url)
+    ? (String(firstVariant.image_url).startsWith("//")
+      ? "https:" + firstVariant.image_url
+      : firstVariant.image_url)
     : "";
   const mainImage = item.images && item.images[0]
     ? (String(item.images[0]).startsWith("//") ? "https:" + item.images[0] : item.images[0])
@@ -75,7 +84,11 @@ export function getPerfumeDisplayData(item) {
   if (USE_TEMPORARY_PERFUME_IMAGE) {
     imageUrl = TEMPORARY_PERFUME_IMAGE;
   }
-  const priceShort = firstVariant?.price_short || (priceMin != null ? `R$ ` + priceMin.toFixed(2).replace(".", ",") : "");
+  const priceShort =
+    firstVariant?.price_short ||
+    (priceMin != null
+      ? `R$ ` + Number(priceMin).toFixed(2).replace(".", ",")
+      : "");
   const source = item.catalogSource || "normal";
   const labels = { arabe: "Árabe", feminino: "Feminino", normal: "Masculino / Unissex" };
   const brand = typeof item?.brand === "string" && item.brand.trim()

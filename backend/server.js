@@ -230,10 +230,35 @@ function toUuidKey(val) {
 
 // Catálogo de perfumes (do banco) — imagens vêm da tabela perfume_images (perfume_id → url)
 // ?catalog=arabe|feminino|normal | ?all=1 (admin: lista todos, inclusive inativos)
+// Paginação: ?limit=24&offset=0 (ou ?page=1) | noTotal=1 retorna hasNext e evita COUNT(*)
+// Compacto: ?compact=1 evita enviar notes/variants (payload menor)
+// Facets: ?facets=1 retorna {brands,total} (para sidebar sem listar tudo)
 app.get("/api/perfumes", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
     const catalog = typeof req.query.catalog === "string" ? req.query.catalog.trim() : null;
+    const facetsOnly = req.query.facets === "1" || req.query.facets === "true";
+    const compactOnly = req.query.compact === "1" || req.query.compact === "true";
+    const noTotal = req.query.noTotal === "1" || req.query.noTotal === "true";
+    const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
+    const brandKey = typeof req.query.brandKey === "string" ? req.query.brandKey.trim() : "";
+    const sort = typeof req.query.sort === "string" ? req.query.sort.trim() : "default";
+    const status = typeof req.query.status === "string" ? req.query.status.trim().toLowerCase() : "all";
+    const stock = typeof req.query.stock === "string" ? req.query.stock.trim().toLowerCase() : "all";
+    const filterActive = status === "active" ? true : status === "inactive" ? false : null;
+    const filterOutOfStock = stock === "out_of_stock" ? true : stock === "in_stock" ? false : null;
+
+    const limitRaw = typeof req.query.limit === "string" ? Number(req.query.limit) : (typeof req.query.pageSize === "string" ? Number(req.query.pageSize) : null);
+    const offsetRaw = typeof req.query.offset === "string" ? Number(req.query.offset) : null;
+    const pageRaw = typeof req.query.page === "string" ? Number(req.query.page) : null;
+    const limit = Number.isFinite(limitRaw) ? Math.min(96, Math.max(1, Math.floor(limitRaw))) : null;
+    let offset = Number.isFinite(offsetRaw) ? Math.max(0, Math.floor(offsetRaw)) : null;
+    if (offset == null && pageRaw != null && limit != null) {
+      const page = Math.max(1, Math.floor(pageRaw) || 1);
+      offset = (page - 1) * limit;
+    }
+    const isPaged = limit != null || offset != null || pageRaw != null;
+
     const allParam = req.query.all === "1" || req.query.all === "true";
     let onlyActive = true;
     if (allParam) {
@@ -241,59 +266,368 @@ app.get("/api/perfumes", async (req, res) => {
       if (!payload) return;
       onlyActive = false;
     }
+
+    const filterByCatalog = Boolean(catalog && ["arabe", "feminino", "normal"].includes(catalog));
+    const hasQuery = Boolean(q);
+    const filterByBrand = Boolean(brandKey);
+
+    if (facetsOnly) {
+      // Sidebar: marcas + contagem total (respeita filtros exceto marca)
+      const brandsRows = await sql`
+        SELECT b.name_key AS key, b.name AS label, COUNT(*)::int AS count
+        FROM perfumes p
+        LEFT JOIN brands b ON b.id = p.brand_id
+        WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+          AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+          AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+          AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+          AND (${hasQuery}::boolean = false OR (
+            p.title ILIKE ${"%" + q + "%"}
+            OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+            OR b.name ILIKE ${"%" + q + "%"}
+          ))
+          AND b.id IS NOT NULL
+        GROUP BY b.name_key, b.name
+        ORDER BY b.name
+      `;
+      const [totalRow] = await sql`
+        SELECT COUNT(*)::int AS total
+        FROM perfumes p
+        LEFT JOIN brands b ON b.id = p.brand_id
+        WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+          AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+          AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+          AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+          AND (${hasQuery}::boolean = false OR (
+            p.title ILIKE ${"%" + q + "%"}
+            OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+            OR b.name ILIKE ${"%" + q + "%"}
+          ))
+      `;
+      return res.status(200).json({
+        brands: (brandsRows || []).map((r) => ({ key: r.key, label: r.label, count: r.count })),
+        total: totalRow?.total ?? 0,
+      });
+    }
+
     let rows;
+    let total = null;
+    const effectiveLimit = isPaged ? (limit ?? 24) : null;
+    const effectiveOffset = isPaged ? (offset ?? 0) : null;
+    const listLimit = isPaged ? (noTotal ? effectiveLimit + 1 : effectiveLimit) : null;
+    // O driver do Neon não suporta bem compor fragments sql`` dentro de outras sql``.
+    // Para evitar isso, sempre usamos LIMIT/OFFSET com valores explícitos.
+    const finalLimit = isPaged ? listLimit : 5000;
+    const finalOffset = isPaged ? effectiveOffset : 0;
+
     try {
-      if (catalog && ["arabe", "feminino", "normal"].includes(catalog)) {
-        rows = onlyActive
-          ? await sql`
-              SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado
-              FROM perfumes p
-              WHERE p.catalog_source = ${catalog} AND COALESCE(p.ativo, true) = true
-              ORDER BY p.title
-            `
-          : await sql`
-              SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado
-              FROM perfumes p
-              WHERE p.catalog_source = ${catalog}
-              ORDER BY p.title
-            `;
-      } else {
-        rows = onlyActive
-          ? await sql`
-              SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url, ativo, esgotado
-              FROM perfumes
-              WHERE COALESCE(ativo, true) = true
-              ORDER BY catalog_source, title
-            `
-          : await sql`
-              SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url, ativo, esgotado
-              FROM perfumes
-              ORDER BY catalog_source, title
-            `;
+      if (isPaged && !noTotal) {
+        const [countRow] = await sql`
+          SELECT COUNT(*)::int AS total
+          FROM perfumes p
+          LEFT JOIN brands b ON b.id = p.brand_id
+          WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+            AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+            AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+            AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+            AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+            AND (${hasQuery}::boolean = false OR (
+              p.title ILIKE ${"%" + q + "%"}
+              OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+              OR b.name ILIKE ${"%" + q + "%"}
+            ))
+        `;
+        total = countRow?.total ?? 0;
       }
+
+      const runListQuery = async (isCompact) => {
+        // Evita compor fragments (Neon sql tag não suporta bem interpolar sql`` em outros sql``)
+        if (sort === "title-asc") {
+          return isCompact
+            ? await sql`
+                SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.image_2_url, p.ativo, p.esgotado,
+                       b.name AS brand_name,
+                       (
+                         SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                         FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                         WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                       ) AS price_min
+                FROM perfumes p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                  AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                  AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                  AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                  AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                  AND (${hasQuery}::boolean = false OR (
+                    p.title ILIKE ${"%" + q + "%"}
+                    OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                    OR b.name ILIKE ${"%" + q + "%"}
+                  ))
+                ORDER BY p.title ASC
+                LIMIT ${finalLimit} OFFSET ${finalOffset}
+              `
+            : await sql`
+                SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado,
+                       b.name AS brand_name,
+                       (
+                         SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                         FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                         WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                       ) AS price_min
+                FROM perfumes p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                  AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                  AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                  AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                  AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                  AND (${hasQuery}::boolean = false OR (
+                    p.title ILIKE ${"%" + q + "%"}
+                    OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                    OR b.name ILIKE ${"%" + q + "%"}
+                  ))
+                ORDER BY p.title ASC
+                LIMIT ${finalLimit} OFFSET ${finalOffset}
+              `;
+        }
+        if (sort === "title-desc") {
+          return isCompact
+            ? await sql`
+                SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.image_2_url, p.ativo, p.esgotado,
+                       b.name AS brand_name,
+                       (
+                         SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                         FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                         WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                       ) AS price_min
+                FROM perfumes p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                  AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                  AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                  AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                  AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                  AND (${hasQuery}::boolean = false OR (
+                    p.title ILIKE ${"%" + q + "%"}
+                    OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                    OR b.name ILIKE ${"%" + q + "%"}
+                  ))
+                ORDER BY p.title DESC
+                LIMIT ${finalLimit} OFFSET ${finalOffset}
+              `
+            : await sql`
+                SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado,
+                       b.name AS brand_name,
+                       (
+                         SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                         FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                         WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                       ) AS price_min
+                FROM perfumes p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                  AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                  AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                  AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                  AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                  AND (${hasQuery}::boolean = false OR (
+                    p.title ILIKE ${"%" + q + "%"}
+                    OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                    OR b.name ILIKE ${"%" + q + "%"}
+                  ))
+                ORDER BY p.title DESC
+                LIMIT ${finalLimit} OFFSET ${finalOffset}
+              `;
+        }
+        if (sort === "price-asc") {
+          return isCompact
+            ? await sql`
+                SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.image_2_url, p.ativo, p.esgotado,
+                       b.name AS brand_name,
+                       (
+                         SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                         FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                         WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                       ) AS price_min
+                FROM perfumes p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                  AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                  AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                  AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                  AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                  AND (${hasQuery}::boolean = false OR (
+                    p.title ILIKE ${"%" + q + "%"}
+                    OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                    OR b.name ILIKE ${"%" + q + "%"}
+                  ))
+                ORDER BY price_min ASC NULLS LAST, p.title ASC
+                LIMIT ${finalLimit} OFFSET ${finalOffset}
+              `
+            : await sql`
+                SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado,
+                       b.name AS brand_name,
+                       (
+                         SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                         FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                         WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                       ) AS price_min
+                FROM perfumes p
+                LEFT JOIN brands b ON b.id = p.brand_id
+                WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                  AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                  AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                  AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                  AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                  AND (${hasQuery}::boolean = false OR (
+                    p.title ILIKE ${"%" + q + "%"}
+                    OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                    OR b.name ILIKE ${"%" + q + "%"}
+                  ))
+                ORDER BY price_min ASC NULLS LAST, p.title ASC
+                LIMIT ${finalLimit} OFFSET ${finalOffset}
+              `;
+        }
+        if (sort === "price-desc") {
+          return isCompact
+            ? await sql`
+                SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.image_2_url, p.ativo, p.esgotado,
+                       b.name AS brand_name,
+                       (
+                         SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                         FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                         WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                       ) AS price_min
+                FROM perfumes p
+                JOIN brands b ON b.id = p.brand_id
+                WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                  AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                  AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                  AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                  AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                  AND (${hasQuery}::boolean = false OR (
+                    p.title ILIKE ${"%" + q + "%"}
+                    OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                    OR b.name ILIKE ${"%" + q + "%"}
+                  ))
+                ORDER BY price_min DESC NULLS LAST, p.title ASC
+                LIMIT ${finalLimit} OFFSET ${finalOffset}
+              `
+            : await sql`
+                SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado,
+                       b.name AS brand_name,
+                       (
+                         SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                         FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                         WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                       ) AS price_min
+                FROM perfumes p
+                JOIN brands b ON b.id = p.brand_id
+                WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                  AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                  AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                  AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                  AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                  AND (${hasQuery}::boolean = false OR (
+                    p.title ILIKE ${"%" + q + "%"}
+                    OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                    OR b.name ILIKE ${"%" + q + "%"}
+                  ))
+                ORDER BY price_min DESC NULLS LAST, p.title ASC
+                LIMIT ${finalLimit} OFFSET ${finalOffset}
+              `;
+        }
+        // default
+        return isCompact
+          ? await sql`
+              SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.image_2_url, p.ativo, p.esgotado,
+                     b.name AS brand_name,
+                     (
+                       SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                       FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                       WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                     ) AS price_min
+              FROM perfumes p
+              LEFT JOIN brands b ON b.id = p.brand_id
+              WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                AND (${hasQuery}::boolean = false OR (
+                  p.title ILIKE ${"%" + q + "%"}
+                  OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                  OR b.name ILIKE ${"%" + q + "%"}
+                ))
+              ORDER BY p.catalog_source, p.title
+              LIMIT ${finalLimit} OFFSET ${finalOffset}
+            `
+          : await sql`
+              SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado,
+                     b.name AS brand_name,
+                     (
+                       SELECT MIN(NULLIF((v->>'price_number')::numeric, 0))
+                       FROM jsonb_array_elements(COALESCE(p.variants, '[]'::jsonb)) AS v
+                       WHERE (v ? 'price_number') AND (v->>'price_number') ~ '^[0-9]+(\.[0-9]+)?$'
+                     ) AS price_min
+              FROM perfumes p
+              LEFT JOIN brands b ON b.id = p.brand_id
+              WHERE (${filterByCatalog}::boolean = false OR p.catalog_source = ${catalog})
+                AND (${onlyActive}::boolean = false OR COALESCE(p.ativo, true) = true)
+                AND (${filterActive}::boolean IS NULL OR COALESCE(p.ativo, true) = ${filterActive})
+                AND (${filterOutOfStock}::boolean IS NULL OR COALESCE(p.esgotado, false) = ${filterOutOfStock})
+                AND (${filterByBrand}::boolean = false OR b.name_key = ${brandKey})
+                AND (${hasQuery}::boolean = false OR (
+                  p.title ILIKE ${"%" + q + "%"}
+                  OR COALESCE(p.description, '') ILIKE ${"%" + q + "%"}
+                  OR b.name ILIKE ${"%" + q + "%"}
+                ))
+              ORDER BY p.catalog_source, p.title
+              LIMIT ${finalLimit} OFFSET ${finalOffset}
+            `;
+      };
+
+      rows = await runListQuery(compactOnly);
     } catch (queryErr) {
       // Retrocompatibilidade: se as colunas ativo/esgotado ainda não existem (migration 009 não aplicada),
       // refaz a query sem esses campos e sem filtro de ativo.
       if (queryErr?.code !== "42703") throw queryErr;
-      if (catalog && ["arabe", "feminino", "normal"].includes(catalog)) {
-        rows = await sql`
-          SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url
-          FROM perfumes p
-          WHERE p.catalog_source = ${catalog}
-          ORDER BY p.title
-        `;
-      } else {
-        rows = await sql`
-          SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url
-          FROM perfumes
-          ORDER BY catalog_source, title
-        `;
+      rows = filterByCatalog
+        ? await sql`
+            SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url
+            FROM perfumes p
+            WHERE p.catalog_source = ${catalog}
+            ORDER BY p.title
+            LIMIT ${finalLimit} OFFSET ${finalOffset}
+          `
+        : await sql`
+            SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url
+            FROM perfumes
+            ORDER BY catalog_source, title
+            LIMIT ${finalLimit} OFFSET ${finalOffset}
+          `;
+      if (isPaged && !noTotal) {
+        const [countRow] = await sql`SELECT COUNT(*)::int AS total FROM perfumes`;
+        total = countRow?.total ?? 0;
       }
     }
-    const idSet = new Set(rows.map((r) => toUuidKey(r.id)).filter(Boolean));
-    const allImages = await sql`SELECT perfume_id, url, position FROM perfume_images ORDER BY perfume_id, position`;
-    const imagesRows = idSet.size
-      ? allImages.filter((r) => idSet.has(toUuidKey(r.perfume_id ?? r.perfumeId)))
+
+    let hasNext = null;
+    let pageRows = rows || [];
+    if (isPaged && noTotal) {
+      hasNext = pageRows.length > effectiveLimit;
+      pageRows = hasNext ? pageRows.slice(0, effectiveLimit) : pageRows;
+    }
+
+    const perfumeIds = [...new Set((pageRows || []).map((r) => toUuidKey(r.id)).filter(Boolean))];
+    const imagesRows = perfumeIds.length
+      ? await sql`
+          SELECT perfume_id, url, position
+          FROM perfume_images
+          WHERE perfume_id = ANY(${perfumeIds})
+          ORDER BY perfume_id, position
+        `
       : [];
     const imagesByPerfume = new Map();
     for (const img of imagesRows) {
@@ -310,7 +644,7 @@ app.get("/api/perfumes", async (req, res) => {
       arr.sort((a, b) => a.position - b.position);
       imagesByPerfume.set(pid, arr.map((x) => x.url));
     }
-    const list = rows.map((p) => {
+    const items = pageRows.map((p) => {
       const perfumeId = toUuidKey(p.id);
       let images = imagesByPerfume.get(perfumeId) ?? [];
       if (images.length === 0) {
@@ -329,14 +663,25 @@ app.get("/api/perfumes", async (req, res) => {
         title: p.title,
         description: p.description ?? "",
         catalogSource: p.catalog_source,
-        notes: p.notes ?? {},
-        variants: p.variants ?? [],
+        brand: p.brand_name ?? "",
+        priceMin: p.price_min != null ? Number(p.price_min) : null,
+        notes: compactOnly ? {} : (p.notes ?? {}),
+        variants: compactOnly ? [] : (p.variants ?? []),
         images,
         ativo: p.ativo === true || p.ativo == null,
         esgotado: p.esgotado === true,
       };
     });
-    return res.status(200).json(list);
+    if (isPaged) {
+      return res.status(200).json({
+        items,
+        total: noTotal ? null : (total ?? items.length),
+        limit: effectiveLimit,
+        offset: effectiveOffset,
+        hasNext: noTotal ? Boolean(hasNext) : null,
+      });
+    }
+    return res.status(200).json(items);
   } catch (err) {
     console.error("GET /api/perfumes error:", err);
     return res.status(500).json({ error: "Erro ao listar perfumes" });

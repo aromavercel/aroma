@@ -27,8 +27,9 @@ function applyImageProxy(perfume) {
 /**
  * Lista perfumes do banco. Opcional: ?catalog=arabe|feminino|normal | ?all=1 (admin: lista todos, inclusive inativos).
  * Imagens do Blob são convertidas para o proxy do backend (evita 403).
- * @param {{ catalog?: string, all?: boolean }} [params]
- * @returns {Promise<Array<{ id: string, url: string, title: string, catalogSource: string, notes: object, variants: array, images: string[], ativo?: boolean, esgotado?: boolean }>>}
+ * Suporta paginação/filtros quando enviado { limit, offset/page, q, brandKey, priceMin, priceMax, sort }.
+ * @param {{ catalog?: string, all?: boolean, limit?: number, offset?: number, page?: number, q?: string, brandKey?: string, priceMin?: number|string, priceMax?: number|string, sort?: string }} [params]
+ * @returns {Promise<any>}
  */
 export async function getPerfumesList(params = {}) {
   const apiBase = getApiBase();
@@ -37,8 +38,38 @@ export async function getPerfumesList(params = {}) {
     url.searchParams.set("catalog", params.catalog);
   }
   if (params.all) url.searchParams.set("all", "1");
+  if (params.limit != null) url.searchParams.set("limit", String(params.limit));
+  if (params.offset != null) url.searchParams.set("offset", String(params.offset));
+  if (params.page != null) url.searchParams.set("page", String(params.page));
+  if (params.q) url.searchParams.set("q", String(params.q));
+  if (params.brandKey) url.searchParams.set("brandKey", String(params.brandKey));
+  if (params.priceMin != null && params.priceMin !== "") url.searchParams.set("priceMin", String(params.priceMin));
+  if (params.priceMax != null && params.priceMax !== "") url.searchParams.set("priceMax", String(params.priceMax));
+  if (params.sort) url.searchParams.set("sort", String(params.sort));
+  if (params.status) url.searchParams.set("status", String(params.status));
+  if (params.stock) url.searchParams.set("stock", String(params.stock));
+  if (params.compact) url.searchParams.set("compact", "1");
+  if (params.noTotal) url.searchParams.set("noTotal", "1");
   const list = await apiFetch(url.toString(), { method: "GET", auth: Boolean(params.all) });
-  return list.map(applyImageProxy);
+  if (list && typeof list === "object" && Array.isArray(list.items)) {
+    return { ...list, items: list.items.map(applyImageProxy) };
+  }
+  return (Array.isArray(list) ? list : []).map(applyImageProxy);
+}
+
+export async function getPerfumeFacets(params = {}) {
+  const apiBase = getApiBase();
+  const url = new URL(`${apiBase}/api/perfumes`, apiBase || undefined);
+  url.searchParams.set("facets", "1");
+  if (params.catalog && ["arabe", "feminino", "normal"].includes(params.catalog)) {
+    url.searchParams.set("catalog", params.catalog);
+  }
+  if (params.all) url.searchParams.set("all", "1");
+  if (params.q) url.searchParams.set("q", String(params.q));
+  if (params.status) url.searchParams.set("status", String(params.status));
+  if (params.stock) url.searchParams.set("stock", String(params.stock));
+  const data = await apiFetch(url.toString(), { method: "GET", auth: false });
+  return data;
 }
 
 /**
