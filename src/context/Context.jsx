@@ -2,6 +2,63 @@ import { openCartModal } from "@/utlis/openCartModal";
 import { getMe, setStoredToken } from "@/api/auth";
 import { getCart, addCartItem, updateCartItem, removeCartItem } from "@/api/cart";
 import { getWishlist, addWishlistItem, removeWishlistItem } from "@/api/wishlist";
+import { getPerfumeById } from "@/api/perfumes";
+
+const WISHLIST_GUEST_STORAGE_KEY = "wishlistGuestItems";
+
+function normalizeGuestWishlistSnapshot(id, snapshot) {
+  const s = snapshot || {};
+  const key = String(id);
+  return {
+    id: key,
+    title: s.title ?? "",
+    url: s.url,
+    description: s.description ?? "",
+    catalogSource: s.catalogSource ?? s.catalog_source ?? "normal",
+    notes: s.notes && typeof s.notes === "object" ? s.notes : {},
+    variants: Array.isArray(s.variants) ? s.variants : [],
+    images: Array.isArray(s.images) ? s.images : [],
+    priceMin: s.priceMin != null ? Number(s.priceMin) : undefined,
+    ativo: s.ativo,
+    esgotado: s.esgotado,
+  };
+}
+
+/** Restaura favoritos do visitante: formato novo (objetos) ou legado (só ids). */
+function readGuestWishlistFromStorage() {
+  try {
+    const rawItems = localStorage.getItem(WISHLIST_GUEST_STORAGE_KEY);
+    if (rawItems) {
+      const parsed = JSON.parse(rawItems);
+      if (Array.isArray(parsed) && parsed.length) {
+        const normalized = parsed
+          .filter((x) => x && (x.id != null || x.perfume_id != null))
+          .map((x) => ({ ...x, id: String(x.id ?? x.perfume_id) }));
+        const seen = new Set();
+        const deduped = normalized.filter((p) => {
+          if (seen.has(p.id)) return false;
+          seen.add(p.id);
+          return true;
+        });
+        return { items: deduped, ids: deduped.map((p) => p.id) };
+      }
+    }
+    const legacy = JSON.parse(localStorage.getItem("wishlist") || "null");
+    if (Array.isArray(legacy) && legacy.length) {
+      const ids = [
+        ...new Set(
+          legacy
+            .map((x) => (typeof x === "string" ? x.trim() : x?.id != null ? String(x.id) : ""))
+            .filter(Boolean),
+        ),
+      ];
+      return { items: ids.map((id) => ({ id })), ids };
+    }
+  } catch {
+    // ignora
+  }
+  return { items: [], ids: [] };
+}
 // import { openWistlistModal } from "@/utlis/openWishlist";
 
 import React, { useEffect } from "react";
@@ -106,7 +163,7 @@ export default function Context({ children }) {
     setCartProducts((pre) => pre.filter((elm) => String(elm.id) !== String(id)));
   };
 
-  const addToWishlist = async (id) => {
+  const addToWishlist = async (id, snapshot = null) => {
     const key = String(id);
     if (user?.id) {
       setWishListLoading(true);
@@ -121,6 +178,14 @@ export default function Context({ children }) {
       return;
     }
     setWishList((pre) => (pre.includes(key) ? pre : [...pre, key]));
+    setWishListItems((pre) => {
+      if (pre.some((p) => String(p.id) === key)) return pre;
+      const entry =
+        snapshot && typeof snapshot === "object"
+          ? normalizeGuestWishlistSnapshot(key, snapshot)
+          : { id: key };
+      return [...pre, entry];
+    });
   };
 
   const removeFromWishlist = async (id) => {
@@ -138,6 +203,7 @@ export default function Context({ children }) {
       return;
     }
     setWishList((pre) => pre.filter((x) => String(x) !== key));
+    setWishListItems((pre) => pre.filter((p) => String(p.id) !== key));
   };
   const addToCompareItem = (id) => {
     if (!compareItem.includes(id)) {
@@ -198,8 +264,14 @@ export default function Context({ children }) {
         })
         .finally(() => setWishListLoading(false));
     } else {
-      setWishListItems([]);
-      setWishList([]);
+      const { items, ids } = readGuestWishlistFromStorage();
+      if (items.length) {
+        setWishListItems(items);
+        setWishList(ids);
+      } else {
+        setWishListItems([]);
+        setWishList([]);
+      }
     }
   }, [user?.id]);
 
@@ -223,15 +295,57 @@ export default function Context({ children }) {
   }, []);
 
   useEffect(() => {
-    const items = JSON.parse(localStorage.getItem("wishlist"));
-    if (!user && items?.length) {
-      setWishList(items.map((x) => String(x)));
+    if (user?.id) return;
+    try {
+      localStorage.setItem(WISHLIST_GUEST_STORAGE_KEY, JSON.stringify(wishListItems || []));
+      localStorage.setItem("wishlist", JSON.stringify((wishList || []).map((x) => String(x))));
+    } catch {
+      // ignora
     }
-  }, [user]);
+  }, [user?.id, wishListItems, wishList]);
 
   useEffect(() => {
-    if (!user) localStorage.setItem("wishlist", JSON.stringify(wishList));
-  }, [user, wishList]);
+    if (user?.id) return;
+    const items = wishListItems || [];
+    const need = items.filter((p) => p?.id && !String(p.title || "").trim());
+    if (!need.length) return;
+    let cancelled = false;
+    (async () => {
+      const updates = await Promise.all(
+        need.map(async (p) => {
+          try {
+            return await getPerfumeById(p.id);
+          } catch {
+            return {
+              id: p.id,
+              title: "Perfume indisponível",
+              description: "",
+              catalogSource: "normal",
+              notes: {},
+              variants: [],
+              images: [],
+            };
+          }
+        }),
+      );
+      if (cancelled) return;
+      setWishListItems((prev) => {
+        const byId = new Map((prev || []).map((x) => [String(x.id), { ...x }]));
+        for (const data of updates) {
+          if (data?.id) {
+            const sid = String(data.id);
+            const existing = byId.get(sid) || {};
+            byId.set(sid, { ...existing, ...data });
+          }
+        }
+        const order = (prev || []).map((x) => String(x.id));
+        return order.map((id) => byId.get(id)).filter(Boolean);
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, wishListItems]);
 
   useEffect(() => {
     getMe().then(setUser);

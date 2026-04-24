@@ -163,7 +163,7 @@ export default function PerfumeDetailModal({ perfume, onClose, onEdit, onDelete 
                         onClick={async () => {
                           if (!perfume?.id) return;
                           if (inWishlist) await removeFromWishlist(perfume.id);
-                          else await addToWishlist(perfume.id);
+                          else await addToWishlist(perfume.id, perfume);
                         }}
                         aria-label={inWishlist ? "Remover da lista de desejos" : "Adicionar à lista de desejos"}
                       >

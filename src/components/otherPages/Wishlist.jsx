@@ -11,20 +11,20 @@ export default function Wishlist() {
   useEffect(() => {
     setItems(Array.isArray(wishListItems) ? wishListItems : []);
   }, [wishListItems]);
+
+  const guestHydrating =
+    !user?.id &&
+    items.some((p) => p?.id && !String(p?.title || "").trim());
+
   return (
     <section className="s-account flat-spacing-4 pt_0">
       <div className="container">
         <div className="row">
           <div className="col-lg-12">
-            {!user ? (
-              <div className="p-4 rounded bg-light">
-                <div className="mb-2">Faça login para ver sua lista de desejos.</div>
-                <Link className="tf-btn btn-dark2 animate-btn mt-2" to="/catalogo">
-                  Ver catálogo
-                </Link>
-              </div>
-            ) : wishListLoading ? (
+            {user?.id && wishListLoading ? (
               <div className="text-muted py-4">Carregando lista de desejos…</div>
+            ) : guestHydrating ? (
+              <div className="text-muted py-4">Carregando perfumes da lista…</div>
             ) : items.length ? (
               <div
                 className="wrapper-shop tf-grid-layout tf-col-2 lg-col-3 xl-col-4 style-1"

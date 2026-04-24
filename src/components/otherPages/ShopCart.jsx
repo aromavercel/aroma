@@ -109,28 +109,6 @@ export default function ShopCart() {
                     </Link>
                   </div>
                 )}
-                <div className="check-gift">
-                  <input type="checkbox" className="tf-check" id="checkGift" />
-                  <label htmlFor="checkGift" className="label text-dark-4">
-                    Adicionar papel de presente. Apenas
-                    <span className="fw-medium"> R$10.00.</span>
-                  </label>
-                </div>
-                <div className="box-ip-discount d-flex flex-column gap-2">
-                  <input type="text" placeholder="Código de Desconto" />
-                  <button
-                    type="button"
-                    className="tf-btn radius-6 btn-out-line-dark-2 align-self-start"
-                  >
-                    Aplicar
-                  </button>
-                </div>
-                <div className="cart-note">
-                  <label htmlFor="note" className="text-md fw-medium">
-                    Instruções especiais para o vendedor
-                  </label>
-                  <textarea id="note" defaultValue={""} />
-                </div>
               </form>
               <div className="fl-iconbox wow fadeInUp">
                 <Swiper
@@ -196,22 +174,6 @@ export default function ShopCart() {
                   <p className="text-sm text-dark-4">
                     Taxas e entrega calculadas no checkout
                   </p>
-                </div>
-                <div className="check-agree">
-                  <input
-                    type="checkbox"
-                    className="tf-check"
-                    id="check-agree"
-                  />
-                  <label htmlFor="check-agree" className="label text-dark-4">
-                    Concordo com os
-                    <Link
-                      to={`/term-and-condition`}
-                      className="text-dark-4 fw-medium text-underline link"
-                    >
-                      termos e condições
-                    </Link>
-                  </label>
                 </div>
                 <div className="checkout-btn">
                   <Link

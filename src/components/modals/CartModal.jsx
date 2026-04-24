@@ -6,7 +6,6 @@ import QuantitySelect from "../common/QuantitySelect";
 
 export default function CartModal() {
   const [openTool, setOpenTool] = useState(-1);
-  const [agreeTerms, setAgreeTerms] = useState(false);
   const {
     cartProducts,
     totalPrice,
@@ -16,7 +15,7 @@ export default function CartModal() {
     removeFromCart,
   } = useContextElement();
 
-  const canCheckout = agreeTerms && cartProducts.length > 0;
+  const hasItems = cartProducts.length > 0;
 
   const removeItem = (id) => {
     removeFromCart(id);
@@ -132,31 +131,6 @@ export default function CartModal() {
                 <div className="tf-cart-tax text-sm opacity-8">
                   Taxas e entrega calculadas no checkout
                 </div>
-                <div className="tf-cart-checkbox">
-                  <div className="tf-checkbox-wrapp">
-                    <input
-                      className=""
-                      type="checkbox"
-                      id="CartDrawer-Form_agree"
-                      name="agree_checkbox"
-                      checked={agreeTerms}
-                      onChange={(e) => setAgreeTerms(e.target.checked)}
-                    />
-                    <div>
-                      <i className="icon-check" />
-                    </div>
-                  </div>
-                  <label htmlFor="CartDrawer-Form_agree" className="text-sm">
-                    Concordo com os{" "}
-                    <Link
-                      to={`/term-and-condition`}
-                      title="Termos de Serviço"
-                      className="fw-medium"
-                    >
-                       termos e condições
-                    </Link>
-                  </label>
-                </div>
                 <div className="tf-mini-cart-view-checkout">
                   <Link
                     to={`/view-cart`}
@@ -166,11 +140,11 @@ export default function CartModal() {
                   </Link>
                   <Link
                     to={`/checkout`}
-                    className={`tf-btn btn-out-line-dark2 w-100 justify-content-center ${canCheckout ? "" : "disabled"}`}
-                    aria-disabled={!canCheckout}
-                    tabIndex={canCheckout ? 0 : -1}
+                    className={`tf-btn btn-out-line-dark2 w-100 justify-content-center ${hasItems ? "" : "disabled"}`}
+                    aria-disabled={!hasItems}
+                    tabIndex={hasItems ? 0 : -1}
                     onClick={(e) => {
-                      if (!canCheckout) {
+                      if (!hasItems) {
                         e.preventDefault();
                         e.stopPropagation();
                       }

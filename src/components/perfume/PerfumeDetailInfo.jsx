@@ -151,7 +151,7 @@ export default function PerfumeDetailInfo({
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            addToWishlist(perfume.id);
+            addToWishlist(perfume.id, perfume);
           }}
           className={`product-extra-icon link btn-add-wishlist ${inWishlist ? "added-wishlist" : ""}`}
         >
