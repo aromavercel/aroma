@@ -1,5 +1,11 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 
+/** Só dígitos (0–9), com limite para telefone/celular. */
+export function filterPhoneDigitsInput(raw, maxLen = 16) {
+  const digits = String(raw ?? "").replace(/\D/g, "");
+  return digits.slice(0, maxLen);
+}
+
 /**
  * Prepara o texto digitado (DDD + número, máscaras, etc.) para libphonenumber com país BR.
  * Não exige +55: só dígitos nacionais (ex.: 11999999999) já são interpretados como Brasil.

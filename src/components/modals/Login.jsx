@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { login as apiLogin, setStoredToken, getMe } from "@/api/auth";
+import { filterPhoneDigitsInput } from "@/utils/brPhone";
 import { useContextElement } from "@/context/Context";
 import { COUNTRY_OPTIONS } from "@/constants/countries";
 
@@ -18,7 +19,7 @@ export default function Login() {
       try {
         const fromCheckout = sessionStorage.getItem("checkoutAuthPhone");
         if (fromCheckout) {
-          setPhone(fromCheckout);
+          setPhone(filterPhoneDigitsInput(fromCheckout));
           sessionStorage.removeItem("checkoutAuthPhone");
         }
       } catch {
@@ -89,10 +90,11 @@ export default function Login() {
               </fieldset>
               <fieldset className="email mb_12">
                 <input
-                  type="tel"
-                  placeholder="DDD + número (ex.: 11 99999-9999)*"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="DDD + número (somente dígitos)*"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(filterPhoneDigitsInput(e.target.value))}
                   required
                 />
               </fieldset>
@@ -129,7 +131,7 @@ export default function Login() {
                   className="tf-btn btn-out-line-dark2 w-100"
                   onClick={() => {
                     try {
-                      sessionStorage.setItem("checkoutAuthPhone", phone.trim());
+                      sessionStorage.setItem("checkoutAuthPhone", filterPhoneDigitsInput(phone));
                     } catch {
                       // ignora
                     }

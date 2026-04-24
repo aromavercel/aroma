@@ -4,7 +4,7 @@ import { useContextElement } from "@/context/Context";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { checkPhoneRegistered, getMe, updateProfile } from "@/api/auth";
-import { isValidBrazilPhoneInput } from "@/utils/brPhone";
+import { filterPhoneDigitsInput, isValidBrazilPhoneInput } from "@/utils/brPhone";
 import { createOrder } from "@/api/orders";
 import { getCart } from "@/api/cart";
 import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLocations";
@@ -44,7 +44,7 @@ export default function Checkout() {
       if (typeof d.city === "string") setCity(d.city);
       if (typeof d.state === "string") setState(d.state);
       if (typeof d.zipcode === "string") setZipcode(d.zipcode);
-      if (typeof d.phone === "string") setPhone(d.phone);
+      if (typeof d.phone === "string") setPhone(filterPhoneDigitsInput(d.phone));
     } catch {
       // ignora
     }
@@ -94,7 +94,7 @@ export default function Checkout() {
     setCity(pickStr("city", user.city ?? ""));
     setState(pickStr("state", user.state ?? ""));
     setZipcode(pickStr("zipcode", user.zipcode ?? ""));
-    setPhone(pickStr("phone", user.phone ?? ""));
+    setPhone(filterPhoneDigitsInput(pickStr("phone", user.phone ?? "")));
   }, [user]);
 
   useEffect(() => {
@@ -183,7 +183,7 @@ export default function Checkout() {
 
   const stashPhoneAndOpenAuth = async (targetId) => {
     try {
-      sessionStorage.setItem("checkoutAuthPhone", phone.trim());
+      sessionStorage.setItem("checkoutAuthPhone", filterPhoneDigitsInput(phone));
     } catch {
       // ignora
     }
@@ -291,10 +291,11 @@ export default function Checkout() {
                     <input
                       className="tf-field-input tf-input"
                       id="phone"
-                      type="tel"
+                      type="text"
+                      inputMode="numeric"
                       autoComplete="tel-national"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(filterPhoneDigitsInput(e.target.value))}
                       placeholder=""
                     />
                     <label className="tf-field-label" htmlFor="phone">Telefone</label>
@@ -364,6 +365,56 @@ export default function Checkout() {
                       <label className="tf-field-label" htmlFor="lastname">Último nome</label>
                     </div>
                   </div>
+                  <div className="grid-3 mb_16">
+                    <fieldset className="tf-field style-2 style-3">
+                      <input
+                        className="tf-field-input tf-input"
+                        id="code"
+                        type="text"
+                        value={zipcode}
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                        maxLength={9}
+                        onChange={handleZipcodeChange}
+                        placeholder=""
+                      />
+                      <label className="tf-field-label" htmlFor="code">
+                        {loadingCep ? "Buscando CEP…" : "CEP"}
+                      </label>
+                    </fieldset>
+                    <div className="tf-select select-square">
+                      <select
+                        id="state"
+                        value={state}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setState(next);
+                          setCity("");
+                        }}
+                      >
+                        {BR_STATES.map((opt) => (
+                          <option key={opt.value || "empty"} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="tf-select select-square">
+                      <select
+                        id="city"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        disabled={!state || loadingCities}
+                      >
+                        <option value="">
+                          {!state ? "Cidade" : loadingCities ? "Carregando cidades…" : "Cidade"}
+                        </option>
+                        {cities.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                   <fieldset className="tf-field style-2 style-3 mb_16">
                     <input
                       className="tf-field-input tf-input"
@@ -384,56 +435,6 @@ export default function Checkout() {
                       onChange={(e) => setApartment(e.target.value)}
                     />
                   </fieldset>
-                  <div className="grid-3 mb_16">
-                    <div className="tf-select select-square">
-                      <select
-                        id="city"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        disabled={!state || loadingCities}
-                      >
-                        <option value="">
-                          {!state ? "Cidade" : loadingCities ? "Carregando cidades…" : "Cidade"}
-                        </option>
-                        {cities.map((name) => (
-                          <option key={name} value={name}>
-                            {name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="tf-select select-square">
-                      <select
-                        id="state"
-                        value={state}
-                        onChange={(e) => {
-                          const next = e.target.value;
-                          setState(next);
-                          setCity("");
-                        }}
-                      >
-                        {BR_STATES.map((opt) => (
-                          <option key={opt.value || "empty"} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <fieldset className="tf-field style-2 style-3">
-                      <input
-                        className="tf-field-input tf-input"
-                        id="code"
-                        type="text"
-                        value={zipcode}
-                        inputMode="numeric"
-                        autoComplete="postal-code"
-                        maxLength={9}
-                        onChange={handleZipcodeChange}
-                        placeholder=""
-                      />
-                      <label className="tf-field-label" htmlFor="code">
-                        {loadingCep ? "Buscando CEP…" : "CEP"}
-                      </label>
-                    </fieldset>
-                  </div>
                 </div>
               <div className="box-ip-shipping">
                 <div className="title text-xl fw-medium">Entrega</div>
