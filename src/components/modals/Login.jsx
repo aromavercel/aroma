@@ -34,7 +34,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const data = await apiLogin({ phone: phone.trim().replace(/\s/g, ""), password, country });
+      const data = await apiLogin({ phone: phone.trim(), password, country });
       setStoredToken(data.token);
       try {
         const fullUser = await getMe();
