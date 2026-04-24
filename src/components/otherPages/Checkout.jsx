@@ -46,7 +46,7 @@ export default function Checkout() {
       if (typeof d.firstname === "string") setFirstname(d.firstname);
       if (typeof d.lastname === "string") setLastname(d.lastname);
       if (typeof d.address === "string") setAddress(d.address);
-      if (typeof d.addressNumber === "string") setAddressNumber(d.addressNumber);
+      if (typeof d.addressNumber === "string") setAddressNumber(onlyDigits(d.addressNumber));
       if (typeof d.complement === "string") setComplement(d.complement);
       else if (typeof d.apartment === "string") setComplement(d.apartment);
       if (typeof d.deliveryInstructions === "string") setDeliveryInstructions(d.deliveryInstructions);
@@ -101,7 +101,7 @@ export default function Checkout() {
     setFirstname(pickStr("firstname", nameParts[0] || ""));
     setLastname(pickStr("lastname", nameParts.slice(1).join(" ") || ""));
     setAddress(pickStr("address", user.address ?? ""));
-    setAddressNumber(pickStr("addressNumber", user.address_number ?? ""));
+    setAddressNumber(onlyDigits(pickStr("addressNumber", user.address_number ?? "")));
     setComplement(pickStr("complement", pickStr("apartment", user.address_complement ?? "")));
     setDeliveryInstructions(pickStr("deliveryInstructions", user.delivery_instructions ?? ""));
     setCity(pickStr("city", user.city ?? ""));
@@ -471,8 +471,10 @@ export default function Checkout() {
                         className="tf-field-input tf-input"
                         id="addressNumber"
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={addressNumber}
-                        onChange={(e) => setAddressNumber(e.target.value)}
+                        onChange={(e) => setAddressNumber(onlyDigits(e.target.value))}
                         placeholder=""
                         autoComplete="off"
                         maxLength={30}
