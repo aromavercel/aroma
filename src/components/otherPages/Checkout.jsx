@@ -168,7 +168,6 @@ export default function Checkout() {
       }
       if (found.city) setCity(found.city);
       if (found.street) setAddress(found.street);
-      if (found.complement && !apartment) setApartment(found.complement);
     } catch {
     } finally {
       setLoadingCep(false);
