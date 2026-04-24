@@ -22,11 +22,22 @@ function getStoredToken() {
   }
 }
 
+/** Evita exibir ao usuário textos de roteamento ou diagnóstico interno vindos da API. */
+function userFacingServerMessage(msg) {
+  if (!msg || typeof msg !== "string") return "";
+  const s = msg.trim();
+  if (/rota\s+n[aã]o\s+encontrada/i.test(s)) return "";
+  if (/route\s+not\s+found/i.test(s)) return "";
+  if (/^not\s+found\.?$/i.test(s)) return "";
+  return s;
+}
+
 function friendlyMessage(status, serverMessage, { auth } = {}) {
-  if (serverMessage) return serverMessage;
+  const safe = userFacingServerMessage(serverMessage);
+  if (safe) return safe;
   if (status === 401) return auth ? "Sua sessão expirou. Entre novamente para continuar." : "Faça login para continuar.";
   if (status === 403) return "Você não tem permissão para realizar essa ação.";
-  if (status === 404) return "Não encontrado.";
+  if (status === 404) return "Serviço indisponível no momento. Tente novamente em instantes.";
   if (status === 409) return "Já existe um registro com esses dados.";
   if (status === 413) return "Arquivo muito grande. Tente uma imagem menor.";
   if (status >= 500) return "Tivemos um problema no servidor. Tente novamente em instantes.";

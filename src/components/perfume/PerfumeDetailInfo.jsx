@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import QuantitySelect from "@/components/common/QuantitySelect";
 import { useContextElement } from "@/context/Context";
 
@@ -16,7 +16,9 @@ export default function PerfumeDetailInfo({
   mainImage,
   onAddToCart,
 }) {
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
+  const [buyNowLoading, setBuyNowLoading] = useState(false);
   const [selectedOption, setSelectedOption] = useState(() => {
     const first = variantsWithPrice?.[0];
     return typeof first?.option0 === "string" ? first.option0 : "";
@@ -51,17 +53,37 @@ export default function PerfumeDetailInfo({
   const displayPriceNumber =
     selectedVariant?.price_number != null ? Number(selectedVariant.price_number) : displayData.priceMin ?? 0;
 
+  const buildSnapshot = () => ({
+    id: `${perfume.id}:${selectedOption || ""}`,
+    perfume_id: perfume.id,
+    variant_option: selectedOption || null,
+    title: selectedOption ? `${displayData.title} (${selectedOption})` : displayData.title,
+    imgSrc: mainImage || "",
+    price: displayPriceNumber ?? 0,
+  });
+
   const handleAddToCart = () => {
     if (!perfume?.id) return;
-    const snapshot = {
-      id: `${perfume.id}:${selectedOption || ""}`,
-      perfume_id: perfume.id,
-      variant_option: selectedOption || null,
-      title: selectedOption ? `${displayData.title} (${selectedOption})` : displayData.title,
-      imgSrc: mainImage || "",
-      price: displayPriceNumber ?? 0,
-    };
-    addProductToCart(perfume.id, inCart ? cartQty : quantity, true, snapshot, selectedVariant);
+    addProductToCart(perfume.id, inCart ? cartQty : quantity, true, buildSnapshot(), selectedVariant);
+  };
+
+  const handleBuyNow = async (e) => {
+    e.preventDefault();
+    if (indisponivel || !perfume?.id) return;
+    if (cartLoading || buyNowLoading) return;
+    setBuyNowLoading(true);
+    try {
+      if (inCart) {
+        navigate("/checkout");
+        return;
+      }
+      await addProductToCart(perfume.id, quantity, false, buildSnapshot(), selectedVariant);
+      navigate("/checkout");
+    } catch (err) {
+      console.error("Comprar agora:", err);
+    } finally {
+      setBuyNowLoading(false);
+    }
   };
 
   return (
@@ -140,9 +162,14 @@ export default function PerfumeDetailInfo({
             Comprar agora
           </span>
         ) : (
-          <Link to="/checkout" className="tf-btn btn-primary w-100 animate-btn">
-            Comprar agora
-          </Link>
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            disabled={cartLoading || buyNowLoading}
+            className="tf-btn btn-primary w-100 animate-btn"
+          >
+            {buyNowLoading ? "..." : "Comprar agora"}
+          </button>
         )}
       </div>
 

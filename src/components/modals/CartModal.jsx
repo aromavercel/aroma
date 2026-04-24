@@ -54,10 +54,12 @@ export default function CartModal() {
               <div className="tf-mini-cart-sroll">
                 {cartProducts.length ? (
                   <div className="tf-mini-cart-items">
-                    {cartProducts.map((product, i) => (
-                      <div key={i} className="tf-mini-cart-item file-delete">
+                    {cartProducts.map((product, i) => {
+                      const perfumePageId = product.perfume_id ?? product.id;
+                      return (
+                      <div key={String(product.id ?? i)} className="tf-mini-cart-item file-delete">
                         <div className="tf-mini-cart-image">
-                          <Link to={`/perfume/${product.id}`}>
+                          <Link to={`/perfume/${perfumePageId}`}>
                             <img
                               className="lazyload"
                               alt="img-product"
@@ -71,7 +73,7 @@ export default function CartModal() {
                           <div className="d-flex justify-content-between">
                             <Link
                               className="title link text-md fw-medium"
-                              to={`/perfume/${product.id}`}
+                              to={`/perfume/${perfumePageId}`}
                             >
                               {product.title}
                             </Link>
@@ -105,7 +107,8 @@ export default function CartModal() {
                           />
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 ) : (
                   <div className="p-4">

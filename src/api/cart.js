@@ -16,12 +16,14 @@ function toProxyUrl(imageUrl) {
  * { id, perfume_id, title, imageUrl, priceShort, price, quantity }
  */
 function mapCartItem(item) {
-  const id = item.id ?? item.perfume_id;
+  const rawLineId = item.id ?? item.cart_item_id;
+  const pid = item.perfume_id != null ? String(item.perfume_id) : "";
+  const id = rawLineId != null && String(rawLineId).trim() !== "" ? String(rawLineId) : pid;
   const price = item.price != null ? Number(item.price) : 0;
   const rawImg = item.imageUrl ?? "";
   return {
     id,
-    perfume_id: item.perfume_id ?? id,
+    perfume_id: pid || id,
     variant_option: item.variant_option ?? null,
     title: item.title ?? "",
     imgSrc: rawImg ? toProxyUrl(rawImg) : "",
