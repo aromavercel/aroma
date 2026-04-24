@@ -211,8 +211,8 @@ export default function Checkout() {
       return;
     }
     const name = [firstname, lastname].filter(Boolean).join(" ").trim();
-    if (!name || !address?.trim() || !city?.trim() || !phone?.trim()) {
-      setError("Preencha nome, endereço, cidade e telefone.");
+    if (!name || !address?.trim() || !city?.trim()) {
+      setError("Preencha nome, endereço e cidade.");
       return;
     }
     setSubmitting(true);
@@ -227,6 +227,12 @@ export default function Checkout() {
       }
       setUser(sessionUser);
       const nextUser = sessionUser;
+      const accountPhone = String(nextUser.phone ?? "").trim();
+      const contactPhone = (phone.trim() || accountPhone).trim();
+      if (!contactPhone) {
+        setError("É necessário um telefone para contato na entrega.");
+        return;
+      }
 
       await updateProfile({
         name: name || nextUser.name,
@@ -236,7 +242,6 @@ export default function Checkout() {
         city: city.trim() || null,
         state: state || null,
         country: COUNTRY_BR_LABEL,
-        phone: phone.trim() || nextUser.phone,
       });
       const updatedUser = {
         ...nextUser,
@@ -247,7 +252,7 @@ export default function Checkout() {
         city: city.trim(),
         state,
         country: COUNTRY_BR_LABEL,
-        phone: phone.trim(),
+        phone: nextUser.phone,
       };
       setUser(updatedUser);
 
@@ -264,7 +269,7 @@ export default function Checkout() {
         shipping_state: state || null,
         shipping_zipcode: zipcode.trim() || null,
         shipping_country: COUNTRY_BR_LABEL,
-        shipping_phone: phone.trim(),
+        shipping_phone: contactPhone,
         payment_method: "cash_delivery",
       });
       const { items } = await getCart();
@@ -298,8 +303,15 @@ export default function Checkout() {
                       onChange={(e) => setPhone(filterPhoneDigitsInput(e.target.value))}
                       placeholder=""
                     />
-                    <label className="tf-field-label" htmlFor="phone">Telefone</label>
+                    <label className="tf-field-label" htmlFor="phone">
+                      {user?.id ? "Telefone para contato na entrega" : "Telefone"}
+                    </label>
                   </fieldset>
+                  {user?.id && (
+                    <p className="text-sm text-dark-4 mb_12">
+                      O pedido fica na sua conta atual. Se preferir, informe outro número só para a entrega; o telefone do cadastro não é alterado aqui.
+                    </p>
+                  )}
                   {!user?.id && (
                     <>
                       <p className="text-sm text-dark-4 mb_8">
