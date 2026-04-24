@@ -3,6 +3,7 @@ import { useContextElement } from "@/context/Context";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PerfumeCard from "@/components/catalog/PerfumeCard";
+import Sidebar from "@/components/dashboard/Sidebar";
 
 export default function Wishlist() {
   const { user, wishListItems, wishListLoading, removeFromWishlist } = useContextElement();
@@ -17,10 +18,26 @@ export default function Wishlist() {
     items.some((p) => p?.id && !String(p?.title || "").trim());
 
   return (
-    <section className="s-account flat-spacing-4 pt_0">
-      <div className="container">
-        <div className="row">
-          <div className="col-lg-12">
+    <div className="flat-spacing-13">
+      <div className="container-7">
+        <div className="btn-sidebar-mb d-lg-none">
+          <button
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#mbAccount"
+            aria-label="Abrir menu da conta"
+          >
+            <i className="icon icon-sidebar" />
+          </button>
+        </div>
+
+        <div className="main-content-account">
+          <div className="sidebar-account-wrap sidebar-content-wrap sticky-top d-lg-block d-none">
+            <ul className="my-account-nav">
+              <Sidebar />
+            </ul>
+          </div>
+          <div className="my-acount-content account-wishlist">
             {user?.id && wishListLoading ? (
               <div className="text-muted py-4">Carregando lista de desejos…</div>
             ) : guestHydrating ? (
@@ -44,12 +61,15 @@ export default function Wishlist() {
                 ))}
               </div>
             ) : (
-              <div className="">
-                <div>
-                  Sua lista de desejos está vazia. Adicione perfumes do catálogo!
-                </div>{" "}
+              <div className="account-no-orders-wrap text-start">
+                <div className="display-sm fw-medium title mb-2">
+                  Sua lista de desejos está vazia
+                </div>
+                <p className="text text-sm mb-3">
+                  Adicione perfumes do catálogo para vê-los aqui.
+                </p>
                 <Link
-                  className="tf-btn btn-dark2 animate-btn mt-3"
+                  className="tf-btn animate-btn d-inline-flex bg-dark-2 justify-content-center"
                   to="/catalogo"
                 >
                   Ver catálogo
@@ -59,6 +79,6 @@ export default function Wishlist() {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
