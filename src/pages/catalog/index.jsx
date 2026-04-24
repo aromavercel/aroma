@@ -31,6 +31,82 @@ const SORT_OPTIONS = [
   { value: "price-desc", label: "Preço (maior)" },
 ];
 
+/** Mesmas classes que `PerfumeCardList` — evita grid no modo lista. */
+function CatalogListSkeleton({ rows = 6 }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, idx) => (
+        <div key={`sk-list-${idx}`} className="card-product style-list">
+          <div className="card-product-wrapper">
+            <div className="product-img" aria-hidden>
+              <Skeleton
+                style={{
+                  width: "100%",
+                  aspectRatio: "1",
+                  minHeight: 160,
+                  maxWidth: 220,
+                }}
+              />
+            </div>
+          </div>
+          <div className="card-product-info">
+            <div className="info-list">
+              <Skeleton
+                variant="text"
+                rounded={false}
+                style={{ width: "58%", height: 18, marginBottom: 10 }}
+              />
+              <Skeleton
+                variant="text"
+                rounded={false}
+                style={{ width: "34%", height: 16, marginBottom: 10 }}
+              />
+              <Skeleton
+                variant="text"
+                rounded={false}
+                style={{ width: "100%", maxWidth: 520, height: 14 }}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** Mesmas classes que `PerfumeCard` (`grid style-1`). */
+function CatalogGridSkeleton({ itemCount = 12 }) {
+  return (
+    <>
+      {Array.from({ length: itemCount }).map((_, idx) => (
+        <div key={`sk-grid-${idx}`} className="card-product grid style-1">
+          <div className="card-product-wrapper">
+            <Skeleton
+              style={{
+                width: "100%",
+                aspectRatio: "513 / 729",
+                minHeight: 200,
+              }}
+            />
+          </div>
+          <div className="card-product-info" style={{ paddingTop: 12 }}>
+            <Skeleton
+              variant="text"
+              rounded={false}
+              style={{ width: "75%", height: 16, marginBottom: 10 }}
+            />
+            <Skeleton
+              variant="text"
+              rounded={false}
+              style={{ width: "40%", height: 14 }}
+            />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 export default function CatalogPage() {
   const location = useLocation();
   const [perfumesList, setPerfumesList] = useState([]);
@@ -432,19 +508,18 @@ export default function CatalogPage() {
               <div className="wrapper-control-shop">
                 {loading ? (
                   <div className="py-4">
-                    <div className={`wrapper-shop tf-grid-layout tf-col-${activeLayout}`} id="gridLayout">
-                      {Array.from({ length: 12 }).map((_, idx) => (
-                        <div key={`sk-${idx}`} className="card-product">
-                          <div className="card-product-wrapper">
-                            <Skeleton style={{ width: "100%", height: 260 }} />
-                          </div>
-                          <div className="card-product-info" style={{ paddingTop: 12 }}>
-                            <Skeleton variant="text" style={{ width: "70%", marginBottom: 10 }} />
-                            <Skeleton variant="text" style={{ width: "40%" }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {activeLayout === 1 ? (
+                      <div className="tf-list-layout wrapper-shop" id="listLayoutSkeleton">
+                        <CatalogListSkeleton rows={6} />
+                      </div>
+                    ) : (
+                      <div
+                        className={`wrapper-shop tf-grid-layout tf-col-${activeLayout}`}
+                        id="gridLayoutSkeleton"
+                      >
+                        <CatalogGridSkeleton itemCount={12} />
+                      </div>
+                    )}
                   </div>
                 ) : loadError ? (
                   <div className="col-12 text-center py-5">
@@ -522,16 +597,18 @@ export default function CatalogPage() {
                       style={{ height: 1, width: "100%" }}
                       aria-hidden
                     />
-                    {loadingMore && (
-                      <div className="d-flex justify-content-center gap-3 flex-wrap py-3">
-                        {Array.from({ length: 6 }).map((_, idx) => (
-                          <div key={`lm-${idx}`} style={{ width: 140 }}>
-                            <Skeleton style={{ width: "100%", height: 120 }} />
-                            <Skeleton variant="text" style={{ width: "80%", marginTop: 8 }} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {loadingMore &&
+                      (activeLayout === 1 ? (
+                        <div className="tf-list-layout wrapper-shop catalog-load-more-skeleton mt-3">
+                          <CatalogListSkeleton rows={4} />
+                        </div>
+                      ) : (
+                        <div
+                          className={`wrapper-shop tf-grid-layout tf-col-${activeLayout} catalog-load-more-skeleton mt-3`}
+                        >
+                          <CatalogGridSkeleton itemCount={12} />
+                        </div>
+                      ))}
                     {loadMoreError && (
                       <p className="text-danger small mb-2">{loadMoreError}</p>
                     )}
