@@ -1,4 +1,4 @@
-import { handleMyOrders } from "../../lib/api/myOrders.js";
+import { handleAdminUsers } from "../../../../lib/api/adminUsers.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -7,8 +7,7 @@ export default async function handler(req, res) {
   const raw = req.query?.id;
   const id = Array.isArray(raw) ? raw[0] : raw;
   if (!id || typeof id !== "string") {
-    return res.status(400).json({ error: "ID do pedido é obrigatório" });
+    return res.status(400).json({ error: "ID do usuário é obrigatório" });
   }
-  return handleMyOrders([id], req, res);
+  return handleAdminUsers([id], req, res);
 }
-

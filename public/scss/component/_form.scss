@@ -110,7 +110,8 @@
 
 .tf-field {
     position: relative;
-    .tf-input {
+    .tf-input,
+    textarea.tf-input {
         &:not(:placeholder-shown),
         &:focus {
             ~ .tf-field-label {
@@ -139,9 +140,9 @@
         color: rgba(102, 112, 133, 0.8);
     }
     &.style-2 {
-        .tf-input {
+        .tf-input,
+        textarea.tf-input {
             padding: 24px 20px 6px;
-            height: 50px;
             &:not(:placeholder-shown),
             &:focus {
                 ~ .tf-field-label {
@@ -156,9 +157,21 @@
                 }
             }
         }
+        .tf-input {
+            height: 50px;
+        }
+        textarea.tf-input {
+            height: auto;
+            min-height: 100px;
+            padding-top: 26px;
+            padding-bottom: 12px;
+            line-height: 1.45;
+            resize: vertical;
+        }
     }
     &.style-3 {
-        .tf-input {
+        .tf-input,
+        textarea.tf-input {
             padding-left: 12px;
             padding-right: 12px;
             &:not(:placeholder-shown),

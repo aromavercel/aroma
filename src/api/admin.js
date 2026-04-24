@@ -10,12 +10,14 @@ export async function getAdminAccessInfo() {
 
 export async function getAdminUser(id) {
   if (!id) throw new Error("ID do usuário é obrigatório");
-  return apiFetch(`/api/admin/users/${id}`, { method: "GET", auth: true });
+  const enc = encodeURIComponent(String(id));
+  return apiFetch(`/api/admin/users/${enc}`, { method: "GET", auth: true });
 }
 
 export async function makeUserAdmin(id) {
   if (!id) throw new Error("ID do usuário é obrigatório");
-  return apiFetch(`/api/admin/users/${id}/make-admin`, { method: "POST", auth: true });
+  const enc = encodeURIComponent(String(id));
+  return apiFetch(`/api/admin/users/${enc}/make-admin`, { method: "POST", auth: true });
 }
 
 export async function getAdminOrders(params = {}) {
