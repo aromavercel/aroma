@@ -615,7 +615,8 @@ export default function CatalogPage() {
                     {manualLoadMode && hasNextPage && (
                       <button
                         type="button"
-                        className="btn btn-outline-primary px-4"
+                        className="tf-btn btn-out-line-dark"
+                        style={{ borderRadius: 10 }}
                         disabled={loadingMore}
                         onClick={handleLoadMoreClick}
                       >

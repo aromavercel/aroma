@@ -123,7 +123,7 @@ export default function PerfumeCard({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                addToWishlist(perfume.id);
+                addToWishlist(perfume.id, perfume);
               }}
               className={`hover-tooltip tooltip-${tooltipDirection} box-icon`}
               aria-label="Lista de desejos"

@@ -110,7 +110,7 @@ export default function PerfumeCardList({ perfume, className = "" }) {
             href="#"
             onClick={(e) => {
               e.preventDefault();
-              addToWishlist(perfume.id);
+              addToWishlist(perfume.id, perfume);
             }}
             className="box-icon wishlist hover-tooltip"
             aria-label="Lista de desejos"

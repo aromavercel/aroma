@@ -169,32 +169,6 @@ export default function Cartmodal3() {
                     <div className="tf-cart-tax text-sm opacity-8">
                       Taxes and shipping calculated at checkout
                     </div>
-                    <div className="tf-cart-checkbox">
-                      <div className="tf-checkbox-wrapp">
-                        <input
-                          className=""
-                          type="checkbox"
-                          id="CartDrawer-Form_agree"
-                          name="agree_checkbox"
-                        />
-                        <div>
-                          <i className="icon-check" />
-                        </div>
-                      </div>
-                      <label
-                        htmlFor="CartDrawer-Form_agree"
-                        className="text-sm"
-                      >
-                        I agree with the
-                        <Link
-                          to={`/term-and-condition`}
-                          title="Terms of Service"
-                          className="fw-medium"
-                        >
-                          terms and conditions
-                        </Link>
-                      </label>
-                    </div>
                     <div className="tf-mini-cart-view-checkout">
                       <Link
                         to={`/view-cart`}
