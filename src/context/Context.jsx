@@ -129,24 +129,34 @@ export default function Context({ children }) {
 
   const updateQuantity = async (id, qty) => {
     const quantity = Math.max(0, parseInt(qty, 10) || 0);
-    if (user?.id) {
-      try {
-        await updateCartItem(id, quantity);
-        const { items } = await getCart();
-        setCartProducts(items);
-      } catch (err) {
-        console.error("Erro ao atualizar quantidade:", err);
+    const lineId = id != null ? String(id) : "";
+    if (!lineId) return;
+
+    if (!user?.id) {
+      if (!cartProducts.some((p) => String(p.id) === lineId)) return;
+      if (quantity === 0) {
+        setCartProducts((pre) => pre.filter((elm) => String(elm.id) !== lineId));
+        return;
       }
+      setCartProducts((pre) =>
+        pre.map((p) => (String(p.id) === lineId ? { ...p, quantity } : p))
+      );
       return;
     }
-    if (!isAddedToCartProducts(id)) return;
-    if (quantity === 0) {
-      setCartProducts((pre) => pre.filter((elm) => String(elm.id) !== String(id)));
-      return;
+
+    const prevSnapshot = cartProducts.map((p) => ({ ...p }));
+    setCartProducts((pre) => {
+      if (quantity === 0) return pre.filter((p) => String(p.id) !== lineId);
+      return pre.map((p) => (String(p.id) === lineId ? { ...p, quantity } : p));
+    });
+    try {
+      await updateCartItem(lineId, quantity);
+      const { items } = await getCart();
+      setCartProducts(items);
+    } catch (err) {
+      console.error("Erro ao atualizar quantidade:", err);
+      setCartProducts(prevSnapshot);
     }
-    setCartProducts((pre) =>
-      pre.map((p) => (String(p.id) === String(id) ? { ...p, quantity } : p))
-    );
   };
 
   const removeFromCart = async (id) => {

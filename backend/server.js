@@ -2269,10 +2269,14 @@ app.patch("/api/cart/items/:id", async (req, res) => {
     if (quantity === 0) {
       await sql`DELETE FROM cart_items WHERE cart_id = ${cart.id} AND id = ${id}`;
     } else {
-      await sql`
+      const updated = await sql`
         UPDATE cart_items SET quantity = ${quantity}
         WHERE cart_id = ${cart.id} AND id = ${id}
+        RETURNING id
       `;
+      if (!updated || updated.length === 0) {
+        return res.status(404).json({ error: "Item do carrinho não encontrado" });
+      }
     }
     await sql`UPDATE carts SET updated_at = now() WHERE id = ${cart.id}`;
     return res.status(200).json({ ok: true });

@@ -38,11 +38,13 @@ export default function ShopCart() {
                       </tr>
                     </thead>
                     <tbody>
-                      {cartProducts.map((product, i) => (
+                      {cartProducts.map((product, i) => {
+                        const perfumePageId = product.perfume_id ?? product.id;
+                        return (
                         <tr key={i} className="tf-cart-item file-delete">
                           <td className="tf-cart-item_product">
                             <Link
-                              to={`/perfume/${product.id}`}
+                              to={`/perfume/${perfumePageId}`}
                               className="img-box"
                             >
                               <img
@@ -54,7 +56,7 @@ export default function ShopCart() {
                             </Link>
                             <div className="cart-info">
                               <Link
-                                to={`/perfume/${product.id}`}
+                                to={`/perfume/${perfumePageId}`}
                                 className="name text-md link fw-medium"
                               >
                                 {product.title}
@@ -95,7 +97,8 @@ export default function ShopCart() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 ) : (
