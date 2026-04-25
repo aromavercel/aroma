@@ -101,7 +101,7 @@ export default function PerfumePage() {
       <Header1 />
       <Breadcumb product={{ title: d.title }} backLink="/catalogo" />
 
-      <section className="flat-single-product">
+      <section className="flat-single-product flat-single-product-perfume">
         <div className="tf-main-product section-image-zoom">
           <div className="container">
             <div className="row">

@@ -400,3 +400,32 @@
   color: var(--bs-danger);
   fill: var(--bs-danger);
 }
+
+/* Página do perfume (mobile): remove linha entre galeria e bloco título/preço */
+@media (max-width: 767px) {
+  .flat-single-product-perfume {
+    .tf-product-info-wrap {
+      margin-top: 0 !important;
+      border-top: none !important;
+      box-shadow: none !important;
+    }
+    .tf-product-media-wrap,
+    .product-thumbs-slider,
+    .flat-wrap-media-product {
+      border-bottom: none !important;
+    }
+    .tf-product-media-main.swiper,
+    .tf-product-media-main {
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .tf-product-media-thumbs {
+      border-top: none !important;
+      border-bottom: none !important;
+    }
+    .tf-product-info-wrap .tf-product-heading {
+      border-bottom: none !important;
+      padding-bottom: 12px;
+    }
+  }
+}
