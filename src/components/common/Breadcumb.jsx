@@ -1,17 +1,26 @@
 import { Link } from "react-router-dom";
 import React from "react";
 
+/**
+ * Breadcrumb compacto em linha (igual à página de produto/perfume):
+ * "Início • …" à esquerda e opcionalmente link de volta à direita.
+ * `pageTitle` mantido por compatibilidade com chamadas antigas; o rastro usa `pageName`.
+ */
 export default function Breadcumb({
   pageName = "Addresses",
-  pageTitle = "My Orders",
+  pageTitle: _pageTitle = "My Orders",
+  backLink,
+  backLabel = "Voltar ao catálogo",
+  fullWidth = false,
 }) {
+  const containerClass = fullWidth ? "container-full" : "container";
+
   return (
-    <section className="tf-page-title">
-      <div className="container">
-        <div className="box-title text-center">
-          <h4 className="title">{pageTitle}</h4>
+    <div className="breadcrumb-sec">
+      <div className={containerClass}>
+        <div className="breadcrumb-wrap">
           <div className="breadcrumb-list">
-            <Link className="breadcrumb-item" to={`/`}>
+            <Link to="/" className="breadcrumb-item">
               Início
             </Link>
             <div className="breadcrumb-item dot">
@@ -19,8 +28,19 @@ export default function Breadcumb({
             </div>
             <div className="breadcrumb-item current">{pageName}</div>
           </div>
+          {backLink ? (
+            <div className="breadcrumb-prev-next">
+              <Link
+                to={backLink}
+                className="breadcrumb-back-catalog link text-decoration-none"
+              >
+                <i className="icon icon-arr-left" aria-hidden />
+                <span>{backLabel}</span>
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -1,14 +1,33 @@
-import { Link } from "react-router-dom";
-import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import React, { useId } from "react";
 import { useContextElement } from "@/context/Context";
+import CartLength from "@/components/common/CartLength";
+import WishlistLength from "@/components/common/WishlistLength";
 
+/**
+ * Navegação fixa inferior (Início, Conta, Loja, Favoritos, Carrinho).
+ * Visível em viewports ≤1199px (ver _responsive.scss + custom.scss).
+ * Oculta no painel admin (/painel/*).
+ */
 export default function Toolbar() {
+  const wishClipId = `aroma-toolbar-wish-${useId().replace(/:/g, "")}`;
+  const { pathname } = useLocation();
   const { user } = useContextElement();
+
+  if (pathname.startsWith("/painel")) {
+    return null;
+  }
+
   const accountTarget = user ? "userMenu" : "login";
+
   return (
-    <div className="tf-toolbar-bottom">
+    <div
+      className="tf-toolbar-bottom"
+      role="navigation"
+      aria-label="Navegação principal da loja"
+    >
       <div className="toolbar-item">
-        <Link to={`/`}>
+        <Link to="/">
           <div className="toolbar-icon">
             <svg
               width={20}
@@ -60,7 +79,7 @@ export default function Toolbar() {
         </a>
       </div>
       <div className="toolbar-item">
-        <Link to={`/catalogo`}>
+        <Link to="/catalogo">
           <div className="toolbar-icon">
             <svg
               width={20}
@@ -105,7 +124,7 @@ export default function Toolbar() {
         </Link>
       </div>
       <div className="toolbar-item">
-        <Link to={`/wish-list`}>
+        <Link to="/wish-list">
           <div className="toolbar-icon">
             <svg
               width={20}
@@ -114,25 +133,30 @@ export default function Toolbar() {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <g clipPath="url(#clip0_4013_1872)">
+              <g clipPath={`url(#${wishClipId})`}>
                 <path
                   d="M18.3932 3.30791C16.218 1.13334 12.6795 1.13334 10.5049 3.30791L9.99983 3.8127L9.49504 3.30791C7.32046 1.13304 3.78163 1.13304 1.60706 3.30791C-0.523361 5.43833 -0.537195 8.81527 1.57498 11.1632C3.50142 13.3039 9.18304 17.9289 9.4241 18.1246C9.58775 18.2576 9.78467 18.3224 9.9804 18.3224C9.98688 18.3224 9.99335 18.3224 9.99953 18.3221C10.202 18.3315 10.406 18.2621 10.575 18.1246C10.816 17.9289 16.4982 13.3039 18.4253 11.1629C20.5371 8.81527 20.5233 5.43833 18.3932 3.30791ZM17.1125 9.98174C15.6105 11.6503 11.4818 15.0917 9.99953 16.313C8.51724 15.092 4.38944 11.6509 2.88773 9.98203C1.41427 8.34433 1.40044 6.01199 2.85564 4.55679C3.59885 3.81388 4.57488 3.44213 5.5509 3.44213C6.52693 3.44213 7.50295 3.81358 8.24616 4.55679L9.3564 5.66703C9.48856 5.79919 9.65516 5.87807 9.82999 5.90574C10.1137 5.96667 10.4216 5.88749 10.6424 5.66732L11.7532 4.55679C13.2399 3.07067 15.6582 3.07097 17.144 4.55679C18.5992 6.01199 18.5854 8.34433 17.1125 9.98174Z"
                   fill="black"
                 />
               </g>
               <defs>
-                <clipPath id="clip0_4013_1872">
+                <clipPath id={wishClipId}>
                   <rect width={20} height={20} fill="white" />
                 </clipPath>
               </defs>
             </svg>
-            <div className="toolbar-count">0</div>
+            <div className="toolbar-count">
+              <WishlistLength />
+            </div>
           </div>
           <div className="toolbar-label">Favoritos</div>
         </Link>
       </div>
       <div className="toolbar-item">
-        <a href="#shoppingCart" data-bs-toggle="offcanvas">
+        <a
+          href="#shoppingCart"
+          data-bs-toggle={pathname === "/cart-drawer-v2" ? "modal" : "offcanvas"}
+        >
           <div className="toolbar-icon">
             <svg
               width={20}
@@ -154,7 +178,9 @@ export default function Toolbar() {
                 fill="black"
               />
             </svg>
-            <div className="toolbar-count">0</div>
+            <div className="toolbar-count">
+              <CartLength />
+            </div>
           </div>
           <div className="toolbar-label">Carrinho</div>
         </a>

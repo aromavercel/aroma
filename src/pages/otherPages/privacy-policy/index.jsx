@@ -1,9 +1,9 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header1 from "@/components/headers/Header1";
 import Topbar1 from "@/components/headers/Topbar1";
-import { Link } from "react-router-dom";
 
 import MetaComponent from "@/components/common/MetaComponent";
+import Breadcumb from "@/components/common/Breadcumb";
 const metadata = {
   title: "Política de Privacidade || Aroma Express",
   description: "Política de Privacidade do Aroma Express - Saiba como usamos e protegemos seus dados.",
@@ -15,35 +15,9 @@ export default function PrivacyPolicyPage() {
       <MetaComponent meta={metadata} />
       <Topbar1 />
       <Header1 />
-      <>
-        {/* Breadcrumb */}
-        <div className="tf-breadcrumb">
-          <div className="container">
-            <ul className="breadcrumb-list">
-              <li className="item-breadcrumb">
-                <Link to={`/`} className="text">
-                  Início
-                </Link>
-              </li>
-              <li className="item-breadcrumb dot">
-                <span />
-              </li>
-              <li className="item-breadcrumb">
-                <span className="text">Política de Privacidade</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-        {/* /Breadcrumb */}
-        {/* Title Page */}
-        <section className="s-title-page">
-          <div className="container">
-            <h4 className="s-title letter-0 text-center">Política de Privacidade</h4>
-          </div>
-        </section>
-        {/* /Title Page */}
-        {/* Privacy policy */}
-        <section className="s-term-user flat-spacing-2">
+      <Breadcumb pageName="Política de Privacidade" pageTitle="Política de Privacidade" />
+      {/* Privacy policy */}
+      <section className="s-term-user flat-spacing-2">
           <div className="container">
             <div className="row">
               <div className="col-lg-12">
@@ -192,7 +166,6 @@ export default function PrivacyPolicyPage() {
           </div>
         </section>
         {/* /Privacy policy */}
-      </>
 
       <Footer1 />
     </>

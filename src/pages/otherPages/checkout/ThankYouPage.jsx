@@ -1,8 +1,8 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header1 from "@/components/headers/Header1";
 import Topbar from "@/components/headers/Topbar";
-import { Link } from "react-router-dom";
 import MetaComponent from "@/components/common/MetaComponent";
+import Breadcumb from "@/components/common/Breadcumb";
 
 const metadata = {
   title: "Pedido recebido | Aroma",
@@ -15,23 +15,7 @@ export default function ThankYouPage() {
       <MetaComponent meta={metadata} />
       <Topbar />
       <Header1 />
-      <div className="tf-breadcrumb">
-        <div className="container">
-          <ul className="breadcrumb-list">
-            <li className="item-breadcrumb">
-              <Link to="/" className="text">Início</Link>
-            </li>
-            <li className="item-breadcrumb dot"><span /></li>
-            <li className="item-breadcrumb">
-              <span className="text">Checkout</span>
-            </li>
-            <li className="item-breadcrumb dot"><span /></li>
-            <li className="item-breadcrumb">
-              <span className="text">Obrigado</span>
-            </li>
-          </ul>
-        </div>
-      </div>
+      <Breadcumb pageName="Obrigado" pageTitle="Pedido recebido" />
       <section className="flat-spacing-25 thankyou-page">
         <div className="container">
           <div className="thankyou-wrap">
