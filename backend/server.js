@@ -2631,11 +2631,9 @@ async function getWishlistUser(req, res) {
     return null;
   }
   const phone = user.phone != null ? String(user.phone).trim() : "";
-  if (!phone) {
-    res.status(400).json({ error: "Lista de desejos disponível apenas para usuários com telefone cadastrado" });
-    return null;
-  }
-  return { userId: user.id, userPhone: phone };
+  // Fallback: contas sem telefone (ex.: login social) ainda podem usar wishlist.
+  const userPhoneKey = phone || `user:${String(user.id)}`;
+  return { userId: user.id, userPhone: userPhoneKey };
 }
 
 app.get("/api/wishlist", async (req, res) => {
