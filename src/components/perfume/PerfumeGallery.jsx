@@ -33,7 +33,13 @@ export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
   const items = images.length ? images.map((imgSrc, id) => ({ id, imgSrc })) : [{ id: 0, imgSrc: "" }];
 
   const mainModules = isMobileGallery ? [Navigation] : [Thumbs, Navigation];
-  const mainThumbs = !isMobileGallery && thumbSwiper ? { swiper: thumbSwiper } : undefined;
+  const canUseThumbs = !isMobileGallery && thumbSwiper && !thumbSwiper.destroyed;
+  const mainThumbs = canUseThumbs ? { swiper: thumbSwiper } : undefined;
+
+  // Ao alternar para mobile, o swiper de thumbs é desmontado; evita manter referência destruída.
+  useEffect(() => {
+    if (isMobileGallery) setThumbSwiper(null);
+  }, [isMobileGallery]);
 
   return (
     <>
