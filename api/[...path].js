@@ -14,6 +14,7 @@ import { handlePasswordResetRequest } from "../lib/api/passwordResetRequest.js";
 import { handlePasswordResetConfirm } from "../lib/api/passwordResetConfirm.js";
 import { handleCheckPhone } from "../lib/api/checkPhone.js";
 import { handlePostOrders } from "../lib/api/ordersCreate.js";
+import { handleWishlist } from "../lib/api/wishlist.js";
 import {
   handleGetCart,
   handlePostCartItems,
@@ -100,6 +101,8 @@ export default async function handler(req, res) {
         return await handlePromoAlert(req, res);
       case "perfumes":
         return await handlePerfumes(rest, req, res);
+      case "wishlist":
+        return await handleWishlist(rest, req, res);
       case "cart": {
         if (rest.length === 0 && req.method === "GET") return await handleGetCart(req, res);
         if (rest[0] === "items" && rest.length === 1 && req.method === "POST") {
