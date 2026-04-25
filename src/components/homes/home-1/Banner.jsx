@@ -33,7 +33,7 @@ export default function Banner() {
             </div>
             <div className="box-btn wow fadeInUp">
               <Link
-                to={`/shop-collection-list`}
+                to={`/catalogo`}
                 className="tf-btn btn-white hover-primary"
               >
                 Comprar agora!
