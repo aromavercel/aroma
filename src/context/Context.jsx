@@ -95,6 +95,38 @@ export default function Context({ children }) {
     return (wishlistOpVersionRef.current.get(key) ?? 0) === v;
   };
 
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  const syncWishlistWithRetries = async ({ opKey, opVersion, expectId, expectMissingId }) => {
+    // Não sobrescreve o estado otimista com uma lista vazia/stale.
+    // Tenta algumas vezes (eventual consistency / cache / resposta fora de ordem).
+    const attempts = 3;
+    for (let i = 0; i < attempts; i++) {
+      if (!isWishlistVersionCurrent(opKey, opVersion)) return null;
+      const { items } = await getWishlist();
+      const ids = (items || []).map((p) => String(p.id));
+      const hasExpected = expectId ? ids.includes(String(expectId)) : true;
+      const missingOk = expectMissingId ? !ids.includes(String(expectMissingId)) : true;
+
+      // Se o servidor confirmou o estado esperado, aplica.
+      if (hasExpected && missingOk) return { items };
+
+      // Se veio vazio mas não era esperado, aguarda e tenta de novo.
+      if ((items || []).length === 0 && (expectId || expectMissingId)) {
+        await sleep(450);
+        continue;
+      }
+
+      // Caso geral: tenta mais uma vez e depois desiste.
+      if (i < attempts - 1) {
+        await sleep(450);
+        continue;
+      }
+      return null;
+    }
+    return null;
+  };
+
   const filterHiddenCartLines = (items) => {
     const hidden = hiddenCartLineIdsRef.current;
     if (!hidden || hidden.size === 0) return items;
@@ -323,11 +355,14 @@ export default function Context({ children }) {
       setWishListLoading(true);
       try {
         await addWishlistItem(key);
-        const { items } = await getWishlist();
-        // Só aplica se este ainda for o último clique para este item.
-        if (isWishlistVersionCurrent(key, opVersion)) {
-          setWishListItems(items);
-          setWishList(items.map((p) => String(p.id)));
+        const synced = await syncWishlistWithRetries({
+          opKey: key,
+          opVersion,
+          expectId: key,
+        });
+        if (synced && isWishlistVersionCurrent(key, opVersion)) {
+          setWishListItems(synced.items || []);
+          setWishList((synced.items || []).map((p) => String(p.id)));
         }
       } catch (err) {
         console.error("Erro ao adicionar aos favoritos:", err);
@@ -363,10 +398,14 @@ export default function Context({ children }) {
       setWishListLoading(true);
       try {
         await removeWishlistItem(key);
-        const { items } = await getWishlist();
-        if (isWishlistVersionCurrent(key, opVersion)) {
-          setWishListItems(items);
-          setWishList(items.map((p) => String(p.id)));
+        const synced = await syncWishlistWithRetries({
+          opKey: key,
+          opVersion,
+          expectMissingId: key,
+        });
+        if (synced && isWishlistVersionCurrent(key, opVersion)) {
+          setWishListItems(synced.items || []);
+          setWishList((synced.items || []).map((p) => String(p.id)));
         }
       } catch (err) {
         console.error("Erro ao remover dos favoritos:", err);
