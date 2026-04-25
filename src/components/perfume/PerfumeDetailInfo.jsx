@@ -28,7 +28,9 @@ export default function PerfumeDetailInfo({
     cartProducts,
     updateQuantity,
     addToWishlist,
+    removeFromWishlist,
     isAddedtoWishlist,
+    wishListLoading,
     addToCompareItem,
     isAddedtoCompareItem,
     cartLoading,
@@ -174,11 +176,13 @@ export default function PerfumeDetailInfo({
       </div>
 
       <div className="tf-product-extra-link">
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            addToWishlist(perfume.id, perfume);
+        <button
+          type="button"
+          disabled={wishListLoading || !perfume?.id}
+          onClick={() => {
+            if (!perfume?.id || wishListLoading) return;
+            if (inWishlist) removeFromWishlist(perfume.id);
+            else addToWishlist(perfume.id, perfume);
           }}
           className={`product-extra-icon link btn-add-wishlist ${inWishlist ? "added-wishlist" : ""}`}
         >
@@ -186,7 +190,7 @@ export default function PerfumeDetailInfo({
           <span className="add">Adicionar aos favoritos</span>
           <i className="icon added icon-trash" />
           <span className="added">Remover dos favoritos</span>
-        </a>
+        </button>
         {/* <a
           href="#compare"
           data-bs-toggle="modal"

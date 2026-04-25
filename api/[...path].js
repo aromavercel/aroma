@@ -9,6 +9,7 @@ import { handleAdminOrders } from "../lib/api/adminOrders.js";
 import { handleAdminContactMessages } from "../lib/api/adminContactMessages.js";
 import { handleMyOrders } from "../lib/api/myOrders.js";
 import { handleContact } from "../lib/api/contact.js";
+import { handlePromoAlert } from "../lib/api/promoAlert.js";
 import { handlePasswordResetRequest } from "../lib/api/passwordResetRequest.js";
 import { handlePasswordResetConfirm } from "../lib/api/passwordResetConfirm.js";
 import { handleCheckPhone } from "../lib/api/checkPhone.js";
@@ -95,6 +96,8 @@ export default async function handler(req, res) {
         return await handleUploadPerfumeImage(req, res);
       case "contact":
         return await handleContact(req, res);
+      case "promo-alert":
+        return await handlePromoAlert(req, res);
       case "perfumes":
         return await handlePerfumes(rest, req, res);
       case "cart": {

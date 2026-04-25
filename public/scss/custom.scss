@@ -401,8 +401,56 @@
   fill: var(--bs-danger);
 }
 
+/* Página do perfume: favoritos legíveis (preto do site); nos favoritos fica vermelho */
+.flat-single-product-perfume .tf-product-extra-link button.btn-add-wishlist.product-extra-icon.link {
+  font: inherit;
+  text-align: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--dark, #000000) !important;
+  -webkit-text-fill-color: var(--dark, #000000);
+  .icon {
+    color: inherit !important;
+    -webkit-text-fill-color: inherit;
+  }
+  .add,
+  .added {
+    color: inherit;
+  }
+  &:hover:not(:disabled):not(.added-wishlist) {
+    color: var(--dark, #000000) !important;
+    opacity: 0.82;
+  }
+  &.added-wishlist {
+    color: var(--bs-danger, #dc3545) !important;
+    -webkit-text-fill-color: var(--bs-danger, #dc3545);
+    .icon {
+      color: inherit !important;
+      -webkit-text-fill-color: inherit;
+    }
+  }
+  &.added-wishlist:hover:not(:disabled) {
+    color: var(--bs-danger, #dc3545) !important;
+    opacity: 0.88;
+  }
+  &:disabled {
+    opacity: 0.5;
+    color: var(--dark, #000000) !important;
+    cursor: wait;
+  }
+}
+
 /* Página do perfume (mobile): remove linha entre galeria e bloco título/preço */
 @media (max-width: 767px) {
+  /* Galeria com sticky-top (z-index 50) ficava por cima da coluna de info ao rolar e bloqueava toques (ex.: favoritos). */
+  .flat-single-product .tf-product-media-wrap.sticky-top {
+    position: relative !important;
+    top: auto !important;
+    z-index: auto !important;
+  }
+
   .flat-single-product-perfume {
     .tf-product-info-wrap {
       margin-top: 0 !important;
@@ -427,5 +475,19 @@
       border-bottom: none !important;
       padding-bottom: 12px;
     }
+  }
+}
+
+/* Barra inferior da loja (tablet/mobile ≤1199px): padrão em todas as páginas públicas */
+@media (max-width: 1199.98px) {
+  .tf-toolbar-bottom {
+    display: flex !important;
+    z-index: 250;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Evita que o último conteúdo fique escondido atrás da barra fixa */
+  #footer.footer-default.xl-pb-70 {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }

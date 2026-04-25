@@ -61,10 +61,10 @@ export default function BeforeLeave() {
               </p>
               <div className="wrap-code justify-content-center">
                 <div className="text">Enter the code:</div>{" "}
-                <div className="coppyText" id="coppyText">
+                <div className="coppyText" id="beforeLeave-coppyText">
                   CODE15OFF{" "}
                 </div>{" "}
-                <div className="btn-coppy-text" id="btn-coppy-text">
+                <div className="btn-coppy-text" id="beforeLeave-btn-coppy">
                   {" "}
                   <i className="icon-copy" />
                 </div>
