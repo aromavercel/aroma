@@ -89,16 +89,16 @@ export default function Nav() {
       </li>
       <li className="menu-item">
         <Link
-          to="/about-us"
-          className={`item-link ${pathname === "/about-us" ? "menuActive" : ""}`}
+          to="/sobre-nos"
+          className={`item-link ${pathname === "/sobre-nos" ? "menuActive" : ""}`}
         >
           Sobre Nós
         </Link>
       </li>
       <li className="menu-item">
         <Link
-          to="/contact-us"
-          className={`item-link ${pathname === "/contact-us" ? "menuActive" : ""}`}
+          to="/contato"
+          className={`item-link ${pathname === "/contato" ? "menuActive" : ""}`}
         >
           Contato
         </Link>

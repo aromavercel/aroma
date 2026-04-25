@@ -294,10 +294,10 @@ export default function Footer1({
                 <div className="tf-collapse-content">
                   <ul className="footer-menu-list">
                     <li>
-                      <Link to={`/about-us`}>Sobre nós</Link>
+                      <Link to={`/sobre-nos`}>Sobre nós</Link>
                     </li>
                     <li>
-                      <Link to={`/contact-us`}>Contate-nos</Link>
+                      <Link to={`/contato`}>Contate-nos</Link>
                     </li>
                   </ul>
                 </div>
@@ -309,7 +309,7 @@ export default function Footer1({
                 <div className="tf-collapse-content">
                   <ul className="footer-menu-list">
                     <li>
-                      <Link to={`/privacy-policy`}>
+                      <Link to={`/politica-de-privacidade`}>
                         Política de privacidade
                       </Link>
                     </li>

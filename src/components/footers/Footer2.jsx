@@ -126,18 +126,18 @@ export default function Footer2() {
             <div className="col-lg-2 col-sm-6">
               <div className="footer-col-block s2">
                 <div className="footer-heading footer-heading-mobile text-xl fw-medium">
-                  About Us
+                  Sobre nós
                 </div>
                 <div className="tf-collapse-content">
                   <ul className="footer-menu-list">
                     <li>
-                      <Link to={`/about-us`}>About Us</Link>
+                      <Link to={`/sobre-nos`}>Sobre nós</Link>
                     </li>
                     <li>
-                      <Link to={`/contact-us`}>Contact Us</Link>
+                      <Link to={`/contato`}>Contato</Link>
                     </li>
                     <li>
-                      <Link to={`/store-location`}>Our Store</Link>
+                      <Link to={`/store-location`}>Lojas</Link>
                     </li>
                   </ul>
                 </div>
@@ -146,28 +146,24 @@ export default function Footer2() {
             <div className="col-lg-2 col-sm-6">
               <div className="footer-col-block s3">
                 <div className="footer-heading footer-heading-mobile text-xl fw-medium">
-                  Resource
+                  Recursos
                 </div>
                 <div className="tf-collapse-content">
                   <ul className="footer-menu-list">
                     <li>
-                      <Link to={`/faq`}>FAQs</Link>
+                      <Link to={`/faq`}>Dúvidas frequentes</Link>
                     </li>
                     <li>
-                      <Link to={`/term-and-condition`}>
-                        Terms &amp; Conditions
-                      </Link>
+                      <Link to={`/term-and-condition`}>Termos e condições</Link>
                     </li>
                     <li>
-                      <Link to={`/privacy-policy`}>Privacy Policies</Link>
+                      <Link to={`/politica-de-privacidade`}>Política de Privacidade</Link>
                     </li>
                     <li>
-                      <Link to={`/return-and-refund`}>
-                        Returns &amp; Refunds
-                      </Link>
+                      <Link to={`/return-and-refund`}>Trocas e devoluções</Link>
                     </li>
                     <li>
-                      <Link to={`/shipping`}>Shipping</Link>
+                      <Link to={`/shipping`}>Envio</Link>
                     </li>
                   </ul>
                 </div>
@@ -176,14 +172,13 @@ export default function Footer2() {
             <div className="col-lg-5 col-sm-6">
               <div className="footer-col-block s4">
                 <p className="footer-heading footer-heading-mobile text-xl fw-medium">
-                  Subscribe Newsletter
+                  Receba novidades
                 </p>
                 <div className="tf-collapse-content">
                   <div className="footer-newsletter">
                     <p>
-                      We invite you to register to read the latest news, offers
-                      and events about our company. We promise not spam your
-                      inbox.
+                      Cadastre seu e-mail para receber novidades, ofertas e
+                      avisos importantes. Prometemos não enviar spam.
                     </p>
                     <div
                       className={`tfSubscribeMsg  footer-sub-element ${

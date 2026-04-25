@@ -182,9 +182,9 @@ export default function MobileMenu() {
               </li> */}
               <li className="nav-mb-item">
                 <Link
-                  to="/about-us"
+                  to="/sobre-nos"
                   className={`mb-menu-link ${
-                    pathname === "/about-us" ? "menuActive" : ""
+                    pathname === "/sobre-nos" ? "menuActive" : ""
                   }`}
                   onClick={handleNavClick}
                 >
@@ -209,9 +209,9 @@ export default function MobileMenu() {
               </li>
               <li className="nav-mb-item">
                 <Link
-                  to="/contact-us"
+                  to="/contato"
                   className={`mb-menu-link ${
-                    pathname === "/contact-us" ? "menuActive" : ""
+                    pathname === "/contato" ? "menuActive" : ""
                   }`}
                   onClick={handleNavClick}
                 >

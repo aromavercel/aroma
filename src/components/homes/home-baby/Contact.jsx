@@ -53,10 +53,10 @@ export default function Contact() {
               </li>
             </ul>
             <Link
-              to={`/contact-us`}
+              to={`/contato`}
               className="tf-btn btn-orange-2 text-capitalize animate-btn"
             >
-              Chat with us
+              Conversar no chat
             </Link>
           </div>
           <div className="image-right">

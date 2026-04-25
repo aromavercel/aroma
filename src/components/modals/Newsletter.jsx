@@ -135,9 +135,9 @@ export default function Newsletter() {
             </form>
             <AromaSocialIcons className="tf-social-icon style-default justify-content-center" />
             <p className="text text-sm mb-0 text-main">
-              Will be used in accordance with our{" "}
-              <Link to={`/privacy-policy`} className="fw-medium">
-                Privacy Policy
+              Usaremos seu e-mail de acordo com nossa{" "}
+              <Link to={`/politica-de-privacidade`} className="fw-medium">
+                Política de Privacidade
               </Link>
             </p>
           </div>

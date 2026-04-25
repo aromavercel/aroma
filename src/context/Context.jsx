@@ -61,7 +61,7 @@ function readGuestWishlistFromStorage() {
 }
 // import { openWistlistModal } from "@/utlis/openWishlist";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useContext, useState } from "react";
 const dataContext = React.createContext();
 export const useContextElement = () => {
@@ -79,6 +79,7 @@ export default function Context({ children }) {
   const [quickViewItem, setQuickViewItem] = useState(null);
   const [quickAddItem, setQuickAddItem] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
+  const pendingOptimisticRemovalsRef = useRef([]);
   useEffect(() => {
     const subtotal = cartProducts.reduce((accumulator, product) => {
       return accumulator + (Number(product.price) || 0) * (Number(product.quantity) || 0);
@@ -98,14 +99,76 @@ export default function Context({ children }) {
   const addProductToCart = async (id, qty = 1, isModal = true, snapshot = null, variant = null) => {
     const quantity = Math.max(1, parseInt(qty, 10) || 1);
     if (user?.id) {
+      const perfumeId = String(id);
+      const variantOption = String(variant?.option0 || variant?.variant_option || snapshot?.variant_option || "");
+      const prevSnapshot = cartProducts.map((p) => ({ ...p }));
+
+      // UI otimista: atualiza imediatamente (sem esperar API)
+      setCartProducts((pre) => {
+        const idx = pre.findIndex(
+          (p) =>
+            String(p.perfume_id ?? p.id) === perfumeId &&
+            String(p.variant_option || "") === variantOption,
+        );
+        if (idx >= 0) {
+          const next = [...pre];
+          const row = next[idx];
+          next[idx] = { ...row, quantity: Math.max(1, Number(row.quantity) || 1) + quantity };
+          return next;
+        }
+        const optimisticId = `optimistic:${perfumeId}:${variantOption || "base"}`;
+        const unitPrice =
+          variant?.price_number ?? variant?.price ?? snapshot?.price ?? 0;
+        const title = snapshot?.title ?? "";
+        const imgSrc = snapshot?.imgSrc ?? "";
+        return [
+          ...pre,
+          {
+            id: optimisticId,
+            perfume_id: perfumeId,
+            variant_option: variantOption || null,
+            title,
+            imgSrc,
+            price: Number(unitPrice) || 0,
+            quantity,
+          },
+        ];
+      });
+      if (isModal) openCartModal();
+
       setCartLoading(true);
       try {
         await addCartItem(id, quantity, variant);
         const { items } = await getCart();
         setCartProducts(items);
-        if (isModal) openCartModal();
+
+        // Se o usuário removeu um item "optimistic:*" antes da sync, tenta remover o item real agora.
+        const pending = pendingOptimisticRemovalsRef.current;
+        if (Array.isArray(pending) && pending.length) {
+          pendingOptimisticRemovalsRef.current = [];
+          (async () => {
+            for (const key of pending) {
+              const match = items.find(
+                (p) => String(p.perfume_id ?? p.id) === String(key.perfumeId) && String(p.variant_option || "") === String(key.variantOption || ""),
+              );
+              if (!match) continue;
+              try {
+                await removeCartItem(String(match.id));
+              } catch {
+                // ignora falha de remoção
+              }
+            }
+            try {
+              const refreshed = await getCart();
+              setCartProducts(refreshed.items);
+            } catch {
+              // ignora
+            }
+          })();
+        }
       } catch (err) {
         console.error("Erro ao adicionar ao carrinho:", err);
+        setCartProducts(prevSnapshot);
         throw err;
       } finally {
         setCartLoading(false);
@@ -161,12 +224,32 @@ export default function Context({ children }) {
 
   const removeFromCart = async (id) => {
     if (user?.id) {
+      const lineId = id != null ? String(id) : "";
+      if (!lineId) return;
+      const prevSnapshot = cartProducts.map((p) => ({ ...p }));
+      // UI otimista
+      setCartProducts((pre) => pre.filter((p) => String(p.id) !== lineId));
+      setCartLoading(true);
       try {
-        await removeCartItem(id);
+        // Se ainda é um item otimista (sem id real), agenda remoção após a próxima sync.
+        if (lineId.startsWith("optimistic:")) {
+          const parts = lineId.split(":");
+          const perfumeId = parts[1] || "";
+          const variantOption = (parts.slice(2).join(":") || "").replace(/^(base)$/, "");
+          pendingOptimisticRemovalsRef.current = [
+            ...(pendingOptimisticRemovalsRef.current || []),
+            { perfumeId, variantOption: variantOption === "base" ? "" : variantOption },
+          ];
+          return;
+        }
+        await removeCartItem(lineId);
         const { items } = await getCart();
         setCartProducts(items);
       } catch (err) {
         console.error("Erro ao remover do carrinho:", err);
+        setCartProducts(prevSnapshot);
+      } finally {
+        setCartLoading(false);
       }
       return;
     }
@@ -245,6 +328,7 @@ export default function Context({ children }) {
       } catch {
         // ignora
       }
+      setCartLoading(true);
       getCart()
         .then(async (r) => {
           if (r.items?.length) {
@@ -296,7 +380,8 @@ export default function Context({ children }) {
           } catch {
             setCartProducts([]);
           }
-        });
+        })
+        .finally(() => setCartLoading(false));
     } else {
       // Usuário não logado: restaura do localStorage (se houver)
       try {

@@ -20,7 +20,7 @@ export default function Faqs() {
               </p>
               <div className="btn-group">
                 <Link
-                  to={`/contact-us`}
+                  to={`/contato`}
                   className="tf-btn btn-fill hover-primary"
                 >
                   Fale conosco

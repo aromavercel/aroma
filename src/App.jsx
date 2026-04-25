@@ -467,8 +467,14 @@ function App() {
               element={<ProductDetailPageGroup />}
             />
 
-            <Route path="about-us" element={<AboutUsPage />} />
-            <Route path="contact-us" element={<ContactusPage />} />
+            {/* Rotas em PT-BR (padrão) */}
+            <Route path="sobre-nos" element={<AboutUsPage />} />
+            <Route path="contato" element={<ContactusPage />} />
+            <Route path="politica-de-privacidade" element={<PrivacyPolicyPage />} />
+
+            {/* Rotas antigas (EN) -> redirect para PT-BR */}
+            <Route path="about-us" element={<Navigate to="/sobre-nos" replace />} />
+            <Route path="contact-us" element={<Navigate to="/contato" replace />} />
             <Route path="store-location" element={<StoreLocationPage />} />
 
             <Route path="faq" element={<FaqPage />} />
@@ -478,7 +484,7 @@ function App() {
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="checkout/thank-you" element={<ThankYouPage />} />
             <Route path="compare" element={<ComparePage />} />
-            <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="privacy-policy" element={<Navigate to="/politica-de-privacidade" replace />} />
 
             <Route path="before-you-leave" element={<BeforeYouLeavePage />} />
             <Route path="cookies" element={<CookiesPage />} />

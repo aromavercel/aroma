@@ -12,23 +12,23 @@ export default function Cookie() {
           <div className="overplay" />
           <div className="content">
             <p className="text-md">
-              The cookie settings on this website are set to "allow all cookies"
-              to give you the very best experience. Please click Accept Cookies
-              to continue to use the site.
+              Usamos cookies para melhorar sua experiência. Ao continuar
+              navegando, você concorda com o uso de cookies conforme descrito em
+              nossa política.
             </p>
             <div className="button-group">
               <Link
                 className="btn-out-line-white btn-submit-total tf-btn"
-                to={`/privacy-policy`}
+                to={`/politica-de-privacidade`}
               >
-                Privacy Policy
+                Política de Privacidade
               </Link>
               <button
                 id="accept-cookie"
                 onClick={() => setHasAccepted(true)}
                 className="accept-button btn-out-line-white btn-submit-total tf-btn"
               >
-                Accept Cookies
+                Aceitar cookies
               </button>
             </div>
           </div>
