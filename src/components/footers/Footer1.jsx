@@ -3,6 +3,22 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { registerPromoAlert } from "@/api/promoAlert";
 import AromaSocialIcons from "@/components/common/AromaSocialIcons";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+
+function formatPromoPhoneBR(input) {
+  const digits = String(input || "").replace(/\D/g, "").slice(0, 11);
+  if (!digits) return "";
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function isValidPromoPhoneBR(raw) {
+  const digits = String(raw || "").replace(/\D/g, "");
+  if (digits.length < 10) return false;
+  const parsed = parsePhoneNumberFromString(digits, "BR");
+  return Boolean(parsed && parsed.isValid());
+}
 
 export default function Footer1({
   paddingBottom = false,
@@ -13,6 +29,7 @@ export default function Footer1({
   const [success, setSuccess] = useState(true);
   const [showMessage, setShowMessage] = useState(false);
   const [loadingAlert, setLoadingAlert] = useState(false);
+  const [promoPhone, setPromoPhone] = useState("");
 
   const handleShowMessage = () => {
     setShowMessage(true);
@@ -23,11 +40,17 @@ export default function Footer1({
 
   const sendAlert = async (e) => {
     e.preventDefault();
-    const phone = e.target.number.value;
+    const phone = promoPhone;
     setLoadingAlert(true);
     try {
+      if (!isValidPromoPhoneBR(phone)) {
+        setSuccess(false);
+        handleShowMessage();
+        return;
+      }
       await registerPromoAlert({ phone, country: "BR" });
       e.target.reset();
+      setPromoPhone("");
       setSuccess(true);
       handleShowMessage();
     } catch (error) {
@@ -35,6 +58,7 @@ export default function Footer1({
       setSuccess(false);
       handleShowMessage();
       e.target.reset();
+      setPromoPhone("");
     } finally {
       setLoadingAlert(false);
     }
@@ -202,7 +226,7 @@ export default function Footer1({
                       </p>
                     ) : (
                       <p style={{ color: "red" }}>
-                        Não foi possível salvar seu alerta. Tente novamente.
+                        Não foi possível salvar seu alerta. Verifique o número e tente novamente.
                       </p>
                     )}
                   </div>
@@ -214,13 +238,20 @@ export default function Footer1({
                     <div className="subscribe-content">
                       <fieldset className="email">
                         <input
-                          type="number"
+                          type="tel"
                           name="number"
                           className="subscribe-email"
                           placeholder="Número de Whatsapp"
                           tabIndex={0}
                           aria-required="true"
                           required
+                          inputMode="tel"
+                          autoComplete="tel"
+                          pattern="\\(\\d{2}\\) \\d{4,5}-\\d{4}"
+                          maxLength={16}
+                          value={promoPhone}
+                          onChange={(e) => setPromoPhone(formatPromoPhoneBR(e.target.value))}
+                          onBlur={(e) => setPromoPhone(formatPromoPhoneBR(e.target.value))}
                         />
                       </fieldset>
                       <div className="button-submit">

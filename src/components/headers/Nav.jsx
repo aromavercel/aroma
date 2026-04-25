@@ -37,7 +37,7 @@ export default function Nav() {
             isMenuParentActive(demoItems) ? "menuActive" : ""
           } `}
         >
-          Inicio
+          Início
         </a>
       </li>
 

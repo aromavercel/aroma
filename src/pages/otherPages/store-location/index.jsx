@@ -7,8 +7,8 @@ import { Link } from "react-router-dom";
 import MetaComponent from "@/components/common/MetaComponent";
 import Breadcumb from "@/components/common/Breadcumb";
 const metadata = {
-  title: "Store Location || Vineta - Multipurpose Reactjs eCommerce Template",
-  description: "Vineta - Multipurpose Reactjs eCommerce Template",
+  title: "Lojas | Aroma",
+  description: "Encontre nossas lojas e pontos de atendimento.",
 };
 export default function StoreLocationPage() {
   return (
@@ -16,7 +16,7 @@ export default function StoreLocationPage() {
       <MetaComponent meta={metadata} />
       <Topbar />
       <Header1 />
-      <Breadcumb pageName="Store Locations" pageTitle="Store Locations" />
+      <Breadcumb pageName="Lojas" pageTitle="Lojas" />
       <StoreLocations />
       <Footer1 />
     </>

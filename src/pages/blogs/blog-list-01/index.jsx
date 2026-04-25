@@ -18,7 +18,7 @@ export default function BlogListPage1() {
       <MetaComponent meta={metadata} />
       <Topbar />
       <Header1 />
-      <Breadcumb pageName="Blogs" pageTitle="Blogs" />
+      <Breadcumb pageName="Blog" pageTitle="Blog" />
 
       <Collections />
       <div className="btn-sidebar-mb d-lg-none right">
