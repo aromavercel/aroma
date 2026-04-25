@@ -159,7 +159,6 @@ export default function PerfumeDetailModal({ perfume, onClose, onEdit, onDelete 
                       <button
                         type="button"
                         className={`tf-btn btn-out-line-dark2 btn-lg ${inWishlist ? "wishlist-btn-active" : ""}`}
-                        disabled={wishListLoading}
                         onClick={async () => {
                           if (!perfume?.id) return;
                           if (inWishlist) await removeFromWishlist(perfume.id);

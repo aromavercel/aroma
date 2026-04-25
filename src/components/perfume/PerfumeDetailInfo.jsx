@@ -184,9 +184,9 @@ export default function PerfumeDetailInfo({
       <div className="tf-product-extra-link">
         <button
           type="button"
-          disabled={wishListLoading || !perfume?.id}
+          disabled={!perfume?.id}
           onClick={() => {
-            if (!perfume?.id || wishListLoading) return;
+            if (!perfume?.id) return;
             if (inWishlist) removeFromWishlist(perfume.id);
             else addToWishlist(perfume.id, perfume);
           }}
