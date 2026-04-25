@@ -80,11 +80,11 @@ export default function Header9() {
               </nav>
             </div>
             <div className="inner-right">
-              <Link to={`/contact-us`} className="link fw-medium text-md">
-                Need Help?
+              <Link to={`/contato`} className="link fw-medium text-md">
+                Precisa de ajuda?
               </Link>
               <a href="tel:123456789" className="call-us text-md fw-medium">
-                Call Us Now <i className="icon icon-arrow1-top-left" />
+                Ligue agora <i className="icon icon-arrow1-top-left" />
               </a>
             </div>
           </div>

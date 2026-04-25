@@ -20,13 +20,13 @@ export default function Faqs() {
               </p>
               <div className="bot">
                 <Link
-                  to={`/contact-us`}
+                  to={`/contato`}
                   className="tf-btn btn-orange-3 animate-btn fw-semibold font-4"
                 >
                   Fale conosco
                 </Link>
                 <Link
-                  to={`/contact-us`}
+                  to={`/contato`}
                   className="tf-btn btn-white animate-btn animate-dark fw-semibold font-4"
                 >
                   Conversar no chat

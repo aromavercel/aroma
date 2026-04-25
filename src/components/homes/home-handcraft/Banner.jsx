@@ -36,10 +36,10 @@ export default function Banner() {
               </div>
               <div className="box-btn-banner">
                 <Link
-                  to={`/about-us`}
+                  to={`/sobre-nos`}
                   className="tf-btn animate-btn btn-red btn-lg fw-medium bg-brown-14 border-0"
                 >
-                  MORE ABOUT US
+                  SAIBA MAIS
                 </Link>
               </div>
             </div>

@@ -535,7 +535,7 @@ export default function Checkout() {
                     suportar sua experiência ao longo deste site e para outros
                     propósitos descritos em nossa{" "}
                     <Link
-                      to={`/privacy-policy`}
+                      to={`/politica-de-privacidade`}
                       className="fw-medium text-decoration-underline link text-sm"
                     >
                       política de privacidade.
