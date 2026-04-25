@@ -75,6 +75,7 @@ export default function Context({ children }) {
   const [wishList, setWishList] = useState([]);
   const [wishListItems, setWishListItems] = useState([]);
   const [wishListLoading, setWishListLoading] = useState(false);
+  const [wishlistLastError, setWishlistLastError] = useState(null); // { message, status, at }
   const [compareItem, setCompareItem] = useState([]);
   const [quickViewItem, setQuickViewItem] = useState(null);
   const [quickAddItem, setQuickAddItem] = useState(1);
@@ -342,6 +343,7 @@ export default function Context({ children }) {
       const prevIds = wishList;
       const prevItems = wishListItems;
       const opVersion = nextWishlistVersion(key);
+      setWishlistLastError(null);
       // UX: atualiza imediatamente (otimista) e depois sincroniza com API
       setWishList((pre) => (pre.includes(key) ? pre : [...pre, key]));
       setWishListItems((pre) => {
@@ -366,6 +368,11 @@ export default function Context({ children }) {
         }
       } catch (err) {
         console.error("Erro ao adicionar aos favoritos:", err);
+        setWishlistLastError({
+          message: err?.message || "Erro ao salvar nos favoritos.",
+          status: err?.status ?? err?.statusCode ?? null,
+          at: Date.now(),
+        });
         if (isWishlistVersionCurrent(key, opVersion)) {
           setWishList(prevIds);
           setWishListItems(prevItems);
@@ -392,6 +399,7 @@ export default function Context({ children }) {
       const prevIds = wishList;
       const prevItems = wishListItems;
       const opVersion = nextWishlistVersion(key);
+      setWishlistLastError(null);
       // UX: remove imediatamente (otimista) e depois sincroniza com API
       setWishList((pre) => pre.filter((x) => String(x) !== key));
       setWishListItems((pre) => pre.filter((p) => String(p.id) !== key));
@@ -409,6 +417,11 @@ export default function Context({ children }) {
         }
       } catch (err) {
         console.error("Erro ao remover dos favoritos:", err);
+        setWishlistLastError({
+          message: err?.message || "Erro ao remover dos favoritos.",
+          status: err?.status ?? err?.statusCode ?? null,
+          at: Date.now(),
+        });
         if (isWishlistVersionCurrent(key, opVersion)) {
           setWishList(prevIds);
           setWishListItems(prevItems);
@@ -668,6 +681,7 @@ export default function Context({ children }) {
     isAddedtoWishlist,
     wishListItems,
     wishListLoading,
+    wishlistLastError,
     quickViewItem,
     wishList,
     setQuickViewItem,

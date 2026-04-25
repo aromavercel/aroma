@@ -31,6 +31,7 @@ export default function PerfumeDetailInfo({
     removeFromWishlist,
     isAddedtoWishlist,
     wishListLoading,
+    wishlistLastError,
     addToCompareItem,
     isAddedtoCompareItem,
     cartLoading,
@@ -197,6 +198,11 @@ export default function PerfumeDetailInfo({
           <i className="icon added icon-trash" />
           <span className="added">Remover dos favoritos</span>
         </button>
+        {wishlistLastError?.message && (
+          <div className="text-danger text-sm mt-2" role="alert">
+            {wishlistLastError.message}
+          </div>
+        )}
         {/* <a
           href="#compare"
           data-bs-toggle="modal"
