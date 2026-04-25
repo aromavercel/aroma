@@ -81,11 +81,27 @@ export default function Context({ children }) {
   const [totalPrice, setTotalPrice] = useState(0);
   const pendingOptimisticRemovalsRef = useRef([]);
   const hiddenCartLineIdsRef = useRef(new Set());
+  const pendingHideCartLineIdsRef = useRef(new Map()); // id -> attempts
 
   const filterHiddenCartLines = (items) => {
     const hidden = hiddenCartLineIdsRef.current;
     if (!hidden || hidden.size === 0) return items;
     return (items || []).filter((p) => !hidden.has(String(p.id)));
+  };
+
+  const scheduleCartRefreshIfNeeded = () => {
+    if (!user?.id) return;
+    const hidden = hiddenCartLineIdsRef.current;
+    if (!hidden || hidden.size === 0) return;
+    // tenta uma revalidação curta para evitar reintrodução por respostas fora de ordem
+    setTimeout(async () => {
+      try {
+        const { items } = await getCart();
+        setCartProducts(filterHiddenCartLines(items));
+      } catch {
+        // ignora
+      }
+    }, 700);
   };
   useEffect(() => {
     const subtotal = cartProducts.reduce((accumulator, product) => {
@@ -236,6 +252,7 @@ export default function Context({ children }) {
       const prevSnapshot = cartProducts.map((p) => ({ ...p }));
       // UI otimista
       hiddenCartLineIdsRef.current.add(lineId);
+      pendingHideCartLineIdsRef.current.set(lineId, (pendingHideCartLineIdsRef.current.get(lineId) || 0) + 1);
       setCartProducts((pre) => pre.filter((p) => String(p.id) !== lineId));
       setCartLoading(true);
       try {
@@ -253,11 +270,20 @@ export default function Context({ children }) {
         await removeCartItem(lineId);
         const { items } = await getCart();
         setCartProducts(filterHiddenCartLines(items));
-        hiddenCartLineIdsRef.current.delete(lineId);
+        // Só libera o "hide" quando o servidor realmente não retorna mais este id.
+        const stillThere = (items || []).some((p) => String(p.id) === lineId);
+        if (!stillThere) {
+          hiddenCartLineIdsRef.current.delete(lineId);
+          pendingHideCartLineIdsRef.current.delete(lineId);
+        } else {
+          // mantém oculto e revalida mais uma vez (eventual consistency / respostas fora de ordem)
+          scheduleCartRefreshIfNeeded();
+        }
       } catch (err) {
         console.error("Erro ao remover do carrinho:", err);
         setCartProducts(prevSnapshot);
         hiddenCartLineIdsRef.current.delete(lineId);
+        pendingHideCartLineIdsRef.current.delete(lineId);
       } finally {
         setCartLoading(false);
       }

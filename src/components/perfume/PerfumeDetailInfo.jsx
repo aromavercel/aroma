@@ -156,7 +156,13 @@ export default function PerfumeDetailInfo({
             className={`tf-btn hover-primary btn-add-to-cart ${cartLoading || indisponivel ? "disabled" : ""}`}
             aria-disabled={cartLoading || indisponivel}
           >
-            {indisponivel ? "Indisponível" : cartLoading ? "..." : inCart ? "No carrinho" : "Adicionar ao carrinho"}
+            {indisponivel
+              ? "Indisponível"
+              : inCart
+                ? "No carrinho"
+                : cartLoading
+                  ? "..."
+                  : "Adicionar ao carrinho"}
           </a>
         </div>
         {indisponivel ? (
