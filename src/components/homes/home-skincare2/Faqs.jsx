@@ -9,29 +9,27 @@ export default function Faqs() {
           <div className="col-lg-5">
             <div className="content">
               <h3 className="title fw-normal fst-italic font-3 letter-0">
-                Frequently Asked Questions
+                Perguntas frequentes
               </h3>
               <p className="text-sm text-main">
-                If you have an issue or question that requires immediate
-                assistance, you can click the button below to chat live with a
-                Customer Service representative.
+                Se você tiver alguma dúvida ou precisar de ajuda, clique no
+                botão abaixo para falar com a gente.
                 <br />
                 <br />
-                Please allow 06 - 12 business days from the time your package
-                arrives back to us for a refund to be issued.
+                Respondemos o mais rápido possível durante o horário comercial.
               </p>
               <div className="bot">
                 <Link
                   to={`/contact-us`}
                   className="tf-btn btn-orange-3 animate-btn fw-semibold font-4"
                 >
-                  Contact us
+                  Fale conosco
                 </Link>
                 <Link
                   to={`/contact-us`}
                   className="tf-btn btn-white animate-btn animate-dark fw-semibold font-4"
                 >
-                  Chat with us
+                  Conversar no chat
                 </Link>
               </div>
             </div>

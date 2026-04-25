@@ -6,8 +6,8 @@ import { Link } from "react-router-dom";
 
 import MetaComponent from "@/components/common/MetaComponent";
 const metadata = {
-  title: "Page Not Found || Vineta - Multipurpose Reactjs eCommerce Template",
-  description: "Vineta - Multipurpose Reactjs eCommerce Template",
+  title: "Página não encontrada | Aroma",
+  description: "A página que você tentou acessar não existe.",
 };
 export default function NotFoundPage() {
   return (
@@ -30,13 +30,13 @@ export default function NotFoundPage() {
                     height={472}
                   />
                 </div>
-                <p className="title">Whoops!</p>
+                <p className="title">Ops!</p>
                 <p className="text-md sub text-main">
-                  We couldn’t find the page you were looking for.
+                  Não encontramos a página que você estava procurando.
                 </p>
                 <div className="bot">
                   <Link to={`/`} className="tf-btn btn-fill animate-btn">
-                    Return to Homepage
+                    Voltar para o início
                   </Link>
                 </div>
               </div>

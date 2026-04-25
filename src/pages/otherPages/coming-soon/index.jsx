@@ -6,8 +6,8 @@ import { Link } from "react-router-dom";
 import CountdownTimer from "@/components/common/Countdown";
 import MetaComponent from "@/components/common/MetaComponent";
 const metadata = {
-  title: "Comming Soon || Vineta - Multipurpose Reactjs eCommerce Template",
-  description: "Vineta - Multipurpose Reactjs eCommerce Template",
+  title: "Em breve | Aroma",
+  description: "Esta página estará disponível em breve.",
 };
 export default function CommingSoonPage() {
   return (
@@ -20,11 +20,11 @@ export default function CommingSoonPage() {
           <div className="row">
             <div className="col-lg-12">
               <div className="wg-coming-soon">
-                <p className="title text-center">Coming Soon!</p>
+                <p className="title text-center">Em breve!</p>
                 <p className="text-md sub text-main text-center">
-                  We couldn’t find the page you were looking for. We suggest
+                  Esta página estará disponível em breve. Enquanto isso,
                   <br />
-                  you return to homepage
+                  você pode voltar para o início.
                 </p>
                 <div className="wg-countdown">
                   <span className="js-countdown">
@@ -45,7 +45,7 @@ export default function CommingSoonPage() {
                           type="email"
                           name="email-form"
                           className="subscribe-email"
-                          placeholder="Your email address"
+                          placeholder="Seu e-mail"
                           tabIndex={0}
                           aria-required="true"
                           required=""
@@ -53,7 +53,7 @@ export default function CommingSoonPage() {
                       </fieldset>
                       <div className="button-submit">
                         <button className="tf-btn animate-btn" type="submit">
-                          <span className="text-sm">Get Notify</span>
+                          <span className="text-sm">Avise-me</span>
                         </button>
                       </div>
                     </div>
@@ -64,7 +64,7 @@ export default function CommingSoonPage() {
                     to={`/`}
                     className="tf-btn btn-fill hover-primary animate-btn"
                   >
-                    Return to Homepage
+                    Voltar para o início
                   </Link>
                 </div>
               </div>

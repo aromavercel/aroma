@@ -18,7 +18,7 @@ export default function BlogGridPage2() {
       <MetaComponent meta={metadata} />
       <Topbar />
       <Header1 />
-      <Breadcumb pageName="Blogs" pageTitle="Blogs" />
+      <Breadcumb pageName="Blog" pageTitle="Blog" />
 
       <div className="btn-sidebar-mb d-lg-none right">
         <button data-bs-toggle="offcanvas" data-bs-target="#mbAccount">
