@@ -167,8 +167,19 @@ export default function CatalogPage() {
     () => ({
       q: searchValue.trim(),
       brandKey: brandValue !== "all" ? brandValue : null,
-      priceMin: priceMinInput,
-      priceMax: priceMaxInput,
+      // Importante: `Number("") === 0`. Precisamos manter vazio como "" para não filtrar por preço 0.
+      priceMin:
+        priceMinInput === "" || priceMinInput == null
+          ? ""
+          : Number.isFinite(Number(priceMinInput))
+            ? Number(priceMinInput)
+            : "",
+      priceMax:
+        priceMaxInput === "" || priceMaxInput == null
+          ? ""
+          : Number.isFinite(Number(priceMaxInput))
+            ? Number(priceMaxInput)
+            : "",
       sort: sortValue,
       compact: true,
       noTotal: true,

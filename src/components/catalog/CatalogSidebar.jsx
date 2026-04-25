@@ -2,6 +2,12 @@
 
 import React from "react";
 
+function toFiniteOrEmpty(value) {
+  if (value === "" || value == null) return "";
+  const n = Number(value);
+  return Number.isFinite(n) ? n : "";
+}
+
 export default function CatalogSidebar({
   brandOptions,
   brandValue,
@@ -106,9 +112,7 @@ export default function CatalogSidebar({
                   placeholder="Mín"
                   value={priceMin === "" ? "" : priceMin}
                   onChange={(e) =>
-                    onPriceMinChange(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    )
+                    onPriceMinChange(toFiniteOrEmpty(e.target.value))
                   }
                 />
                 <span>-</span>
@@ -121,9 +125,7 @@ export default function CatalogSidebar({
                   placeholder="Máx"
                   value={priceMax === "" ? "" : priceMax}
                   onChange={(e) =>
-                    onPriceMaxChange(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    )
+                    onPriceMaxChange(toFiniteOrEmpty(e.target.value))
                   }
                 />
               </div>

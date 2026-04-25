@@ -13,6 +13,7 @@ import {
 import { normalizePhone } from "./lib/phone.js";
 import { cartPhoneCandidateKeys, resolveCartsUserPhoneFromCandidates } from "../lib/cartPhoneResolve.js";
 import { generateOtpCode, hashResetCode, constantTimeEqualHex } from "../lib/passwordReset.js";
+import { handlePerfumes } from "../lib/api/perfumes.js";
 
 const MAX_AVATAR_SIZE = 4 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -235,6 +236,7 @@ function toUuidKey(val) {
 // Compacto: ?compact=1 evita enviar notes/variants (payload menor)
 // Facets: ?facets=1 retorna {brands,total} (para sidebar sem listar tudo)
 app.get("/api/perfumes", async (req, res) => {
+  return await handlePerfumes([], req, res);
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
     const catalog = typeof req.query.catalog === "string" ? req.query.catalog.trim() : null;
