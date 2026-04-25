@@ -7,6 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Link } from "react-router-dom";
 import { useContextElement } from "@/context/Context";
 import QuantitySelect from "../common/QuantitySelect";
+import Skeleton from "@/components/common/Skeleton";
 
 export default function ShopCart() {
   const {
@@ -14,6 +15,7 @@ export default function ShopCart() {
     totalPrice,
     updateQuantity,
     removeFromCart,
+    cartLoading,
   } = useContextElement();
 
   const removeItem = (id) => {
@@ -27,7 +29,22 @@ export default function ShopCart() {
           <div className="col-xl-8">
             <div className="tf-page-cart-main">
               <form className="form-cart" onSubmit={(e) => e.preventDefault()}>
-                {cartProducts.length ? (
+                {cartLoading && !cartProducts.length ? (
+                  <div className="p-3 p-md-4">
+                    <div className="d-grid gap-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={`cart-page-skel-${i}`} className="d-flex gap-3 align-items-start">
+                          <Skeleton style={{ width: 84, height: 120, borderRadius: 12 }} />
+                          <div className="flex-grow-1">
+                            <Skeleton variant="text" style={{ width: "70%", height: 16, marginBottom: 12 }} />
+                            <Skeleton variant="text" style={{ width: "40%", height: 12, marginBottom: 14 }} />
+                            <Skeleton style={{ width: 140, height: 36, borderRadius: 999 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : cartProducts.length ? (
                   <table className="table-page-cart">
                     <thead>
                       <tr>
@@ -181,7 +198,15 @@ export default function ShopCart() {
                 <div className="checkout-btn">
                   <Link
                     to={`/checkout`}
-                    className="tf-btn btn-dark2 animate-btn w-100"
+                    className={`tf-btn btn-dark2 animate-btn w-100 ${cartLoading ? "disabled" : ""}`}
+                    aria-disabled={cartLoading}
+                    tabIndex={cartLoading ? -1 : 0}
+                    onClick={(e) => {
+                      if (cartLoading) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
                   >
                     Checkout
                   </Link>

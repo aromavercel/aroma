@@ -1,27 +1,23 @@
-export const openCartModal = () => {
-  // const bootstrap = require("bootstrap"); // dynamically import bootstrap
-  // const modalElements = document.querySelectorAll(".modal.show");
-  // modalElements.forEach((modal) => {
-  //   const modalInstance = bootstrap.Modal.getInstance(modal);
-  //   if (modalInstance) {
-  //     modalInstance.hide();
-  //   }
-  // });
-  // // Close any open offcanvas
-  // const offcanvasElements = document.querySelectorAll(".offcanvas.show");
-  // offcanvasElements.forEach((offcanvas) => {
-  //   const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvas);
-  //   if (offcanvasInstance) {
-  //     offcanvasInstance.hide();
-  //   }
-  // });
-  // var myModal = new bootstrap.Modal(document.getElementById("shoppingCart"), {
-  //   keyboard: false,
-  // });
-  // myModal.show();
-  // document
-  //   .getElementById("shoppingCart")
-  //   .addEventListener("hidden.bs.modal", () => {
-  //     myModal.hide();
-  //   });
+export const openCartModal = async () => {
+  if (typeof document === "undefined") return;
+  const el = document.getElementById("shoppingCart");
+  if (!el) return;
+
+  try {
+    const bootstrap = await import("bootstrap");
+    const isOffcanvas = el.classList.contains("offcanvas");
+    if (isOffcanvas) {
+      const instance =
+        bootstrap.Offcanvas.getInstance(el) ||
+        new bootstrap.Offcanvas(el, { backdrop: true, scroll: false });
+      instance.show();
+      return;
+    }
+    const instance =
+      bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el, { keyboard: true });
+    instance.show();
+  } catch (err) {
+    // não bloqueia a UX se o bootstrap não estiver disponível
+    console.error("openCartModal:", err);
+  }
 };

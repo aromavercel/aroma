@@ -3,6 +3,7 @@ import { useContextElement } from "@/context/Context";
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import QuantitySelect from "../common/QuantitySelect";
+import Skeleton from "@/components/common/Skeleton";
 
 export default function CartModal() {
   const [openTool, setOpenTool] = useState(-1);
@@ -13,6 +14,7 @@ export default function CartModal() {
     isAddedToCartProducts,
     updateQuantity,
     removeFromCart,
+    cartLoading,
   } = useContextElement();
 
   const hasItems = cartProducts.length > 0;
@@ -52,7 +54,22 @@ export default function CartModal() {
           <div className="tf-mini-cart-wrap">
             <div className="tf-mini-cart-main">
               <div className="tf-mini-cart-sroll">
-                {cartProducts.length ? (
+                {cartLoading && !cartProducts.length ? (
+                  <div className="p-4">
+                    <div className="d-grid gap-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={`cart-skel-${i}`} className="d-flex gap-3 align-items-start">
+                          <Skeleton style={{ width: 64, height: 86, borderRadius: 10 }} />
+                          <div className="flex-grow-1">
+                            <Skeleton variant="text" style={{ width: "70%", height: 14, marginBottom: 10 }} />
+                            <Skeleton variant="text" style={{ width: "45%", height: 12, marginBottom: 12 }} />
+                            <Skeleton style={{ width: 120, height: 34, borderRadius: 999 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : cartProducts.length ? (
                   <div className="tf-mini-cart-items">
                     {cartProducts.map((product, i) => {
                       const perfumePageId = product.perfume_id ?? product.id;
