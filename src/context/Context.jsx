@@ -82,6 +82,18 @@ export default function Context({ children }) {
   const pendingOptimisticRemovalsRef = useRef([]);
   const hiddenCartLineIdsRef = useRef(new Set());
   const pendingHideCartLineIdsRef = useRef(new Map()); // id -> attempts
+  const wishlistOpVersionRef = useRef(new Map()); // id -> version (last action wins)
+
+  const nextWishlistVersion = (key) => {
+    const map = wishlistOpVersionRef.current;
+    const v = (map.get(key) ?? 0) + 1;
+    map.set(key, v);
+    return v;
+  };
+
+  const isWishlistVersionCurrent = (key, v) => {
+    return (wishlistOpVersionRef.current.get(key) ?? 0) === v;
+  };
 
   const filterHiddenCartLines = (items) => {
     const hidden = hiddenCartLineIdsRef.current;
@@ -295,14 +307,36 @@ export default function Context({ children }) {
   const addToWishlist = async (id, snapshot = null) => {
     const key = String(id);
     if (user?.id) {
+      const prevIds = wishList;
+      const prevItems = wishListItems;
+      const opVersion = nextWishlistVersion(key);
+      // UX: atualiza imediatamente (otimista) e depois sincroniza com API
+      setWishList((pre) => (pre.includes(key) ? pre : [...pre, key]));
+      setWishListItems((pre) => {
+        if (pre.some((p) => String(p.id) === key)) return pre;
+        const entry =
+          snapshot && typeof snapshot === "object"
+            ? normalizeGuestWishlistSnapshot(key, snapshot)
+            : { id: key };
+        return [...pre, entry];
+      });
       setWishListLoading(true);
       try {
         await addWishlistItem(key);
         const { items } = await getWishlist();
-        setWishListItems(items);
-        setWishList(items.map((p) => String(p.id)));
+        // Só aplica se este ainda for o último clique para este item.
+        if (isWishlistVersionCurrent(key, opVersion)) {
+          setWishListItems(items);
+          setWishList(items.map((p) => String(p.id)));
+        }
+      } catch (err) {
+        console.error("Erro ao adicionar aos favoritos:", err);
+        if (isWishlistVersionCurrent(key, opVersion)) {
+          setWishList(prevIds);
+          setWishListItems(prevItems);
+        }
       } finally {
-        setWishListLoading(false);
+        if (isWishlistVersionCurrent(key, opVersion)) setWishListLoading(false);
       }
       return;
     }
@@ -320,14 +354,28 @@ export default function Context({ children }) {
   const removeFromWishlist = async (id) => {
     const key = String(id);
     if (user?.id) {
+      const prevIds = wishList;
+      const prevItems = wishListItems;
+      const opVersion = nextWishlistVersion(key);
+      // UX: remove imediatamente (otimista) e depois sincroniza com API
+      setWishList((pre) => pre.filter((x) => String(x) !== key));
+      setWishListItems((pre) => pre.filter((p) => String(p.id) !== key));
       setWishListLoading(true);
       try {
         await removeWishlistItem(key);
         const { items } = await getWishlist();
-        setWishListItems(items);
-        setWishList(items.map((p) => String(p.id)));
+        if (isWishlistVersionCurrent(key, opVersion)) {
+          setWishListItems(items);
+          setWishList(items.map((p) => String(p.id)));
+        }
+      } catch (err) {
+        console.error("Erro ao remover dos favoritos:", err);
+        if (isWishlistVersionCurrent(key, opVersion)) {
+          setWishList(prevIds);
+          setWishListItems(prevItems);
+        }
       } finally {
-        setWishListLoading(false);
+        if (isWishlistVersionCurrent(key, opVersion)) setWishListLoading(false);
       }
       return;
     }
