@@ -80,6 +80,13 @@ export default function Context({ children }) {
   const [quickAddItem, setQuickAddItem] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
   const pendingOptimisticRemovalsRef = useRef([]);
+  const hiddenCartLineIdsRef = useRef(new Set());
+
+  const filterHiddenCartLines = (items) => {
+    const hidden = hiddenCartLineIdsRef.current;
+    if (!hidden || hidden.size === 0) return items;
+    return (items || []).filter((p) => !hidden.has(String(p.id)));
+  };
   useEffect(() => {
     const subtotal = cartProducts.reduce((accumulator, product) => {
       return accumulator + (Number(product.price) || 0) * (Number(product.quantity) || 0);
@@ -140,7 +147,7 @@ export default function Context({ children }) {
       try {
         await addCartItem(id, quantity, variant);
         const { items } = await getCart();
-        setCartProducts(items);
+        setCartProducts(filterHiddenCartLines(items));
 
         // Se o usuário removeu um item "optimistic:*" antes da sync, tenta remover o item real agora.
         const pending = pendingOptimisticRemovalsRef.current;
@@ -160,7 +167,7 @@ export default function Context({ children }) {
             }
             try {
               const refreshed = await getCart();
-              setCartProducts(refreshed.items);
+              setCartProducts(filterHiddenCartLines(refreshed.items));
             } catch {
               // ignora
             }
@@ -215,7 +222,7 @@ export default function Context({ children }) {
     try {
       await updateCartItem(lineId, quantity);
       const { items } = await getCart();
-      setCartProducts(items);
+      setCartProducts(filterHiddenCartLines(items));
     } catch (err) {
       console.error("Erro ao atualizar quantidade:", err);
       setCartProducts(prevSnapshot);
@@ -228,6 +235,7 @@ export default function Context({ children }) {
       if (!lineId) return;
       const prevSnapshot = cartProducts.map((p) => ({ ...p }));
       // UI otimista
+      hiddenCartLineIdsRef.current.add(lineId);
       setCartProducts((pre) => pre.filter((p) => String(p.id) !== lineId));
       setCartLoading(true);
       try {
@@ -244,10 +252,12 @@ export default function Context({ children }) {
         }
         await removeCartItem(lineId);
         const { items } = await getCart();
-        setCartProducts(items);
+        setCartProducts(filterHiddenCartLines(items));
+        hiddenCartLineIdsRef.current.delete(lineId);
       } catch (err) {
         console.error("Erro ao remover do carrinho:", err);
         setCartProducts(prevSnapshot);
+        hiddenCartLineIdsRef.current.delete(lineId);
       } finally {
         setCartLoading(false);
       }
@@ -332,7 +342,7 @@ export default function Context({ children }) {
       getCart()
         .then(async (r) => {
           if (r.items?.length) {
-            setCartProducts(r.items);
+            setCartProducts(filterHiddenCartLines(r.items));
             return;
           }
           let guest = [];
@@ -362,7 +372,7 @@ export default function Context({ children }) {
             const next = await getCart();
             const merged = next.items || [];
             if (merged.length > 0) {
-              setCartProducts(merged);
+              setCartProducts(filterHiddenCartLines(merged));
             } else if (guest.length > 0) {
               setCartProducts(guest);
             } else {
