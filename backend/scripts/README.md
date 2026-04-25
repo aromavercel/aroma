@@ -82,3 +82,11 @@ ou, se preferir, aplicar as migrations na ordem.
 ```bash
 node --env-file=.env.local backend/scripts/seed-perfumes.js
 ```
+
+---
+
+## Reset: só catálogo + usuários admin
+
+O arquivo SQL `reset_keep_catalog_and_admins.sql` apaga **pedidos, carrinhos, wishlists, mensagens, tokens de reset, promo_alerts** e **todos os usuários que não são admin**, mantendo **`brands`**, **`perfumes`**, **`perfume_images`** e contas **`role = admin`**.
+
+Execute **manualmente** no SQL Editor do Neon (ou `psql`), após backup. O script exige que já exista **pelo menos um** usuário admin; caso contrário aborta com erro.
