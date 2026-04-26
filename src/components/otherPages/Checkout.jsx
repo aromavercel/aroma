@@ -2,7 +2,7 @@
 
 import { useContextElement } from "@/context/Context";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { checkPhoneRegistered, getMe, updateProfile } from "@/api/auth";
 import {
   brazilPhoneNationalDigits,
@@ -17,8 +17,10 @@ import { fetchAddressByCep, formatCep, onlyDigits } from "@/utils/cep";
 const CHECKOUT_DRAFT_KEY = "aroma_checkout_draft_v1";
 
 export default function Checkout() {
-  const { user, cartProducts, totalPrice, setCartProducts, setUser } = useContextElement();
+  const { user, cartProducts, totalPrice, setCartProducts, setUser, cartLoading } = useContextElement();
   const navigate = useNavigate();
+  const errorRef = useRef(null);
+  const [orderPlaced, setOrderPlaced] = useState(false);
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
   const [address, setAddress] = useState("");
@@ -217,9 +219,34 @@ export default function Checkout() {
       return;
     }
     if (!user?.id) {
-      setError(
-        "Para finalizar, entre na sua conta ou crie uma conta usando as opções que aparecem após informar seu telefone.",
-      );
+      const msg =
+        "Para finalizar, entre na sua conta ou crie uma conta usando as opções que aparecem após informar seu telefone.";
+      setError(msg);
+      // Abre automaticamente o modal correto e replica a mesma mensagem nele.
+      try {
+        sessionStorage.setItem("checkoutAuthMessage", msg);
+      } catch {
+        // ignora
+      }
+      const target = phoneRegistry === "exists" ? "login" : "register";
+      // Importante: o Bootstrap aplica `overflow: hidden` no body ao abrir o offcanvas,
+      // o que pode impedir o scroll. Então primeiro subimos a página e depois abrimos.
+      requestAnimationFrame(() => {
+        const el = errorRef.current;
+        if (el) {
+          const topOffset = 24;
+          const rect = el.getBoundingClientRect();
+          const y = Math.max(0, rect.top + window.scrollY - topOffset);
+          try {
+            window.scrollTo({ top: y, behavior: "smooth" });
+          } catch {
+            window.scrollTo(0, y);
+          }
+        }
+        setTimeout(() => {
+          stashPhoneAndOpenAuth(target);
+        }, 350);
+      });
       return;
     }
     const name = [firstname, lastname].filter(Boolean).join(" ").trim();
@@ -290,6 +317,7 @@ export default function Checkout() {
         shipping_phone: contactPhone,
         payment_method: "cash_delivery",
       });
+      setOrderPlaced(true);
       try {
         localStorage.removeItem("cartList");
       } catch {
@@ -309,6 +337,49 @@ export default function Checkout() {
     }
   };
 
+  useEffect(() => {
+    if (!error) return;
+    // Em mobile/desktop: sobe automaticamente até o alerta de erro.
+    // Usa rAF para garantir que o DOM já renderizou o alerta.
+    const t = requestAnimationFrame(() => {
+      const el = errorRef.current;
+      if (!el) return;
+      // Primeiro: scroll explícito na janela (mais confiável no desktop).
+      const topOffset = 24; // espaço para não colar no topo
+      const rect = el.getBoundingClientRect();
+      const y = Math.max(0, rect.top + window.scrollY - topOffset);
+      try {
+        window.scrollTo({ top: y, behavior: "smooth" });
+      } catch {
+        window.scrollTo(0, y);
+      }
+      // Fallback: garante visibilidade mesmo se houver containers/overflow.
+      try {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch {
+        el.scrollIntoView();
+      }
+      // A11y: foco no alerta para leitores de tela.
+      try {
+        el.focus?.();
+      } catch {
+        // ignora
+      }
+    });
+    return () => cancelAnimationFrame(t);
+  }, [error]);
+
+  useEffect(() => {
+    // Não permitir acesso ao checkout sem itens no carrinho.
+    // Evita redirecionar durante a hidratação/sincronização inicial.
+    // Também não redireciona enquanto estiver concluindo o pedido (o carrinho zera antes do navigate).
+    if (cartLoading) return;
+    if (orderPlaced) return;
+    if (Array.isArray(cartProducts) && cartProducts.length === 0) {
+      navigate("/catalogo", { replace: true });
+    }
+  }, [cartLoading, cartProducts, navigate, orderPlaced]);
+
   return (
     <div className="flat-spacing-25">
       <div className="container">
@@ -318,7 +389,16 @@ export default function Checkout() {
               <div className="tf-checkout-cart-main">
                 <div className="box-ip-checkout">
                   <div className="title text-xl fw-medium">Checkout</div>
-                  {error && <div className="alert alert-danger mb_16">{error}</div>}
+                  {error && (
+                    <div
+                      ref={errorRef}
+                      className="alert alert-danger mb_16"
+                      role="alert"
+                      tabIndex={-1}
+                    >
+                      {error}
+                    </div>
+                  )}
                   <fieldset className="tf-field style-2 style-3 mb_16">
                     <input
                       className={`tf-field-input tf-input${user?.id ? " bg-light" : ""}`}
