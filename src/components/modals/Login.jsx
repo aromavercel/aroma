@@ -12,6 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [checkoutMessage, setCheckoutMessage] = useState("");
 
   useEffect(() => {
     const el = document.getElementById("login");
@@ -22,6 +23,13 @@ export default function Login() {
         if (fromCheckout) {
           setPhone(brazilPhoneNationalDigits(fromCheckout));
           sessionStorage.removeItem("checkoutAuthPhone");
+        }
+        const msg = sessionStorage.getItem("checkoutAuthMessage");
+        if (msg) {
+          setCheckoutMessage(String(msg));
+          sessionStorage.removeItem("checkoutAuthMessage");
+        } else {
+          setCheckoutMessage("");
         }
       } catch {
         // ignora
@@ -70,6 +78,11 @@ export default function Login() {
         </div>
         <div className="canvas-body popup-inner">
           <form onSubmit={handleSubmit} acceptCharset="utf-8" className="form-login">
+            {checkoutMessage && (
+              <div className="alert alert-danger text-sm mb_12" role="alert">
+                {checkoutMessage}
+              </div>
+            )}
             {error && (
               <div className="alert alert-danger text-sm mb_12" role="alert">
                 {error}
