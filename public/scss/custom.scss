@@ -259,11 +259,9 @@
   filter: grayscale(0.2);
 }
 
-/* Botões desabilitados (visual de "não clicável") */
-button.tf-btn:disabled,
-.tf-btn[disabled],
-.tf-btn.disabled,
-.tf-btn[aria-disabled="true"] {
+/* Checkout: botão "Finalizar pedido" desabilitado */
+.checkout-finalize-btn:disabled,
+.checkout-finalize-btn[aria-disabled="true"] {
   cursor: not-allowed !important;
   opacity: 0.55 !important;
   filter: grayscale(0.25);
@@ -271,10 +269,8 @@ button.tf-btn:disabled,
   box-shadow: none !important;
 }
 
-button.tf-btn:disabled:hover,
-.tf-btn[disabled]:hover,
-.tf-btn.disabled:hover,
-.tf-btn[aria-disabled="true"]:hover {
+.checkout-finalize-btn:disabled:hover,
+.checkout-finalize-btn[aria-disabled="true"]:hover {
   transform: none !important;
 }
 
