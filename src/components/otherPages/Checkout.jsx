@@ -2,7 +2,7 @@
 
 import { useContextElement } from "@/context/Context";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { checkPhoneRegistered, getMe, updateProfile } from "@/api/auth";
 import {
   brazilPhoneNationalDigits,
@@ -15,6 +15,7 @@ import { BR_STATES, COUNTRY_BR_LABEL, fetchBrazilCitiesByUF } from "@/utils/brLo
 import { fetchAddressByCep, formatCep, onlyDigits } from "@/utils/cep";
 
 const CHECKOUT_DRAFT_KEY = "aroma_checkout_draft_v1";
+const CHECKOUT_AUTO_FINALIZE_KEY = "aroma_checkout_auto_finalize_v1";
 
 export default function Checkout() {
   const { user, cartProducts, totalPrice, setCartProducts, setUser, cartLoading } = useContextElement();
@@ -195,6 +196,44 @@ export default function Checkout() {
   const taxCost = 0;
   const orderTotal = totalPrice ? totalPrice + shippingCost : 0;
 
+  const getCheckoutValidationError = useCallback(
+    ({ requireAuthReady = false } = {}) => {
+      if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
+        return "Seu carrinho está vazio.";
+      }
+
+      const name = [firstname, lastname].filter(Boolean).join(" ").trim();
+      if (!name) return "Preencha seu nome.";
+      if (!address?.trim()) return "Preencha o logradouro.";
+      if (!addressNumber?.trim()) return "Preencha o número.";
+      if (!city?.trim()) return "Preencha a cidade.";
+
+      // Para visitantes, o telefone é obrigatório antes de abrir login/cadastro.
+      if (!user?.id) {
+        const trimmed = phone.trim();
+        if (!trimmed) return "Informe seu telefone com DDD.";
+        if (!isValidBrazilPhoneInput(trimmed)) return "Informe um telefone válido com DDD.";
+        if (requireAuthReady && phoneRegistry === "checking") return "Aguarde a verificação do telefone.";
+        if (requireAuthReady && phoneRegistry !== "exists" && phoneRegistry !== "absent") {
+          return "Aguarde a verificação do telefone.";
+        }
+      }
+
+      // Para usuários logados, precisamos ter um telefone de contato (do checkout ou da conta).
+      if (user?.id) {
+        const accountPhone = String(user.phone ?? "").trim();
+        const contactPhone = (phone.trim() || accountPhone).trim();
+        if (!contactPhone) return "É necessário um telefone para contato na entrega.";
+        if (phone.trim() && !isValidBrazilPhoneInput(phone.trim())) {
+          return "Informe um telefone válido com DDD.";
+        }
+      }
+
+      return "";
+    },
+    [address, addressNumber, cartProducts, city, firstname, lastname, phone, phoneRegistry, user?.id, user?.phone],
+  );
+
   const stashPhoneAndOpenAuth = async (targetId) => {
     try {
       sessionStorage.setItem("checkoutAuthPhone", brazilPhoneNationalDigits(phone));
@@ -211,51 +250,60 @@ export default function Checkout() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (!cartProducts.length) {
-      setError("Seu carrinho está vazio.");
-      return;
-    }
-    if (!user?.id) {
-      const msg =
-        "Para finalizar, entre na sua conta ou crie uma conta usando as opções que aparecem após informar seu telefone.";
-      setError(msg);
-      // Abre automaticamente o modal correto e replica a mesma mensagem nele.
-      try {
-        sessionStorage.setItem("checkoutAuthMessage", msg);
-      } catch {
-        // ignora
+  const finalizeOrder = useCallback(
+    async ({ auto = false } = {}) => {
+      const validationError = getCheckoutValidationError({ requireAuthReady: !user?.id });
+      if (validationError) {
+        setError(validationError);
+        return;
       }
-      const target = phoneRegistry === "exists" ? "login" : "register";
-      // Importante: o Bootstrap aplica `overflow: hidden` no body ao abrir o offcanvas,
-      // o que pode impedir o scroll. Então primeiro subimos a página e depois abrimos.
-      requestAnimationFrame(() => {
-        const el = errorRef.current;
-        if (el) {
-          const topOffset = 24;
-          const rect = el.getBoundingClientRect();
-          const y = Math.max(0, rect.top + window.scrollY - topOffset);
-          try {
-            window.scrollTo({ top: y, behavior: "smooth" });
-          } catch {
-            window.scrollTo(0, y);
-          }
+
+      // Visitante: só direciona para login/cadastro depois de validar os dados obrigatórios.
+      if (!user?.id) {
+        const msg =
+          "Para finalizar, entre na sua conta ou crie uma conta usando as opções que aparecem após informar seu telefone.";
+        setError(msg);
+
+        // Marca para auto-finalizar assim que autenticar.
+        try {
+          sessionStorage.setItem(CHECKOUT_AUTO_FINALIZE_KEY, "1");
+        } catch {
+          // ignora
         }
-        setTimeout(() => {
-          stashPhoneAndOpenAuth(target);
-        }, 350);
-      });
-      return;
-    }
-    const name = [firstname, lastname].filter(Boolean).join(" ").trim();
-    if (!name || !address?.trim() || !addressNumber?.trim() || !city?.trim()) {
-      setError("Preencha nome, logradouro, número e cidade.");
-      return;
-    }
-    setSubmitting(true);
-    try {
+
+        // Replica a mesma mensagem no modal.
+        try {
+          sessionStorage.setItem("checkoutAuthMessage", msg);
+        } catch {
+          // ignora
+        }
+
+        const target = phoneRegistry === "exists" ? "login" : "register";
+
+        // Importante: o Bootstrap aplica `overflow: hidden` no body ao abrir o offcanvas,
+        // o que pode impedir o scroll. Então primeiro subimos a página e depois abrimos.
+        requestAnimationFrame(() => {
+          const el = errorRef.current;
+          if (el) {
+            const topOffset = 24;
+            const rect = el.getBoundingClientRect();
+            const y = Math.max(0, rect.top + window.scrollY - topOffset);
+            try {
+              window.scrollTo({ top: y, behavior: "smooth" });
+            } catch {
+              window.scrollTo(0, y);
+            }
+          }
+          setTimeout(() => {
+            stashPhoneAndOpenAuth(target);
+          }, 350);
+        });
+        return;
+      }
+
+      setError("");
+      setSubmitting(true);
+      try {
       const sessionUser = await getMe();
       if (!sessionUser?.id) {
         setUser(null);
@@ -271,6 +319,15 @@ export default function Checkout() {
       if (!contactPhone) {
         setError("É necessário um telefone para contato na entrega.");
         return;
+      }
+
+      // Se foi auto-finalização pós-auth, limpamos o flag agora (antes do request).
+      if (auto) {
+        try {
+          sessionStorage.removeItem(CHECKOUT_AUTO_FINALIZE_KEY);
+        } catch {
+          // ignora
+        }
       }
 
       await updateProfile({
@@ -335,7 +392,55 @@ export default function Checkout() {
     } finally {
       setSubmitting(false);
     }
+    },
+    [
+      address,
+      addressNumber,
+      city,
+      getCheckoutValidationError,
+      navigate,
+      phone,
+      phoneRegistry,
+      setCartProducts,
+      setUser,
+      totalPrice,
+      discount,
+      shippingCost,
+      taxCost,
+      orderTotal,
+      firstname,
+      lastname,
+      complement,
+      deliveryInstructions,
+      state,
+      zipcode,
+      user?.id,
+      stashPhoneAndOpenAuth,
+    ],
+  );
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await finalizeOrder({ auto: false });
   };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (submitting) return;
+    let shouldAuto = false;
+    try {
+      shouldAuto = sessionStorage.getItem(CHECKOUT_AUTO_FINALIZE_KEY) === "1";
+    } catch {
+      shouldAuto = false;
+    }
+    if (!shouldAuto) return;
+
+    // Dá um tick para os states (draft/user) estabilizarem após o setUser do modal.
+    const t = setTimeout(() => {
+      finalizeOrder({ auto: true });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [finalizeOrder, submitting, user?.id]);
 
   useEffect(() => {
     if (!error) return;
@@ -379,6 +484,8 @@ export default function Checkout() {
       navigate("/catalogo", { replace: true });
     }
   }, [cartLoading, cartProducts, navigate, orderPlaced]);
+
+  const canFinalize = Boolean(!getCheckoutValidationError({ requireAuthReady: true }));
 
   return (
     <div className="flat-spacing-25">
@@ -695,7 +802,7 @@ export default function Checkout() {
                   <button
                     type="submit"
                     className="tf-btn btn-dark2 animate-btn w-100"
-                    disabled={submitting || !cartProducts.length}
+                    disabled={submitting || !canFinalize}
                   >
                     {submitting ? "Finalizando…" : "Finalizar pedido"}
                   </button>
