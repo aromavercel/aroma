@@ -68,7 +68,7 @@ export default function Header14() {
                   </Link>
                 </li>
                 <li className="nav-wishlist style-2">
-                  <Link to={`/wish-list`} className="nav-icon-item">
+                  <Link to="/lista-de-desejos" className="nav-icon-item">
                     <i className="icon icon-heart" />
                     <span className="text d-none d-xl-block">
                       <span className="d-flex text-main text-xs fw-normal">

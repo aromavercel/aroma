@@ -293,7 +293,7 @@ export default function MobileMenu() {
           </div>
           <div className="mb-other-content">
             <div className="group-icon">
-              <Link to="/wish-list" className="site-nav-icon" onClick={handleNavClick}>
+              <Link to="/lista-de-desejos" className="site-nav-icon" onClick={handleNavClick}>
                 <i className="icon icon-heart" />
                 Favoritos
               </Link>

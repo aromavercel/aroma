@@ -320,7 +320,7 @@ export const otherPages = [
   { href: "/faq", text: "FAQ" },
   { href: "/404", text: "404" },
   { href: "/coming-soon", text: "Coming Soon!" },
-  { href: "/view-cart", text: "View cart" },
+  { href: "/carrinho-de-compras", text: "Carrinho de compras" },
   { href: "/", text: "Newsletter Popup 1" },
   { href: "/newsletter-popup-02", text: "Newsletter Popup 2" },
   { href: "/newsletter-popup-03", text: "Newsletter Popup 3" },

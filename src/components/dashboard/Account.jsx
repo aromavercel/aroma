@@ -87,7 +87,7 @@ export default function Account() {
                   </Link>
                 </li>
                 <li>
-                  <Link to={`/wish-list`} className="box-check text-center">
+                  <Link to="/lista-de-desejos" className="box-check text-center">
                     <div className="icon">
                       <i className="icon-heart" />
                       <span className="count-number text-sm text-white fw-medium">

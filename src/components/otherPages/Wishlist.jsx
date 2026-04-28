@@ -20,23 +20,27 @@ export default function Wishlist() {
   return (
     <div className="flat-spacing-13">
       <div className="container-7">
-        <div className="btn-sidebar-mb d-lg-none">
-          <button
-            type="button"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#mbAccount"
-            aria-label="Abrir menu da conta"
-          >
-            <i className="icon icon-sidebar" />
-          </button>
-        </div>
+        {user?.id && (
+          <div className="btn-sidebar-mb d-lg-none">
+            <button
+              type="button"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#mbAccount"
+              aria-label="Abrir menu da conta"
+            >
+              <i className="icon icon-sidebar" />
+            </button>
+          </div>
+        )}
 
         <div className="main-content-account">
-          <div className="sidebar-account-wrap sidebar-content-wrap sticky-top d-lg-block d-none">
-            <ul className="my-account-nav">
-              <Sidebar />
-            </ul>
-          </div>
+          {user?.id && (
+            <div className="sidebar-account-wrap sidebar-content-wrap sticky-top d-lg-block d-none">
+              <ul className="my-account-nav">
+                <Sidebar />
+              </ul>
+            </div>
+          )}
           <div className="my-acount-content account-wishlist">
             {user?.id && wishListLoading ? (
               <div className="text-muted py-4">Carregando lista de desejos…</div>
