@@ -50,7 +50,7 @@ export default function Header7() {
               </li>
               <UserAccountTrigger />
               <li className="nav-wishlist">
-                <Link to={`/wish-list`} className="nav-icon-item">
+                <Link to="/lista-de-desejos" className="nav-icon-item">
                   <i className="icon icon-heart" />
                   <span className="count-box">
                     <WishlistLength />

@@ -7,7 +7,7 @@ import { useContextElement } from "@/context/Context";
 const accountLinks = [
   { href: "/account-page", label: "Visão geral" },
   { href: "/account-orders", label: "Meus pedidos" },
-  { href: "/wish-list", label: "Lista de desejos" },
+  { href: "/lista-de-desejos", label: "Lista de desejos" },
   { href: "/account-addresses", label: "Endereços" },
 ];
 

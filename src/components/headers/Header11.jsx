@@ -44,7 +44,7 @@ export default function Header11() {
               <ul className="nav-icon d-flex justify-content-end align-items-center">
                 <UserAccountTrigger />
                 <li className="nav-wishlist">
-                  <Link to={`/wish-list`} className="nav-icon-item">
+                  <Link to="/lista-de-desejos" className="nav-icon-item">
                     <i className="icon icon-heart" />
                     <span className="text d-none d-xl-block">Wishlist</span>
                   </Link>

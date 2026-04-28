@@ -290,7 +290,7 @@ export default function Footer3() {
                       <Link to={`/shipping`}>Shipping</Link>
                     </li>
                     <li>
-                      <Link to={`/wish-list`}>My Wishlist</Link>
+                      <Link to="/lista-de-desejos">My Wishlist</Link>
                     </li>
                   </ul>
                 </div>

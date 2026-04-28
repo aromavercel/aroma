@@ -124,7 +124,7 @@ export default function Toolbar() {
         </Link>
       </div>
       <div className="toolbar-item">
-        <Link to="/wish-list">
+        <Link to="/lista-de-desejos">
           <div className="toolbar-icon">
             <svg
               width={20}

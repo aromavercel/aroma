@@ -5,7 +5,7 @@ import React from "react";
 const accountLinks = [
   { href: "/account-page", label: "Painel" },
   { href: "/account-orders", label: "Meus pedidos" },
-  { href: "/wish-list", label: "Lista de desejos" },
+  { href: "/lista-de-desejos", label: "Lista de desejos" },
   { href: "/account-addresses", label: "Endereços" },
 ];
 export default function DbSidebar() {

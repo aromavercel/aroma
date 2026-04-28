@@ -153,7 +153,7 @@ export default function CartModal() {
                 </div>
                 <div className="tf-mini-cart-view-checkout">
                   <Link
-                    to={`/view-cart`}
+                    to="/carrinho-de-compras"
                     className="tf-btn animate-btn d-inline-flex bg-dark-2 w-100 justify-content-center"
                   >
                     Ver carrinho

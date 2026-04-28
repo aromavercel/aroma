@@ -480,7 +480,11 @@ function App() {
             <Route path="faq" element={<FaqPage />} />
             <Route path="cart-empty" element={<CartEmptyPage />} />
             <Route path="cart-drawer-v2" element={<CartDrawerPage2 />} />
-            <Route path="view-cart" element={<ViewCartPage />} />
+            <Route path="carrinho-de-compras" element={<ViewCartPage />} />
+            <Route
+              path="view-cart"
+              element={<Navigate to="/carrinho-de-compras" replace />}
+            />
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="checkout/thank-you" element={<ThankYouPage />} />
             <Route path="compare" element={<ComparePage />} />
@@ -499,7 +503,8 @@ function App() {
 
             <Route path="account-orders" element={<AccountOrderPage />} />
             <Route path="account-orders/:id" element={<AccountOrderDetailPage />} />
-            <Route path="wish-list" element={<WishlistPage />} />
+            <Route path="lista-de-desejos" element={<WishlistPage />} />
+            <Route path="wish-list" element={<Navigate to="/lista-de-desejos" replace />} />
             <Route path="account-addresses" element={<AccountAddressPage />} />
             <Route path="*" element={<NotFoundPage />} />
             </Route>
