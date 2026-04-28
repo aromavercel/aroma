@@ -3,6 +3,13 @@ import { CATALOG_SOURCE_OPTIONS } from "@/data/perfumes";
 
 const MODAL_ID = "perfumeFormModal";
 const CATALOG_SELECT_OPTIONS = CATALOG_SOURCE_OPTIONS;
+const BLOB_HOST = "blob.vercel-storage.com";
+
+function toProxyUrl(imageUrl) {
+  if (!imageUrl || typeof imageUrl !== "string") return imageUrl;
+  if (!imageUrl.includes(BLOB_HOST)) return imageUrl;
+  return `/api/perfume-image?url=${encodeURIComponent(imageUrl)}`;
+}
 
 function notesToForm(notes) {
   const n = notes || {};
@@ -526,7 +533,7 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
                             style={{ width: "100%", height: 80 }}
                           >
                             <img
-                              src={url}
+                              src={toProxyUrl(url)}
                               alt=""
                               style={{ width: "100%", height: "100%", objectFit: "contain" }}
                               onError={(e) => {
