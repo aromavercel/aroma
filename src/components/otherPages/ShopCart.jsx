@@ -56,7 +56,7 @@ export default function ShopCart() {
                     </thead>
                     <tbody>
                       {cartProducts.map((product, i) => {
-                        const perfumePageId = product.perfume_id ?? product.id;
+                        const perfumePageId = product.slug ?? product.perfume_id ?? product.id;
                         return (
                         <tr key={i} className="tf-cart-item file-delete">
                           <td className="tf-cart-item_product">

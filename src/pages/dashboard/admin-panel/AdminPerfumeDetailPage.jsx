@@ -121,7 +121,7 @@ export default function AdminPerfumeDetailPage() {
                 </ul>
               </div>
             )}
-            <Link to={`/perfume/${perfume.id}`} className="subscribe-button tf-btn animate-btn bg-dark-2 text-white text-decoration-none d-inline-flex align-items-center">
+            <Link to={`/perfume/${perfume.slug || perfume.id}`} className="subscribe-button tf-btn animate-btn bg-dark-2 text-white text-decoration-none d-inline-flex align-items-center">
               <span className="icon icon-cart2 me-2" />Ver na loja
             </Link>
           </div>

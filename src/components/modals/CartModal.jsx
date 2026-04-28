@@ -72,7 +72,7 @@ export default function CartModal() {
                 ) : cartProducts.length ? (
                   <div className="tf-mini-cart-items">
                     {cartProducts.map((product, i) => {
-                      const perfumePageId = product.perfume_id ?? product.id;
+                      const perfumePageId = product.slug ?? product.perfume_id ?? product.id;
                       return (
                       <div key={String(product.id ?? i)} className="tf-mini-cart-item file-delete">
                         <div className="tf-mini-cart-image">
