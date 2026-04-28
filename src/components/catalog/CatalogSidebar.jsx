@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Skeleton from "@/components/common/Skeleton";
 
 function toFiniteOrEmpty(value) {
   if (value === "" || value == null) return "";
@@ -12,6 +13,7 @@ export default function CatalogSidebar({
   brandOptions,
   brandValue,
   onBrandChange,
+  facetsLoading,
   searchValue,
   onSearchChange,
   priceMin,
@@ -41,23 +43,41 @@ export default function CatalogSidebar({
           </div>
           <div id="catalog-collections" className="collapse show">
             <ul className="collapse-body list-categories current-scrollbar">
-              {(brandOptions || []).map((opt) => {
-                const count = countByBrand?.[opt.value] ?? null;
-                return (
-                  <li key={opt.value} className="cate-item">
-                    <button
-                      type="button"
-                      className={`text-sm link cate-link w-100 text-start border-0 bg-transparent p-0 ${
-                        brandValue === opt.value ? "fw-medium text-primary" : ""
-                      }`}
-                      onClick={() => onBrandChange(opt.value)}
-                    >
-                      <span>{opt.label}</span>
-                      {count != null && <span className="count">({count})</span>}
-                    </button>
-                  </li>
-                );
-              })}
+              {facetsLoading ? (
+                <li className="cate-item" aria-hidden>
+                  <div className="py-2 d-flex flex-column align-items-center justify-content-center gap-2">
+                    {Array.from({ length: 6 }).map((_, idx) => {
+                      const widths = ["72%", "58%", "66%", "52%", "70%", "60%"];
+                      return (
+                        <Skeleton
+                          key={`brand-skel-line-${idx}`}
+                          variant="text"
+                          rounded={false}
+                          style={{ width: widths[idx] || "62%", height: 16 }}
+                        />
+                      );
+                    })}
+                  </div>
+                </li>
+              ) : (
+                (brandOptions || []).map((opt) => {
+                  const count = countByBrand?.[opt.value] ?? null;
+                  return (
+                    <li key={opt.value} className="cate-item">
+                      <button
+                        type="button"
+                        className={`text-sm link cate-link w-100 text-start border-0 bg-transparent p-0 ${
+                          brandValue === opt.value ? "fw-medium text-primary" : ""
+                        }`}
+                        onClick={() => onBrandChange(opt.value)}
+                      >
+                        <span>{opt.label}</span>
+                        {count != null && <span className="count">({count})</span>}
+                      </button>
+                    </li>
+                  );
+                })
+              )}
             </ul>
           </div>
         </div>

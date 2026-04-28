@@ -127,6 +127,7 @@ export default function CatalogPage() {
   const [reloadToken, setReloadToken] = useState(0);
   const [brandOptions, setBrandOptions] = useState([{ value: "all", label: "Todas" }]);
   const [countByBrand, setCountByBrand] = useState({ all: 0 });
+  const [facetsLoading, setFacetsLoading] = useState(true);
 
   const listRef = useRef([]);
   const hasNextRef = useRef(false);
@@ -138,6 +139,7 @@ export default function CatalogPage() {
   // Facets (marcas + contagens) — evita precisar carregar tudo.
   useEffect(() => {
     let cancelled = false;
+    setFacetsLoading(true);
     getPerfumeFacets({ q: searchValue.trim() })
       .then((data) => {
         if (cancelled) return;
@@ -157,6 +159,9 @@ export default function CatalogPage() {
       })
       .catch(() => {
         // Se falhar, mantém as opções atuais (não bloqueia o catálogo).
+      })
+      .finally(() => {
+        if (!cancelled) setFacetsLoading(false);
       });
     return () => {
       cancelled = true;
@@ -373,6 +378,7 @@ export default function CatalogPage() {
     onPriceMaxChange: setPriceMaxAndPage,
     totalCount,
     countByBrand,
+    facetsLoading,
   };
 
   return (
