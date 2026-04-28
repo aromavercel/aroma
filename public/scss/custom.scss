@@ -259,6 +259,25 @@
   filter: grayscale(0.2);
 }
 
+/* Botões desabilitados (visual de "não clicável") */
+button.tf-btn:disabled,
+.tf-btn[disabled],
+.tf-btn.disabled,
+.tf-btn[aria-disabled="true"] {
+  cursor: not-allowed !important;
+  opacity: 0.55 !important;
+  filter: grayscale(0.25);
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+button.tf-btn:disabled:hover,
+.tf-btn[disabled]:hover,
+.tf-btn.disabled:hover,
+.tf-btn[aria-disabled="true"]:hover {
+  transform: none !important;
+}
+
 /* Status no histórico de pedidos (garante contraste/legibilidade) */
 .account-orders {
   .badge[class*="status-"] {
