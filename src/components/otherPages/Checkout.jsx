@@ -329,7 +329,7 @@ export default function Checkout() {
       } catch {
         setCartProducts([]);
       }
-      navigate("/checkout/thank-you", { state: { orderSuccess: true } });
+      navigate("/checkout/agradecimento", { state: { orderSuccess: true } });
     } catch (err) {
       setError(err.message || "Erro ao finalizar pedido. Tente novamente.");
     } finally {
