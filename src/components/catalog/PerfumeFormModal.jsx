@@ -195,7 +195,7 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
   const uploadPerfumeImage = async (file, { applyToForm } = { applyToForm: false }) => {
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowed.includes(file.type)) throw new Error("Use uma imagem JPEG, PNG, WebP ou GIF.");
-    if (file.size > 4 * 1024 * 1024) throw new Error("Imagem muito grande. Máximo 4 MB.");
+    if (file.size > 3 * 1024 * 1024) throw new Error("Imagem muito grande. Máximo 3 MB.");
 
     setUploadingImage(true);
     setError("");
