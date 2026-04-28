@@ -45,7 +45,7 @@ export default function PerfumeDetailInfo({
   );
   const inCart = Boolean(cartItemForSelection);
   const cartQty = inCart ? (cartItemForSelection?.quantity ?? 1) : quantity;
-  const indisponivel = perfume && (!perfume.ativo || perfume.esgotado);
+  const indisponivel = perfume && (!perfume.active || perfume.outOfStock);
 
   const selectedVariant =
     variantsWithPrice.find((v) => String(v?.option0 || "") === String(selectedOption || "")) ||

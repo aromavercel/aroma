@@ -30,8 +30,8 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
     external_url: "",
     description: "",
     catalog_source: "normal",
-    ativo: true,
-    esgotado: false,
+    active: true,
+    outOfStock: false,
     notesTop: "",
     notesHeart: "",
     notesBase: "",
@@ -66,8 +66,8 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
           external_url: perfume.external_url || perfume.url || "",
           description: perfume.description || "",
           catalog_source: perfume.catalogSource || "normal",
-          ativo: perfume.ativo !== false,
-          esgotado: perfume.esgotado === true,
+          active: perfume.active !== false,
+          outOfStock: perfume.outOfStock === true,
           notesTop: notes.top,
           notesHeart: notes.heart,
           notesBase: notes.base,
@@ -98,8 +98,8 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
           external_url: "",
           description: "",
           catalog_source: "normal",
-          ativo: true,
-          esgotado: false,
+          active: true,
+          outOfStock: false,
           notesTop: "",
           notesHeart: "",
           notesBase: "",
@@ -316,8 +316,8 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
         external_url: String(form.external_url || "").trim() || undefined,
         description: form.description.trim() || undefined,
         catalog_source,
-        ativo: form.ativo,
-        esgotado: form.esgotado,
+        active: form.active,
+        outOfStock: form.outOfStock,
         notes: formToNotes({ top: form.notesTop, heart: form.notesHeart, base: form.notesBase }),
         variants,
         images,
@@ -379,8 +379,8 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
                         <input
                           type="checkbox"
                           id="form-ativo"
-                          checked={Boolean(form.ativo)}
-                          onChange={(e) => handleChange("ativo", e.target.checked)}
+                          checked={Boolean(form.active)}
+                          onChange={(e) => handleChange("active", e.target.checked)}
                         />
                         {/* <div><i className="icon-check" /></div> */}
                       </div>
@@ -392,8 +392,8 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
                         <input
                           type="checkbox"
                           id="form-esgotado"
-                          checked={Boolean(form.esgotado)}
-                          onChange={(e) => handleChange("esgotado", e.target.checked)}
+                          checked={Boolean(form.outOfStock)}
+                          onChange={(e) => handleChange("outOfStock", e.target.checked)}
                         />
                         {/* <div><i className="icon-check" /></div> */}
                       </div>

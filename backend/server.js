@@ -671,8 +671,8 @@ app.get("/api/perfumes", async (req, res) => {
         notes: compactOnly ? {} : (p.notes ?? {}),
         variants: compactOnly ? [] : (p.variants ?? []),
         images,
-        ativo: p.ativo === true || p.ativo == null,
-        esgotado: p.esgotado === true,
+        active: p.ativo === true || p.ativo == null,
+        outOfStock: p.esgotado === true,
       };
     });
     if (isPaged) {
@@ -736,8 +736,8 @@ app.get("/api/search", async (req, res) => {
         notes: p.notes ?? {},
         variants: p.variants ?? [],
         images,
-        ativo: p.ativo === true || p.ativo == null,
-        esgotado: p.esgotado === true,
+        active: p.ativo === true || p.ativo == null,
+        outOfStock: p.esgotado === true,
       };
     };
 
@@ -911,8 +911,8 @@ app.get("/api/perfumes/:id", async (req, res) => {
       notes: p.notes ?? {},
       variants: p.variants ?? [],
       images,
-      ativo: p.ativo === true || p.ativo == null,
-      esgotado: p.esgotado === true,
+      active: p.ativo === true || p.ativo == null,
+      outOfStock: p.esgotado === true,
     });
   } catch (err) {
     console.error("GET /api/perfumes/:id error:", err);
@@ -2710,8 +2710,8 @@ app.get("/api/wishlist", async (req, res) => {
         notes: p.notes ?? {},
         variants: p.variants ?? [],
         images,
-        ativo: p.ativo === true || p.ativo == null,
-        esgotado: p.esgotado === true,
+        active: p.ativo === true || p.ativo == null,
+        outOfStock: p.esgotado === true,
       };
     });
     return res.status(200).json({ items });
