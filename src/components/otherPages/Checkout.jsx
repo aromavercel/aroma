@@ -801,7 +801,7 @@ export default function Checkout() {
                 <div className="btn-order">
                   <button
                     type="submit"
-                    className="tf-btn btn-dark2 animate-btn w-100"
+                    className="tf-btn btn-dark2 animate-btn w-100 checkout-finalize-btn"
                     disabled={submitting || !canFinalize}
                   >
                     {submitting ? "Finalizando…" : "Finalizar pedido"}
