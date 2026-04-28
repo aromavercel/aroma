@@ -182,7 +182,7 @@ export default function CatalogPage() {
             : "",
       sort: sortValue,
       compact: true,
-      noTotal: true,
+      includeTotal: false,
     }),
     [brandValue, searchValue, priceMinInput, priceMaxInput, sortValue],
   );

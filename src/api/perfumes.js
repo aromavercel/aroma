@@ -49,7 +49,12 @@ export async function getPerfumesList(params = {}) {
   if (params.status) url.searchParams.set("status", String(params.status));
   if (params.stock) url.searchParams.set("stock", String(params.stock));
   if (params.compact) url.searchParams.set("compact", "1");
-  if (params.noTotal) url.searchParams.set("noTotal", "1");
+  // Novo padrão: includeTotal=1/0. Compat: se alguém ainda passar `noTotal`, traduzimos.
+  if (params.includeTotal != null) {
+    url.searchParams.set("includeTotal", params.includeTotal ? "1" : "0");
+  } else if (params.noTotal != null) {
+    url.searchParams.set("includeTotal", params.noTotal ? "0" : "1");
+  }
   const list = await apiFetch(url.toString(), { method: "GET", auth: Boolean(params.all) });
   if (list && typeof list === "object" && Array.isArray(list.items)) {
     return { ...list, items: list.items.map(applyImageProxy) };

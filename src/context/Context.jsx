@@ -19,8 +19,8 @@ function normalizeGuestWishlistSnapshot(id, snapshot) {
     variants: Array.isArray(s.variants) ? s.variants : [],
     images: Array.isArray(s.images) ? s.images : [],
     priceMin: s.priceMin != null ? Number(s.priceMin) : undefined,
-    ativo: s.ativo,
-    esgotado: s.esgotado,
+    active: s.active ?? s.ativo,
+    outOfStock: s.outOfStock ?? s.esgotado,
   };
 }
 

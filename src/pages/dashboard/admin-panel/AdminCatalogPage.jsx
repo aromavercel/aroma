@@ -47,7 +47,7 @@ export default function AdminCatalogPage() {
         catalog: catalogSource !== "all" ? catalogSource : null,
         sort: "title-asc",
         compact: true,
-        noTotal: false,
+        includeTotal: true,
       });
       if (data && typeof data === "object" && Array.isArray(data.items)) {
         const t = data.total == null ? null : Number(data.total || 0);
@@ -81,7 +81,7 @@ export default function AdminCatalogPage() {
       catalog: catalogSource !== "all" ? catalogSource : null,
       sort: "title-asc",
       compact: true,
-      noTotal: true,
+      includeTotal: false,
     })
       .then((data) => {
         if (data && typeof data === "object" && Array.isArray(data.items)) {
@@ -349,8 +349,8 @@ export default function AdminCatalogPage() {
                       </td>
                       <td><span className="badge bg-primary">{d.catalogLabel || d.catalogSource || "—"}</span></td>
                       <td>
-                        <span className={`badge me-1 ${perfume.ativo !== false ? "bg-success" : "bg-secondary"}`}>{perfume.ativo !== false ? "Ativo" : "Inativo"}</span>
-                        {perfume.esgotado === true && <span className="badge bg-warning text-dark">Esgotado</span>}
+                        <span className={`badge me-1 ${perfume.active !== false ? "bg-success" : "bg-secondary"}`}>{perfume.active !== false ? "Ativo" : "Inativo"}</span>
+                        {perfume.outOfStock === true && <span className="badge bg-warning text-dark">Esgotado</span>}
                       </td>
                       <td className="text-end" onClick={(e) => e.stopPropagation()}>
                         <button type="button" className="btn btn-sm btn-outline-dark me-1" onClick={(e) => openEdit(perfume, e)}>Editar</button>
