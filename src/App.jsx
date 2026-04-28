@@ -486,7 +486,11 @@ function App() {
               element={<Navigate to="/carrinho-de-compras" replace />}
             />
             <Route path="checkout" element={<CheckoutPage />} />
-            <Route path="checkout/thank-you" element={<ThankYouPage />} />
+            <Route path="checkout/agradecimento" element={<ThankYouPage />} />
+            <Route
+              path="checkout/thank-you"
+              element={<Navigate to="/checkout/agradecimento" replace />}
+            />
             <Route path="compare" element={<ComparePage />} />
             <Route path="privacy-policy" element={<Navigate to="/politica-de-privacidade" replace />} />
 
