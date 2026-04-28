@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Footer1 from "@/components/footers/Footer1";
 import Header1 from "@/components/headers/Header1";
 import Topbar from "@/components/headers/Topbar";
@@ -15,6 +15,7 @@ import Skeleton from "@/components/common/Skeleton";
 
 export default function PerfumePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [perfume, setPerfume] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,6 +29,16 @@ export default function PerfumePage() {
       .catch((err) => setError(err.message || "Erro ao carregar"))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !perfume) return;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isUuid = uuidRegex.test(String(id).trim());
+    const slug = typeof perfume.slug === "string" ? perfume.slug.trim() : "";
+    if (isUuid && slug) {
+      navigate(`/perfume/${slug}`, { replace: true });
+    }
+  }, [id, perfume, navigate]);
 
   if (loading) {
     return (

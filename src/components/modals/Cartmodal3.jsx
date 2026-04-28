@@ -56,7 +56,7 @@ export default function Cartmodal3() {
                             className="tf-mini-cart-item file-delete"
                           >
                             <div className="tf-mini-cart-image">
-                              <Link to={`/perfume/${product.id}`}>
+                              <Link to={`/perfume/${product.slug ?? product.id}`}>
                                 <img
                                   className="lazyload"
                                   alt="img-product"
@@ -70,7 +70,7 @@ export default function Cartmodal3() {
                               <div className="d-flex justify-content-between">
                                 <Link
                                   className="title link text-md fw-medium"
-                                  to={`/perfume/${product.id}`}
+                                  to={`/perfume/${product.slug ?? product.id}`}
                                 >
                                   {product.title}
                                 </Link>

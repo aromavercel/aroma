@@ -152,7 +152,7 @@ export default function PerfumeDetailModal({ perfume, onClose, onEdit, onDelete 
                 <div className="d-flex align-items-center gap-2 flex-wrap">
                   {!(onEdit || onDelete) && (
                     <>
-                      <Link to={`/perfume/${perfume.id}`} className="subscribe-button tf-btn animate-btn bg-dark-2 btn-lg text-white text-decoration-none d-inline-flex align-items-center">
+                      <Link to={`/perfume/${perfume.slug || perfume.id}`} className="subscribe-button tf-btn animate-btn bg-dark-2 btn-lg text-white text-decoration-none d-inline-flex align-items-center">
                         <span className="icon icon-cart2 me-2" />
                         Ver na loja
                       </Link>

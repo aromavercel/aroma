@@ -24,7 +24,11 @@ export default function PerfumeCard({
     isAddedtoWishlist,
   } = useContextElement();
   const d = getPerfumeDisplayData(perfume);
-  const perfumeUrl = perfume?.id ? `/perfume/${perfume.id}` : "/catalogo";
+  const perfumeUrl = perfume?.slug
+    ? `/perfume/${perfume.slug}`
+    : perfume?.id
+      ? `/perfume/${perfume.id}`
+      : "/catalogo";
 
   const handleClick = (e) => {
     if (onSelect) {
@@ -39,6 +43,7 @@ export default function PerfumeCard({
     if (!perfume?.id) return;
     const snapshot = {
       id: perfume.id,
+      slug: perfume.slug,
       title: d.title,
       imgSrc: d.imageUrl ?? "",
       price: d.priceMin ?? 0,

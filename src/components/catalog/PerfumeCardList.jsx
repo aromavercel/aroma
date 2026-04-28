@@ -20,7 +20,11 @@ export default function PerfumeCardList({ perfume, className = "" }) {
     isAddedtoCompareItem,
   } = useContextElement();
   const d = getPerfumeDisplayData(perfume);
-  const perfumeUrl = perfume?.id ? `/perfume/${perfume.id}` : "/catalogo";
+  const perfumeUrl = perfume?.slug
+    ? `/perfume/${perfume.slug}`
+    : perfume?.id
+      ? `/perfume/${perfume.id}`
+      : "/catalogo";
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -28,6 +32,7 @@ export default function PerfumeCardList({ perfume, className = "" }) {
     if (!perfume?.id) return;
     const snapshot = {
       id: perfume.id,
+      slug: perfume.slug,
       title: d.title,
       imgSrc: d.imageUrl ?? "",
       price: d.priceMin ?? 0,

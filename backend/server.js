@@ -866,58 +866,8 @@ app.get("/api/search", async (req, res) => {
 });
 
 app.get("/api/perfumes/:id", async (req, res) => {
-  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
-  try {
-    const id = req.params.id;
-    let p;
-    try {
-      [p] = await sql`
-        SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url, ativo, esgotado
-        FROM perfumes WHERE id = ${id}
-      `;
-    } catch (queryErr) {
-      if (queryErr?.code !== "42703") throw queryErr;
-      [p] = await sql`
-        SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url
-        FROM perfumes WHERE id = ${id}
-      `;
-    }
-    if (!p) return res.status(404).json({ error: "Perfume não encontrado" });
-    const isActive = p.ativo === true || p.ativo == null;
-    if (!isActive) {
-      const payload = await requireAdmin(req, res);
-      if (!payload) return res.status(404).json({ error: "Perfume não encontrado" });
-    }
-    const imgRows = await sql`
-      SELECT url, position FROM perfume_images WHERE perfume_id = ${id} ORDER BY position
-    `;
-    let images = (imgRows || []).map((i) => (i.url != null ? String(i.url).trim() : "")).filter(Boolean);
-    if (images.length === 0) {
-      const vars = p.variants ?? [];
-      const firstWithImg = vars.find((v) => v && (v.image_url || v.imageUrl));
-      const url = firstWithImg && (firstWithImg.image_url ?? firstWithImg.imageUrl);
-      if (url) images = [String(url).startsWith("//") ? "https:" + url : url];
-    }
-    if (images.length === 0 && p.image_2_url) {
-      const u = String(p.image_2_url).trim();
-      if (u) images = [u.startsWith("//") ? "https:" + u : u];
-    }
-    return res.status(200).json({
-      id: p.id,
-      url: p.external_url,
-      title: p.title,
-      description: p.description ?? "",
-      catalogSource: p.catalog_source,
-      notes: p.notes ?? {},
-      variants: p.variants ?? [],
-      images,
-      active: p.ativo === true || p.ativo == null,
-      outOfStock: p.esgotado === true,
-    });
-  } catch (err) {
-    console.error("GET /api/perfumes/:id error:", err);
-    return res.status(500).json({ error: "Erro ao buscar perfume" });
-  }
+  // Usa a mesma lógica compartilhada (aceita UUID ou slug)
+  return await handlePerfumes([req.params.id], req, res);
 });
 
 async function requireAdmin(req, res) {
