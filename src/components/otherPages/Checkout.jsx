@@ -198,6 +198,10 @@ export default function Checkout() {
 
   const getCheckoutValidationError = useCallback(
     ({ requireAuthReady = false } = {}) => {
+      // Se o carrinho está sincronizando (ex.: após login), evita validar como vazio.
+      if (cartLoading) {
+        return "Carregando carrinho…";
+      }
       if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
         return "Seu carrinho está vazio.";
       }
@@ -231,7 +235,7 @@ export default function Checkout() {
 
       return "";
     },
-    [address, addressNumber, cartProducts, city, firstname, lastname, phone, phoneRegistry, user?.id, user?.phone],
+    [address, addressNumber, cartLoading, cartProducts, city, firstname, lastname, phone, phoneRegistry, user?.id, user?.phone],
   );
 
   const stashPhoneAndOpenAuth = async (targetId) => {
@@ -435,12 +439,32 @@ export default function Checkout() {
     }
     if (!shouldAuto) return;
 
-    // Dá um tick para os states (draft/user) estabilizarem após o setUser do modal.
-    const t = setTimeout(() => {
+    // Aguarda o carrinho sincronizar após login (evita "Carrinho vazio" por race),
+    // e não entra em loop infinito: se continuar vazio, limpa o flag e para.
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 12; // ~3.6s
+    const tick = () => {
+      if (cancelled) return;
+      attempts += 1;
+      if (cartLoading) {
+        if (attempts < maxAttempts) return setTimeout(tick, 300);
+      }
+      if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
+        try {
+          sessionStorage.removeItem(CHECKOUT_AUTO_FINALIZE_KEY);
+        } catch {
+          // ignora
+        }
+        setError("Seu carrinho está vazio.");
+        return;
+      }
+      // Dá um tick para states estabilizarem após o setUser do modal.
       finalizeOrder({ auto: true });
-    }, 100);
+    };
+    const t = setTimeout(tick, 150);
     return () => clearTimeout(t);
-  }, [finalizeOrder, submitting, user?.id]);
+  }, [cartLoading, cartProducts, finalizeOrder, submitting, user?.id]);
 
   useEffect(() => {
     if (!error) return;
