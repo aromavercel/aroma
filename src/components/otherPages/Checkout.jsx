@@ -198,10 +198,8 @@ export default function Checkout() {
 
   const getCheckoutValidationError = useCallback(
     ({ requireAuthReady = false } = {}) => {
-      // Se o carrinho está sincronizando (ex.: após login), evita validar como vazio.
-      if (cartLoading) {
-        return "Carregando carrinho…";
-      }
+      // Se o carrinho está sincronizando (ex.: após login), não exibe erro.
+      if (cartLoading) return "";
       if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
         return "Seu carrinho está vazio.";
       }
@@ -509,7 +507,7 @@ export default function Checkout() {
     }
   }, [cartLoading, cartProducts, navigate, orderPlaced]);
 
-  const canFinalize = Boolean(!getCheckoutValidationError({ requireAuthReady: true }));
+  const canFinalize = !cartLoading && Boolean(!getCheckoutValidationError({ requireAuthReady: true }));
 
   return (
     <div className="flat-spacing-25">
