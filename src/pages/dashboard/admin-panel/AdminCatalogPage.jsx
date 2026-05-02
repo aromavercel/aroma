@@ -46,7 +46,7 @@ export default function AdminCatalogPage() {
         brandKey: brandKey !== "all" ? brandKey : null,
         catalog: catalogSource !== "all" ? catalogSource : null,
         sort: "title-asc",
-        compact: true,
+        compact: false,
         includeTotal: true,
       });
       if (data && typeof data === "object" && Array.isArray(data.items)) {
@@ -80,7 +80,7 @@ export default function AdminCatalogPage() {
       brandKey: brandKey !== "all" ? brandKey : null,
       catalog: catalogSource !== "all" ? catalogSource : null,
       sort: "title-asc",
-      compact: true,
+      compact: false,
       includeTotal: false,
     })
       .then((data) => {

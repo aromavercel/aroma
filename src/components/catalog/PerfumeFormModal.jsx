@@ -5,10 +5,69 @@ const MODAL_ID = "perfumeFormModal";
 const CATALOG_SELECT_OPTIONS = CATALOG_SOURCE_OPTIONS;
 const BLOB_HOST = "blob.vercel-storage.com";
 
+/** Reverte URLs do proxy `/api/perfume-image?url=` para a URL real (ex.: Blob), para não gravar proxy no banco. */
+function canonicalStorageUrl(url) {
+  if (!url || typeof url !== "string") return url;
+  const s = url.trim();
+  if (!s) return s;
+  try {
+    const base =
+      typeof window !== "undefined" && window.location?.origin
+        ? window.location.origin
+        : "http://localhost";
+    const u = /^https?:/i.test(s) ? new URL(s) : new URL(s, base);
+    const path = u.pathname || "";
+    if (path === "/api/perfume-image" || path.endsWith("/api/perfume-image")) {
+      const inner = u.searchParams.get("url");
+      if (inner && String(inner).trim()) return String(inner).trim();
+    }
+  } catch {
+    /* ignore */
+  }
+  return s;
+}
+
 function toProxyUrl(imageUrl) {
   if (!imageUrl || typeof imageUrl !== "string") return imageUrl;
-  if (!imageUrl.includes(BLOB_HOST)) return imageUrl;
-  return `/api/perfume-image?url=${encodeURIComponent(imageUrl)}`;
+  const raw = canonicalStorageUrl(imageUrl);
+  if (!raw.includes(BLOB_HOST)) return raw;
+  return `/api/perfume-image?url=${encodeURIComponent(raw)}`;
+}
+
+function variantsWithCanonicalImageUrls(variants) {
+  const arr = Array.isArray(variants) ? variants : [];
+  return arr.map((v) => {
+    if (!v || typeof v !== "object") return v;
+    const out = { ...v };
+    const img = out.image_url ?? out.imageUrl;
+    if (typeof img === "string" && img.trim()) {
+      out.image_url = canonicalStorageUrl(img);
+      delete out.imageUrl;
+    }
+    return out;
+  });
+}
+
+function variantApiToRow(v) {
+  if (!v || typeof v !== "object") return null;
+  const option0 = String(v.option0 ?? v.label ?? "").trim();
+  const priceNumRaw = v.price_number ?? v.priceNumber ?? v.price;
+  const priceNum =
+    priceNumRaw != null && priceNumRaw !== "" && !Number.isNaN(Number(priceNumRaw))
+      ? Number(priceNumRaw)
+      : null;
+  const priceShortRaw = v.price_short ?? v.priceShort;
+  const priceShort =
+    priceShortRaw != null && String(priceShortRaw).trim() ? String(priceShortRaw).trim() : "";
+  const hasOption = Boolean(option0);
+  const hasPrice = priceShort || priceNum != null;
+  if (!hasOption && !hasPrice) return null;
+  const price =
+    priceShort ||
+    (priceNum != null
+      ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(priceNum)
+      : "");
+  return { option0, price };
 }
 
 function notesToForm(notes) {
@@ -66,8 +125,9 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
     if (perfume !== undefined) {
       if (perfume) {
         const notes = notesToForm(perfume.notes);
-        const variants = Array.isArray(perfume.variants) ? perfume.variants : [];
-        const firstWithPrice = variants.find((v) => v && (v.price_number != null || v.price_short != null)) || variants[0];
+        const variantsRaw = Array.isArray(perfume.variants) ? perfume.variants : [];
+        const variantsNormalized = variantsWithCanonicalImageUrls(variantsRaw);
+        const rowsFromApi = variantsNormalized.map(variantApiToRow).filter(Boolean);
         setForm({
           title: perfume.title || "",
           external_url: perfume.external_url || perfume.url || "",
@@ -78,27 +138,13 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
           notesTop: notes.top,
           notesHeart: notes.heart,
           notesBase: notes.base,
-          variantsJson: Array.isArray(perfume.variants) && perfume.variants.length > 0 ? JSON.stringify(perfume.variants, null, 2) : "",
-          imagesText: Array.isArray(perfume.images) ? perfume.images.join("\n") : "",
+          variantsJson:
+            variantsNormalized.length > 0 ? JSON.stringify(variantsNormalized, null, 2) : "",
+          imagesText: Array.isArray(perfume.images)
+            ? perfume.images.map((u) => canonicalStorageUrl(String(u || "").trim())).filter(Boolean).join("\n")
+            : "",
         });
-        setVariantRows(
-          Array.isArray(perfume.variants)
-            ? perfume.variants
-                .filter((v) => v && (v.option0 || v.price_number != null || v.price_short))
-                .map((v) => ({
-                  option0: String(v.option0 || "").trim(),
-                  price:
-                    v.price_short != null && String(v.price_short).trim()
-                      ? String(v.price_short).trim()
-                      : v.price_number != null && !Number.isNaN(Number(v.price_number))
-                        ? new Intl.NumberFormat("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          }).format(Number(v.price_number))
-                        : "",
-                }))
-            : [],
-        );
+        setVariantRows(rowsFromApi);
       } else {
         setForm({
           title: "",
@@ -151,7 +197,9 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
       if (idx !== 0) return v;
       const firstImg = imagesList?.[0];
       if (!firstImg) return v;
-      return v.image_url ? v : { ...v, image_url: firstImg };
+      const canonicalFirst = canonicalStorageUrl(firstImg);
+      const existing = v.image_url ? canonicalStorageUrl(v.image_url) : "";
+      return existing ? { ...v, image_url: existing } : { ...v, image_url: canonicalFirst };
     });
     setForm((f) => ({ ...f, variantsJson: withImage.length ? JSON.stringify(withImage, null, 2) : "" }));
   };
@@ -283,13 +331,17 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
         try {
           variants = JSON.parse(form.variantsJson);
           if (!Array.isArray(variants)) variants = [];
+          variants = variantsWithCanonicalImageUrls(variants);
         } catch {
           setError("Variantes: JSON inválido.");
           setSaving(false);
           return;
         }
       }
-      let images = form.imagesText.split("\n").map((s) => s.trim()).filter(Boolean);
+      let images = form.imagesText
+        .split("\n")
+        .map((s) => canonicalStorageUrl(s.trim()))
+        .filter(Boolean);
 
       // Se o admin selecionou um arquivo mas não clicou em "Enviar imagem",
       // fazemos o upload automaticamente no salvar.
@@ -314,7 +366,7 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
           .filter((v) => v.option0 || v.price_number != null || v.price_short);
         if (cleaned.length) {
           if (images[0] && !cleaned[0].image_url) cleaned[0].image_url = images[0];
-          variants = cleaned;
+          variants = variantsWithCanonicalImageUrls(cleaned);
         }
       }
 
