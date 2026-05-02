@@ -16,6 +16,7 @@ import { getPerfumesList, getPerfumeFacets } from "@/api/perfumes";
 import Skeleton from "@/components/common/Skeleton";
 
 const ITEMS_PER_PAGE = 24;
+const CATALOG_SEARCH_DEBOUNCE_MS = 360;
 /** Quantas vezes o scroll ao fim pode carregar mais automaticamente; na próxima vez aparece "Mostrar mais". */
 const AUTO_SCROLL_LOAD_BATCHES = 2;
 const metadata = {
@@ -120,6 +121,8 @@ export default function CatalogPage() {
   const [scrollLoadsDone, setScrollLoadsDone] = useState(0);
   const [brandValue, setBrandValue] = useState("all");
   const [searchValue, setSearchValue] = useState("");
+  /** Busca enviada à API (debounce) — alinha lista + facets e reduz requisições duplicadas. */
+  const [searchForRequest, setSearchForRequest] = useState("");
   const [priceMinInput, setPriceMinInput] = useState("");
   const [priceMaxInput, setPriceMaxInput] = useState("");
   const [sortValue, setSortValue] = useState("default");
@@ -136,11 +139,18 @@ export default function CatalogPage() {
   hasNextRef.current = hasNextPage;
   loadingMoreRef.current = loadingMore;
 
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setSearchForRequest(String(searchValue || "").trim());
+    }, CATALOG_SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(t);
+  }, [searchValue]);
+
   // Facets (marcas + contagens) — evita precisar carregar tudo.
   useEffect(() => {
     let cancelled = false;
     setFacetsLoading(true);
-    getPerfumeFacets({ q: searchValue.trim() })
+    getPerfumeFacets({ q: searchForRequest })
       .then((data) => {
         if (cancelled) return;
         const brands = Array.isArray(data?.brands) ? data.brands : [];
@@ -166,11 +176,11 @@ export default function CatalogPage() {
     return () => {
       cancelled = true;
     };
-  }, [searchValue]);
+  }, [searchForRequest]);
 
   const listQueryParams = useMemo(
     () => ({
-      q: searchValue.trim(),
+      q: searchForRequest,
       brandKey: brandValue !== "all" ? brandValue : null,
       // Importante: `Number("") === 0`. Precisamos manter vazio como "" para não filtrar por preço 0.
       priceMin:
@@ -189,7 +199,7 @@ export default function CatalogPage() {
       compact: true,
       includeTotal: false,
     }),
-    [brandValue, searchValue, priceMinInput, priceMaxInput, sortValue],
+    [brandValue, searchForRequest, priceMinInput, priceMaxInput, sortValue],
   );
 
   // Primeira página / reset ao mudar filtros ou ordenação.
@@ -330,6 +340,7 @@ export default function CatalogPage() {
     const q = (params.get("q") || "").trim();
     if (q) {
       setSearchValue(q);
+      setSearchForRequest(q);
     }
     // Se não houver q, não sobrescreve o que o usuário já digitou no catálogo.
   }, [location.search]);
