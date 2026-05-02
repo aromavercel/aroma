@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+
+const ADMIN_SEARCH_DEBOUNCE_MS = 380;
 import { useNavigate } from "react-router-dom";
 import PerfumeFormModal from "@/components/catalog/PerfumeFormModal";
 import { getPerfumesList, getPerfumeFacets, deletePerfume } from "@/api/perfumes";
@@ -19,6 +21,8 @@ export default function AdminCatalogPage() {
   const [formModalPerfume, setFormModalPerfume] = useState(undefined);
   const [deletingId, setDeletingId] = useState(null);
   const [q, setQ] = useState("");
+  /** Termo efetivo para API (debounce) — evita N requisições a cada tecla e 401 em rajadas. */
+  const [qForRequest, setQForRequest] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // all | active | inactive
   const [stockFilter, setStockFilter] = useState("all"); // all | in_stock | out_of_stock
   const [brandKey, setBrandKey] = useState("all");
@@ -29,12 +33,19 @@ export default function AdminCatalogPage() {
   const pageIndex = Math.max(1, currentPage);
   const totalPages = totalCount ? Math.max(1, Math.ceil((Number(totalCount) || 0) / ITEMS_PER_PAGE)) : null;
 
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setQForRequest(String(q || "").trim());
+    }, ADMIN_SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(t);
+  }, [q]);
+
   const ensureTotalCount = async () => {
     if (totalCount != null) return totalCount;
     if (loadingTotal) return null;
     setLoadingTotal(true);
     try {
-      const term = String(q || "").trim();
+      const term = String(qForRequest || "").trim();
       const hasTerm = term.length >= 2;
       const data = await getPerfumesList({
         all: true,
@@ -67,7 +78,7 @@ export default function AdminCatalogPage() {
   const loadPerfumes = useCallback(() => {
     setLoading(true);
     setLoadError(null);
-    const term = String(q || "").trim();
+    const term = String(qForRequest || "").trim();
     const hasTerm = term.length >= 2;
     const offset = (pageIndex - 1) * ITEMS_PER_PAGE;
     getPerfumesList({
@@ -97,14 +108,14 @@ export default function AdminCatalogPage() {
       })
       .catch((err) => setLoadError(err.message || "Erro ao carregar catálogo."))
       .finally(() => setLoading(false));
-  }, [pageIndex, q, statusFilter, stockFilter, brandKey, catalogSource]);
+  }, [pageIndex, qForRequest, statusFilter, stockFilter, brandKey, catalogSource]);
 
   useEffect(() => { loadPerfumes(); }, [loadPerfumes]);
 
   // Opções de marca com contagens, respeitando filtros (exceto marca).
   useEffect(() => {
     let cancelled = false;
-    const term = String(q || "").trim();
+    const term = String(qForRequest || "").trim();
     const hasTerm = term.length >= 2;
     getPerfumeFacets({
       all: true,
@@ -127,7 +138,7 @@ export default function AdminCatalogPage() {
     return () => {
       cancelled = true;
     };
-  }, [q, statusFilter, stockFilter, catalogSource]);
+  }, [qForRequest, statusFilter, stockFilter, catalogSource]);
 
   // Lista já vem filtrada/paginada do backend
   const filteredList = useMemo(() => perfumesList || [], [perfumesList]);

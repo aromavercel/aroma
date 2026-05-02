@@ -73,7 +73,8 @@ export async function getPerfumeFacets(params = {}) {
   if (params.q) url.searchParams.set("q", String(params.q));
   if (params.status) url.searchParams.set("status", String(params.status));
   if (params.stock) url.searchParams.set("stock", String(params.stock));
-  const data = await apiFetch(url.toString(), { method: "GET", auth: false });
+  // Mesma regra da lista: ?all=1 exige admin no servidor — precisa enviar Bearer.
+  const data = await apiFetch(url.toString(), { method: "GET", auth: Boolean(params.all) });
   return data;
 }
 
