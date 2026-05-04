@@ -43,7 +43,8 @@ export default function Footer1({
     const phone = promoPhone;
     setLoadingAlert(true);
     try {
-      if (!isValidPromoPhoneBR(phone)) {
+      const digits = String(phone || "").replace(/\D/g, "");
+      if (!digits.length || !isValidPromoPhoneBR(phone)) {
         setSuccess(false);
         handleShowMessage();
         return;
@@ -234,6 +235,7 @@ export default function Footer1({
                     onSubmit={sendAlert}
                     id="subscribe-form"
                     className="form-newsletter"
+                    noValidate
                   >
                     <div className="subscribe-content">
                       <fieldset className="email">
@@ -247,7 +249,7 @@ export default function Footer1({
                           required
                           inputMode="tel"
                           autoComplete="tel"
-                          pattern="\\(\\d{2}\\) \\d{4,5}-\\d{4}"
+                          title="Telefone com DDD (ex.: (11) 98765-4321)"
                           maxLength={16}
                           value={promoPhone}
                           onChange={(e) => setPromoPhone(formatPromoPhoneBR(e.target.value))}
