@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Navigation, Thumbs } from "swiper/modules";
+import React, { useEffect, useRef, useState } from "react";
+import { EffectFade, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+
+/** Estilos do efeito fade (mobile): sem translate horizontal = sem faixa de 1px do slide vizinho no WebKit */
+import "swiper/css/effect-fade";
 
 const MOBILE_GALLERY_MQ = "(max-width: 767px)";
 
@@ -25,18 +28,60 @@ function usePerfumeGalleryMobile() {
 /**
  * Galeria de imagens do perfume no estilo Vineta (product-detail):
  * thumbs verticais + imagem principal com navegação.
- * No mobile (≤767px) só a imagem principal: o swiper de thumbs em coluna cheia gerava uma faixa estranha abaixo da foto.
+ * No mobile (≤767px) só a imagem principal. A galeria principal usa efeito *fade* (não slide) para
+ * evitar artefato de 1px na borda ao trocar imagem (subpixel + translate no iOS/Safari).
+ *
+ * O módulo Thumbs do Swiper costuma falhar com React (montagem/desmontagem + estado).
+ * Aqui a sincronização é explícita: clique na miniatura → slideTo na principal; setas → atualiza miniatura ativa.
  */
 export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
   const [thumbSwiper, setThumbSwiper] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const mainSwiperRef = useRef(null);
   const isMobileGallery = usePerfumeGalleryMobile();
   const items = images.length ? images.map((imgSrc, id) => ({ id, imgSrc })) : [{ id: 0, imgSrc: "" }];
 
-  const mainModules = isMobileGallery ? [Navigation] : [Thumbs, Navigation];
-  const canUseThumbs = !isMobileGallery && thumbSwiper && !thumbSwiper.destroyed;
-  const mainThumbs = canUseThumbs ? { swiper: thumbSwiper } : undefined;
+  const imagesSig = images.join("|");
+  useEffect(() => {
+    setActiveIndex(0);
+    const m = mainSwiperRef.current;
+    if (m && !(typeof m.destroyed === "boolean" && m.destroyed)) {
+      try {
+        m.slideTo(0, 0);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [imagesSig]);
 
-  // Ao alternar para mobile, o swiper de thumbs é desmontado; evita manter referência destruída.
+  const syncThumbStrip = (index) => {
+    const thumb = thumbSwiper;
+    if (!thumb || (typeof thumb.destroyed === "boolean" && thumb.destroyed)) return;
+    try {
+      thumb.slideTo(index);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleMainSlideChange = (swiper) => {
+    const i = swiper.activeIndex;
+    setActiveIndex(i);
+    syncThumbStrip(i);
+  };
+
+  const handleThumbClick = (index) => {
+    const main = mainSwiperRef.current;
+    if (!main || (typeof main.destroyed === "boolean" && main.destroyed)) return;
+    try {
+      main.slideTo(index);
+    } catch {
+      /* ignore */
+    }
+    setActiveIndex(index);
+    syncThumbStrip(index);
+  };
+
   useEffect(() => {
     if (isMobileGallery) setThumbSwiper(null);
   }, [isMobileGallery]);
@@ -50,11 +95,25 @@ export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
           slidesPerView={4}
           direction="vertical"
           onSwiper={setThumbSwiper}
-          modules={[Thumbs]}
           spaceBetween={8}
+          watchSlidesProgress
+          threshold={14}
         >
           {items.map(({ id, imgSrc }, index) => (
-            <SwiperSlide key={id} className="swiper-slide stagger-item">
+            <SwiperSlide
+              key={id}
+              className={`swiper-slide stagger-item${activeIndex === index ? " swiper-slide-thumb-active" : ""}`}
+              onClick={() => handleThumbClick(index)}
+              style={{ cursor: "pointer" }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleThumbClick(index);
+                }
+              }}
+            >
               <div className="item">
                 {imgSrc ? (
                   <img
@@ -65,6 +124,7 @@ export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
                     width={828}
                     height={1241}
                     loading="lazy"
+                    draggable={false}
                     referrerPolicy="no-referrer"
                   />
                 ) : (
@@ -79,15 +139,31 @@ export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
       ) : null}
       <div className="flat-wrap-media-product">
         <Swiper
-          key={isMobileGallery ? "perfume-main-mobile" : "perfume-main-desktop"}
-          modules={mainModules}
+          key={isMobileGallery ? "perfume-main-mobile-fade" : "perfume-main-desktop-slide"}
+          {...(isMobileGallery
+            ? {
+                modules: [Navigation, EffectFade],
+                effect: "fade",
+                fadeEffect: { crossFade: true },
+                speed: 320,
+              }
+            : {
+                modules: [Navigation],
+                slidesPerView: 1,
+                spaceBetween: 0,
+                roundLengths: true,
+                speed: 400,
+              })}
           dir="ltr"
-          className="swiper tf-product-media-main"
-          thumbs={mainThumbs}
+          className={`swiper tf-product-media-main${isMobileGallery ? " perfume-gallery-mobile-fade" : ""}`}
           navigation={{
             prevEl: ".perfume-gallery-prev",
             nextEl: ".perfume-gallery-next",
           }}
+          onSwiper={(swiper) => {
+            mainSwiperRef.current = swiper;
+          }}
+          onSlideChange={handleMainSlideChange}
         >
           {items.map(({ id, imgSrc }, i) => (
             <SwiperSlide key={id} className="swiper-slide">

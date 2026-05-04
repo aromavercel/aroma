@@ -1,3 +1,5 @@
+import { normalizePublicUrl } from "@/utils/normalizeImageUrl";
+
 export function normalizeBrandKey(name) {
   return String(name || "")
     .normalize("NFD")
@@ -73,13 +75,12 @@ export function getPerfumeDisplayData(item) {
   const priceMin = variantsPriceMin ?? priceMinFromApi;
   const firstVariant = variants.find((v) => v && v.image_url) || variants[0];
   const variantImage = firstVariant?.image_url
-    ? (String(firstVariant.image_url).startsWith("//")
-      ? "https:" + firstVariant.image_url
-      : firstVariant.image_url)
+    ? normalizePublicUrl(String(firstVariant.image_url))
     : "";
-  const mainImage = item.images && item.images[0]
-    ? (String(item.images[0]).startsWith("//") ? "https:" + item.images[0] : item.images[0])
-    : "";
+  const mainImage =
+    item.images && item.images[0]
+      ? normalizePublicUrl(String(item.images[0]))
+      : "";
   let imageUrl = mainImage || variantImage || "";
   if (USE_TEMPORARY_PERFUME_IMAGE) {
     imageUrl = TEMPORARY_PERFUME_IMAGE;
@@ -113,7 +114,8 @@ export function getPerfumeAllImages(item) {
   const out = [];
   const add = (url) => {
     if (!url || typeof url !== "string") return;
-    const full = String(url).startsWith("//") ? "https:" + url : url;
+    const full = normalizePublicUrl(String(url));
+    if (!full) return;
     if (seen.has(full)) return;
     seen.add(full);
     out.push(full);
