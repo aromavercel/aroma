@@ -137,7 +137,7 @@ export default function Footer7() {
                       </Link>
                     </li>
                     <li>
-                      <Link className="font-11 body-text" to={`/account-page`}>
+                      <Link className="font-11 body-text" to={`/minha-conta`}>
                         Account
                       </Link>
                     </li>

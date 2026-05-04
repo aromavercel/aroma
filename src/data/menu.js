@@ -316,7 +316,7 @@ export const otherPages = [
   { href: "/about-us", text: "About" },
   { href: "/contact-us", text: "Contact" },
   { href: "/store-location", text: "Store location" },
-  { href: "/account-page", text: "My Account" },
+  { href: "/minha-conta", text: "Minha conta" },
   { href: "/faq", text: "FAQ" },
   { href: "/404", text: "404" },
   { href: "/coming-soon", text: "Coming Soon!" },

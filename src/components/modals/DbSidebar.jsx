@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import React from "react";
 const accountLinks = [
-  { href: "/account-page", label: "Painel" },
+  { href: "/minha-conta", label: "Painel" },
   { href: "/account-orders", label: "Meus pedidos" },
   { href: "/lista-de-desejos", label: "Lista de desejos" },
   { href: "/account-addresses", label: "Endereços" },

@@ -5,7 +5,7 @@ import { useLocation } from "react-router-dom";
 import { useContextElement } from "@/context/Context";
 
 const accountLinks = [
-  { href: "/account-page", label: "Visão geral" },
+  { href: "/minha-conta", label: "Visão geral" },
   { href: "/account-orders", label: "Meus pedidos" },
   { href: "/lista-de-desejos", label: "Lista de desejos" },
   { href: "/account-addresses", label: "Endereços" },
