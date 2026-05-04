@@ -110,6 +110,9 @@ export function getPerfumeDisplayData(item) {
 }
 
 export function getPerfumeAllImages(item) {
+  if (USE_TEMPORARY_PERFUME_IMAGE) {
+    return [TEMPORARY_PERFUME_IMAGE];
+  }
   const seen = new Set();
   const out = [];
   const add = (url) => {
@@ -120,10 +123,15 @@ export function getPerfumeAllImages(item) {
     seen.add(full);
     out.push(full);
   };
-  (item.images || []).forEach(add);
-  (item.variants || []).forEach((v) => add(v?.image_url));
-  if (USE_TEMPORARY_PERFUME_IMAGE) {
-    return [TEMPORARY_PERFUME_IMAGE];
+
+  const gallery = Array.isArray(item.images) ? item.images : [];
+  /* Só mescla variant[].image_url quando não há lista em perfume_images: senão URLs antigas
+     nas variantes (ex.: blob apagado) viravam slide extra com ícone de erro. */
+  if (gallery.length > 0) {
+    gallery.forEach(add);
+    return out;
   }
+
+  (item.variants || []).forEach((v) => add(v?.image_url));
   return out;
 }
