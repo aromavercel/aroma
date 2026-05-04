@@ -56,6 +56,8 @@ export default function Checkout() {
   const [phoneRegistry, setPhoneRegistry] = useState("idle");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  /** Chaves de campo com erro após tentar finalizar (borda vermelha). */
+  const [checkoutFieldErrors, setCheckoutFieldErrors] = useState({});
 
   // Visitante: formulário sempre vazio (sem rascunho em sessionStorage).
   useEffect(() => {
@@ -198,45 +200,169 @@ export default function Checkout() {
   const taxCost = 0;
   const orderTotal = totalPrice ? totalPrice + shippingCost : 0;
 
-  const getCheckoutValidationError = useCallback(
+  const getCheckoutInvalidDetails = useCallback(
     ({ requireAuthReady = false } = {}) => {
-      // Se o carrinho está sincronizando (ex.: após login), não exibe erro.
-      if (cartLoading) return "";
+      const fields = {};
+      const mark = (key) => {
+        fields[key] = true;
+      };
+
+      if (cartLoading) {
+        return { message: "", fields: {}, focusId: null };
+      }
       if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
-        return "Seu carrinho está vazio.";
+        return {
+          message: "Seu carrinho está vazio.",
+          fields: {},
+          focusId: null,
+        };
       }
 
       const name = [firstname, lastname].filter(Boolean).join(" ").trim();
-      if (!name) return "Preencha seu nome.";
-      if (!address?.trim()) return "Preencha o logradouro.";
-      if (!addressNumber?.trim()) return "Preencha o número.";
-      if (!city?.trim()) return "Preencha a cidade.";
+      if (!name) {
+        mark("firstname");
+        mark("lastname");
+        return {
+          message: "Preencha seu nome.",
+          fields,
+          focusId: "firstname",
+        };
+      }
+      if (!address?.trim()) {
+        mark("address");
+        return {
+          message: "Preencha o logradouro.",
+          fields,
+          focusId: "address",
+        };
+      }
+      if (!addressNumber?.trim()) {
+        mark("addressNumber");
+        return {
+          message: "Preencha o número.",
+          fields,
+          focusId: "addressNumber",
+        };
+      }
+      if (!city?.trim()) {
+        mark("city");
+        return {
+          message: "Preencha a cidade.",
+          fields,
+          focusId: "city",
+        };
+      }
 
-      // Para visitantes, o telefone é obrigatório antes de abrir login/cadastro.
       if (!user?.id) {
         const trimmed = phone.trim();
-        if (!trimmed) return "Informe seu telefone com DDD.";
-        if (!isValidBrazilPhoneInput(trimmed)) return "Informe um telefone válido com DDD.";
-        if (requireAuthReady && phoneRegistry === "checking") return "Aguarde a verificação do telefone.";
+        if (!trimmed) {
+          mark("phone");
+          return {
+            message: "Informe seu telefone com DDD.",
+            fields,
+            focusId: "phone",
+          };
+        }
+        if (!isValidBrazilPhoneInput(trimmed)) {
+          mark("phone");
+          return {
+            message: "Informe um telefone válido com DDD.",
+            fields,
+            focusId: "phone",
+          };
+        }
+        if (requireAuthReady && phoneRegistry === "checking") {
+          mark("phone");
+          return {
+            message: "Aguarde a verificação do telefone.",
+            fields,
+            focusId: "phone",
+          };
+        }
         if (requireAuthReady && phoneRegistry !== "exists" && phoneRegistry !== "absent") {
-          return "Aguarde a verificação do telefone.";
+          mark("phone");
+          return {
+            message: "Aguarde a verificação do telefone.",
+            fields,
+            focusId: "phone",
+          };
         }
       }
 
-      // Para usuários logados, precisamos ter um telefone de contato (do checkout ou da conta).
       if (user?.id) {
         const accountPhone = String(user.phone ?? "").trim();
         const contactPhone = (phone.trim() || accountPhone).trim();
-        if (!contactPhone) return "É necessário um telefone para contato na entrega.";
+        if (!contactPhone) {
+          mark("phone");
+          return {
+            message: "É necessário um telefone para contato na entrega.",
+            fields,
+            focusId: "phone",
+          };
+        }
         if (phone.trim() && !isValidBrazilPhoneInput(phone.trim())) {
-          return "Informe um telefone válido com DDD.";
+          mark("phone");
+          return {
+            message: "Informe um telefone válido com DDD.",
+            fields,
+            focusId: "phone",
+          };
         }
       }
 
-      return "";
+      return { message: "", fields: {}, focusId: null };
     },
-    [address, addressNumber, cartLoading, cartProducts, city, firstname, lastname, phone, phoneRegistry, user?.id, user?.phone],
+    [
+      address,
+      addressNumber,
+      cartLoading,
+      cartProducts,
+      city,
+      firstname,
+      lastname,
+      phone,
+      phoneRegistry,
+      user?.id,
+      user?.phone,
+    ],
   );
+
+  const getCheckoutValidationError = useCallback(
+    (opts) => getCheckoutInvalidDetails(opts).message,
+    [getCheckoutInvalidDetails],
+  );
+
+  const scrollCheckoutToTarget = useCallback((focusId) => {
+    const topOffset = 24;
+    const run = () => {
+      const el = focusId
+        ? document.getElementById(focusId)
+        : errorRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const y = Math.max(0, rect.top + window.scrollY - topOffset);
+      try {
+        window.scrollTo({ top: y, behavior: "smooth" });
+      } catch {
+        window.scrollTo(0, y);
+      }
+      try {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } catch {
+        el.scrollIntoView();
+      }
+      try {
+        if (focusId && typeof el.focus === "function") el.focus({ preventScroll: true });
+      } catch {
+        try {
+          el.focus();
+        } catch {
+          // ignora
+        }
+      }
+    };
+    requestAnimationFrame(() => requestAnimationFrame(run));
+  }, []);
 
   const stashPhoneAndOpenAuth = async (targetId) => {
     try {
@@ -256,11 +382,14 @@ export default function Checkout() {
 
   const finalizeOrder = useCallback(
     async ({ auto = false } = {}) => {
-      const validationError = getCheckoutValidationError({ requireAuthReady: !user?.id });
-      if (validationError) {
-        setError(validationError);
+      const invalid = getCheckoutInvalidDetails({ requireAuthReady: !user?.id });
+      if (invalid.message) {
+        setError(invalid.message);
+        setCheckoutFieldErrors(invalid.fields);
+        scrollCheckoutToTarget(invalid.focusId);
         return;
       }
+      setCheckoutFieldErrors({});
 
       // Visitante: só direciona para login/cadastro depois de validar os dados obrigatórios.
       if (!user?.id) {
@@ -308,6 +437,7 @@ export default function Checkout() {
       setError("");
       setSubmitting(true);
       try {
+      const name = [firstname, lastname].filter(Boolean).join(" ").trim();
       const sessionUser = await getMe();
       if (!sessionUser?.id) {
         setUser(null);
@@ -401,10 +531,11 @@ export default function Checkout() {
       address,
       addressNumber,
       city,
-      getCheckoutValidationError,
+      getCheckoutInvalidDetails,
       navigate,
       phone,
       phoneRegistry,
+      scrollCheckoutToTarget,
       setCartProducts,
       setUser,
       totalPrice,
@@ -468,6 +599,8 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!error) return;
+    // Erros de validação de campo já acionam scroll até o input; evita puxar só para o banner.
+    if (Object.keys(checkoutFieldErrors).length > 0) return;
     // Em mobile/desktop: sobe automaticamente até o alerta de erro.
     // Usa rAF para garantir que o DOM já renderizou o alerta.
     const t = requestAnimationFrame(() => {
@@ -496,7 +629,7 @@ export default function Checkout() {
       }
     });
     return () => cancelAnimationFrame(t);
-  }, [error]);
+  }, [error, checkoutFieldErrors]);
 
   useEffect(() => {
     // Não permitir acesso ao checkout sem itens no carrinho.
@@ -508,6 +641,11 @@ export default function Checkout() {
       navigate("/catalogo", { replace: true });
     }
   }, [cartLoading, cartProducts, navigate, orderPlaced]);
+
+  useEffect(() => {
+    setCheckoutFieldErrors({});
+    setError("");
+  }, [firstname, lastname, address, addressNumber, city, state, zipcode, phone]);
 
   const canFinalize = !cartLoading && Boolean(!getCheckoutValidationError({ requireAuthReady: true }));
 
@@ -532,7 +670,7 @@ export default function Checkout() {
                   )}
                   <fieldset className="tf-field style-2 style-3 mb_16">
                     <input
-                      className={`tf-field-input tf-input${user?.id ? " bg-light" : ""}`}
+                      className={`tf-field-input tf-input${user?.id ? " bg-light" : ""}${checkoutFieldErrors.phone ? " checkout-field-invalid" : ""}`}
                       id="phone"
                       type="tel"
                       inputMode="tel"
@@ -600,7 +738,7 @@ export default function Checkout() {
                   <div className="grid-2 mb_16">
                     <div className="tf-field style-2 style-3">
                       <input
-                        className="tf-field-input tf-input"
+                        className={`tf-field-input tf-input${checkoutFieldErrors.firstname ? " checkout-field-invalid" : ""}`}
                         id="firstname"
                         placeholder=" "
                         type="text"
@@ -611,7 +749,7 @@ export default function Checkout() {
                     </div>
                     <div className="tf-field style-2 style-3">
                       <input
-                        className="tf-field-input tf-input"
+                        className={`tf-field-input tf-input${checkoutFieldErrors.lastname ? " checkout-field-invalid" : ""}`}
                         id="lastname"
                         placeholder=" "
                         type="text"
@@ -653,7 +791,7 @@ export default function Checkout() {
                         ))}
                       </select>
                     </div>
-                    <div className="tf-select select-square">
+                    <div className={`tf-select select-square${checkoutFieldErrors.city ? " checkout-field-invalid" : ""}`}>
                       <select
                         id="city"
                         value={city}
@@ -674,7 +812,7 @@ export default function Checkout() {
                   <div className="grid-2 mb_16" style={{ gap: "12px" }}>
                     <fieldset className="tf-field style-2 style-3 mb-0">
                       <input
-                        className="tf-field-input tf-input"
+                        className={`tf-field-input tf-input${checkoutFieldErrors.address ? " checkout-field-invalid" : ""}`}
                         id="address"
                         type="text"
                         value={address}
@@ -688,7 +826,7 @@ export default function Checkout() {
                     </fieldset>
                     <fieldset className="tf-field style-2 style-3 mb-0">
                       <input
-                        className="tf-field-input tf-input"
+                        className={`tf-field-input tf-input${checkoutFieldErrors.addressNumber ? " checkout-field-invalid" : ""}`}
                         id="addressNumber"
                         type="text"
                         inputMode="numeric"
@@ -826,7 +964,8 @@ export default function Checkout() {
                   <button
                     type="submit"
                     className="tf-btn btn-dark2 animate-btn w-100 checkout-finalize-btn"
-                    disabled={submitting || !canFinalize}
+                    disabled={submitting}
+                    aria-disabled={!canFinalize && !submitting}
                   >
                     {submitting ? "Finalizando…" : "Finalizar pedido"}
                   </button>
