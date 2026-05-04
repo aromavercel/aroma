@@ -1,14 +1,17 @@
 import { apiFetch, getApiBase } from "./apiFetch";
+import { normalizePublicUrl } from "@/utils/normalizeImageUrl";
 const BLOB_HOST = "blob.vercel-storage.com";
 
 function toProxyUrl(imageUrl) {
   if (!imageUrl || typeof imageUrl !== "string") return imageUrl;
-  if (!imageUrl.includes(BLOB_HOST)) return imageUrl;
+  const normalized = normalizePublicUrl(imageUrl);
+  if (!normalized) return "";
+  if (!normalized.includes(BLOB_HOST)) return normalized;
   const base = getApiBase();
-  return `${base}/api/perfume-image?url=${encodeURIComponent(imageUrl)}`;
+  return `${base}/api/perfume-image?url=${encodeURIComponent(normalized)}`;
 }
 
-function applyImageProxy(perfume) {
+export function applyImageProxy(perfume) {
   if (!perfume) return perfume;
   const p = { ...perfume };
   if (Array.isArray(p.images)) p.images = p.images.map(toProxyUrl);

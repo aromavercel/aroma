@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Navigation, Thumbs } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
@@ -29,12 +29,29 @@ function usePerfumeGalleryMobile() {
  */
 export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
   const [thumbSwiper, setThumbSwiper] = useState(null);
+  const mainSwiperRef = useRef(null);
   const isMobileGallery = usePerfumeGalleryMobile();
   const items = images.length ? images.map((imgSrc, id) => ({ id, imgSrc })) : [{ id: 0, imgSrc: "" }];
 
   const mainModules = isMobileGallery ? [Navigation] : [Thumbs, Navigation];
-  const canUseThumbs = !isMobileGallery && thumbSwiper && !thumbSwiper.destroyed;
+  const thumbAlive = thumbSwiper && typeof thumbSwiper.destroyed === "boolean" ? !thumbSwiper.destroyed : Boolean(thumbSwiper);
+  const canUseThumbs = !isMobileGallery && thumbAlive;
   const mainThumbs = canUseThumbs ? { swiper: thumbSwiper } : undefined;
+
+  // Garante ligação Thumbs após o swiper de miniaturas existir (React + Swiper 11).
+  useEffect(() => {
+    if (isMobileGallery || !thumbSwiper || !mainSwiperRef.current) return;
+    const main = mainSwiperRef.current;
+    try {
+      if (main.thumbs) {
+        main.thumbs.swiper = thumbSwiper;
+        if (typeof main.thumbs.init === "function") main.thumbs.init();
+        if (typeof main.update === "function") main.update();
+      }
+    } catch {
+      // ignora
+    }
+  }, [isMobileGallery, thumbSwiper]);
 
   // Ao alternar para mobile, o swiper de thumbs é desmontado; evita manter referência destruída.
   useEffect(() => {
@@ -52,6 +69,8 @@ export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
           onSwiper={setThumbSwiper}
           modules={[Thumbs]}
           spaceBetween={8}
+          watchSlidesProgress
+          slideToClickedSlide
         >
           {items.map(({ id, imgSrc }, index) => (
             <SwiperSlide key={id} className="swiper-slide stagger-item">
@@ -79,11 +98,18 @@ export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
       ) : null}
       <div className="flat-wrap-media-product">
         <Swiper
-          key={isMobileGallery ? "perfume-main-mobile" : "perfume-main-desktop"}
+          key={
+            isMobileGallery
+              ? "perfume-main-mobile"
+              : `perfume-main-desktop-${canUseThumbs ? "thumbs" : "pending"}`
+          }
           modules={mainModules}
           dir="ltr"
           className="swiper tf-product-media-main"
           thumbs={mainThumbs}
+          onSwiper={(swiper) => {
+            mainSwiperRef.current = swiper;
+          }}
           navigation={{
             prevEl: ".perfume-gallery-prev",
             nextEl: ".perfume-gallery-next",
