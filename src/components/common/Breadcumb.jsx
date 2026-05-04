@@ -5,6 +5,7 @@ import React from "react";
  * Breadcrumb compacto em linha (igual à página de produto/perfume):
  * "Início • …" à esquerda e opcionalmente link de volta à direita.
  * `pageTitle` mantido por compatibilidade com chamadas antigas; o rastro usa `pageName`.
+ * @param {{ label: string, to: string }[]} [trail] - links entre "Início" e a página atual (ex.: Catálogo).
  */
 export default function Breadcumb({
   pageName = "Addresses",
@@ -12,8 +13,10 @@ export default function Breadcumb({
   backLink,
   backLabel = "Voltar ao catálogo",
   fullWidth = false,
+  trail = [],
 }) {
   const containerClass = fullWidth ? "container-full" : "container";
+  const segments = Array.isArray(trail) ? trail.filter((s) => s && s.label && s.to) : [];
 
   return (
     <div className="breadcrumb-sec">
@@ -23,6 +26,16 @@ export default function Breadcumb({
             <Link to="/" className="breadcrumb-item">
               Início
             </Link>
+            {segments.map((s) => (
+              <React.Fragment key={`${s.to}-${s.label}`}>
+                <div className="breadcrumb-item dot">
+                  <span />
+                </div>
+                <Link to={s.to} className="breadcrumb-item">
+                  {s.label}
+                </Link>
+              </React.Fragment>
+            ))}
             <div className="breadcrumb-item dot">
               <span />
             </div>

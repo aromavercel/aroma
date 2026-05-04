@@ -13,6 +13,8 @@ import { getPerfumeById } from "@/api/perfumes";
 import { getPerfumeDisplayData, getPerfumeAllImages } from "@/data/perfumes";
 import Skeleton from "@/components/common/Skeleton";
 
+const BREADCRUMB_CATALOG = [{ label: "Catálogo", to: "/catalogo" }];
+
 export default function PerfumePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ export default function PerfumePage() {
       <>
         <Topbar />
         <Header1 />
-        <Breadcumb product={{ title: "Perfume" }} backLink="/catalogo" />
+        <Breadcumb product={{ title: "Perfume" }} backLink="/catalogo" trail={BREADCRUMB_CATALOG} />
         <section className="tf-section">
           <div className="container">
             <div className="row py-4">
@@ -77,7 +79,7 @@ export default function PerfumePage() {
       <>
         <Topbar />
         <Header1 />
-        <Breadcumb product={{ title: "Perfume" }} backLink="/catalogo" />
+        <Breadcumb product={{ title: "Perfume" }} backLink="/catalogo" trail={BREADCRUMB_CATALOG} />
         <section className="tf-section">
           <div className="container">
             <p className="text-muted text-center py-5">{error || "Perfume não encontrado."}</p>
@@ -110,7 +112,7 @@ export default function PerfumePage() {
       <MetaComponent meta={metadata} />
       <Topbar />
       <Header1 />
-      <Breadcumb product={{ title: d.title }} backLink="/catalogo" />
+      <Breadcumb product={{ title: d.title }} backLink="/catalogo" trail={BREADCRUMB_CATALOG} />
 
       <section className="flat-single-product flat-single-product-perfume">
         <div className="tf-main-product section-image-zoom">
