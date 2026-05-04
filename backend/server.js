@@ -2450,12 +2450,31 @@ app.get("/api/my-orders", async (req, res) => {
       WHERE user_id = ${payload.userId}
       ORDER BY created_at DESC
     `;
+    const orderIds = (rows || []).map((r) => r.id).filter(Boolean);
+    const itemsByOrderId = new Map();
+    if (orderIds.length > 0) {
+      const itemRows = await sql`
+        SELECT order_id, title, quantity
+        FROM order_items
+        WHERE order_id = ANY(${orderIds})
+        ORDER BY order_id, title
+      `;
+      for (const row of itemRows || []) {
+        const oid = row.order_id;
+        if (!itemsByOrderId.has(oid)) itemsByOrderId.set(oid, []);
+        itemsByOrderId.get(oid).push(row);
+      }
+    }
     const list = (rows || []).map((o) => ({
       id: o.id,
       status: o.status,
       total: Number(o.total || 0),
       created_at: o.created_at,
       updated_at: o.updated_at,
+      items: (itemsByOrderId.get(o.id) || []).map((i) => ({
+        title: typeof i.title === "string" ? i.title : "",
+        quantity: Number(i.quantity || 0),
+      })),
     }));
     return res.status(200).json(list);
   } catch (err) {
