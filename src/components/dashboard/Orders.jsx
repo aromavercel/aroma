@@ -3,6 +3,18 @@ import Sidebar from "./Sidebar";
 import { Link } from "react-router-dom";
 import { getMyOrders } from "@/api/orders";
 
+function orderItemsLabel(order) {
+  const items = Array.isArray(order?.items) ? order.items : [];
+  if (!items.length) return "—";
+  return items
+    .map((i) => {
+      const t = String(i.title || "").trim() || "Item";
+      const q = Number(i.quantity || 1);
+      return q > 1 ? `${t} ×${q}` : t;
+    })
+    .join(" · ");
+}
+
 const STATUS_LABELS = {
   pending: "Pedido realizado",
   confirmed: "Pedido confirmado",
@@ -122,7 +134,9 @@ export default function Orders() {
                         const statusKey = statusKeyRaw || "pending";
                         return (
                           <tr className="tf-order-item" key={o.id}>
-                            <td className="text-md">#{o.id}</td>
+                            <td className="text-md" style={{ maxWidth: 360 }}>
+                              <span className="d-inline-block text-break">{orderItemsLabel(o)}</span>
+                            </td>
                             <td className="text-md">{dateStr}</td>
                             <td className="text-md">
                               <span
