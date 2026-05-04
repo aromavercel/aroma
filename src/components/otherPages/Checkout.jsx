@@ -17,6 +17,23 @@ import { fetchAddressByCep, formatCep, onlyDigits } from "@/utils/cep";
 const CHECKOUT_DRAFT_KEY = "aroma_checkout_draft_v1";
 const CHECKOUT_AUTO_FINALIZE_KEY = "aroma_checkout_auto_finalize_v1";
 
+/** Campos do checkout a partir do objeto usuário retornado por GET /api/me (ou contexto). */
+function profileToCheckoutFields(me) {
+  const nameParts = String(me?.name || "").trim().split(/\s+/);
+  return {
+    firstname: nameParts[0] || "",
+    lastname: nameParts.slice(1).join(" ") || "",
+    address: String(me?.address ?? "").trim(),
+    addressNumber: onlyDigits(me?.address_number ?? ""),
+    complement: String(me?.address_complement ?? "").trim(),
+    deliveryInstructions: String(me?.delivery_instructions ?? "").trim(),
+    city: String(me?.city ?? "").trim(),
+    state: String(me?.state ?? "").trim(),
+    zipcode: formatCep(me?.zipcode ?? ""),
+    phone: brazilPhoneNationalDigits(me?.phone ?? ""),
+  };
+}
+
 export default function Checkout() {
   const { user, cartProducts, totalPrice, setCartProducts, setUser, cartLoading } = useContextElement();
   const navigate = useNavigate();
@@ -40,78 +57,63 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Visitante: formulário sempre vazio (sem rascunho em sessionStorage).
   useEffect(() => {
+    if (user?.id) return;
+    setFirstname("");
+    setLastname("");
+    setAddress("");
+    setAddressNumber("");
+    setComplement("");
+    setDeliveryInstructions("");
+    setCity("");
+    setState("");
+    setZipcode("");
+    setPhone("");
     try {
-      const raw = sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
-      if (!raw) return;
-      const d = JSON.parse(raw);
-      if (!d || typeof d !== "object") return;
-      if (typeof d.firstname === "string") setFirstname(d.firstname);
-      if (typeof d.lastname === "string") setLastname(d.lastname);
-      if (typeof d.address === "string") setAddress(d.address);
-      if (typeof d.addressNumber === "string") setAddressNumber(onlyDigits(d.addressNumber));
-      if (typeof d.complement === "string") setComplement(d.complement);
-      else if (typeof d.apartment === "string") setComplement(d.apartment);
-      if (typeof d.deliveryInstructions === "string") setDeliveryInstructions(d.deliveryInstructions);
-      if (typeof d.city === "string") setCity(d.city);
-      if (typeof d.state === "string") setState(d.state);
-      if (typeof d.zipcode === "string") setZipcode(d.zipcode);
-      if (typeof d.phone === "string") setPhone(brazilPhoneNationalDigits(d.phone));
+      sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
     } catch {
       // ignora
     }
-  }, []);
+  }, [user?.id]);
 
+  // Logado: snapshot imediato do contexto + GET /api/me para dados atualizados do banco.
   useEffect(() => {
-    try {
-      sessionStorage.setItem(
-        CHECKOUT_DRAFT_KEY,
-        JSON.stringify({
-          firstname,
-          lastname,
-          address,
-          addressNumber,
-          complement,
-          deliveryInstructions,
-          city,
-          state,
-          zipcode,
-          phone,
-        }),
-      );
-    } catch {
-      // ignora
-    }
-  }, [firstname, lastname, address, addressNumber, complement, deliveryInstructions, city, state, zipcode, phone]);
-
-  useEffect(() => {
-    if (!user) return;
-    let draft = null;
-    try {
-      draft = JSON.parse(sessionStorage.getItem(CHECKOUT_DRAFT_KEY) || "null");
-    } catch {
-      draft = null;
-    }
-    const pickStr = (key, ...fallbacks) => {
-      const v = draft?.[key];
-      if (typeof v === "string" && v.trim()) return v;
-      for (const f of fallbacks) {
-        if (typeof f === "string" && f.trim()) return f;
-      }
-      return "";
+    if (!user?.id) return;
+    const snapshot = user;
+    const apply = (me) => {
+      const f = profileToCheckoutFields(me);
+      setFirstname(f.firstname);
+      setLastname(f.lastname);
+      setAddress(f.address);
+      setAddressNumber(f.addressNumber);
+      setComplement(f.complement);
+      setDeliveryInstructions(f.deliveryInstructions);
+      setCity(f.city);
+      setState(f.state);
+      setZipcode(f.zipcode);
+      setPhone(f.phone);
     };
-    const nameParts = (user.name || "").trim().split(/\s+/);
-    setFirstname(pickStr("firstname", nameParts[0] || ""));
-    setLastname(pickStr("lastname", nameParts.slice(1).join(" ") || ""));
-    setAddress(pickStr("address", user.address ?? ""));
-    setAddressNumber(onlyDigits(pickStr("addressNumber", user.address_number ?? "")));
-    setComplement(pickStr("complement", pickStr("apartment", user.address_complement ?? "")));
-    setDeliveryInstructions(pickStr("deliveryInstructions", user.delivery_instructions ?? ""));
-    setCity(pickStr("city", user.city ?? ""));
-    setState(pickStr("state", user.state ?? ""));
-    setZipcode(pickStr("zipcode", user.zipcode ?? ""));
-    setPhone(brazilPhoneNationalDigits(pickStr("phone", user.phone ?? "")));
-  }, [user]);
+    apply(snapshot);
+    try {
+      sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+    } catch {
+      // ignora
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const me = await getMe();
+        if (cancelled || !me?.id) return;
+        apply(me);
+      } catch {
+        // mantém o snapshot já aplicado
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
