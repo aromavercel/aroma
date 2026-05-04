@@ -226,15 +226,40 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
     setError("");
   };
 
+  /** Remove a URL da lista do item e das variantes — a vitrine junta `images` + `variants[].image_url`; só limpar o textarea não basta. */
   const removeImageUrl = (url) => {
     if (!url) return;
+    const removedCanon = canonicalStorageUrl(String(url).trim());
+    if (!removedCanon) return;
     setForm((f) => {
-      const next = String(f.imagesText || "")
+      const nextLines = String(f.imagesText || "")
         .split("\n")
         .map((s) => s.trim())
         .filter(Boolean)
-        .filter((u) => u !== url);
-      return { ...f, imagesText: next.join("\n") };
+        .filter((line) => canonicalStorageUrl(line) !== removedCanon);
+
+      let nextVariantsJson = f.variantsJson;
+      try {
+        const raw = String(f.variantsJson || "").trim();
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            const mapped = parsed.map((v) => {
+              if (!v || typeof v !== "object") return v;
+              const img = v.image_url ?? v.imageUrl;
+              if (!img || typeof img !== "string") return v;
+              const c = canonicalStorageUrl(img.trim());
+              if (c !== removedCanon) return v;
+              const { image_url, imageUrl, ...rest } = v;
+              return rest;
+            });
+            nextVariantsJson = mapped.length ? JSON.stringify(mapped, null, 2) : "";
+          }
+        }
+      } catch {
+        /* mantém variantsJson */
+      }
+      return { ...f, imagesText: nextLines.join("\n"), variantsJson: nextVariantsJson };
     });
   };
 
@@ -368,6 +393,20 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
           if (images[0] && !cleaned[0].image_url) cleaned[0].image_url = images[0];
           variants = variantsWithCanonicalImageUrls(cleaned);
         }
+      }
+
+      /* URLs do item (textarea) são a lista oficial da galeria; tira image_url de variantes que não estão mais nela */
+      if (images.length > 0) {
+        const allowed = new Set(images.map((u) => canonicalStorageUrl(u)));
+        variants = variants.map((v) => {
+          if (!v || typeof v !== "object") return v;
+          const img = v.image_url ?? v.imageUrl;
+          if (!img || typeof img !== "string") return v;
+          const c = canonicalStorageUrl(img.trim());
+          if (allowed.has(c)) return variantsWithCanonicalImageUrls([v])[0];
+          const { image_url, imageUrl, ...rest } = v;
+          return rest;
+        });
       }
 
       const payload = {
