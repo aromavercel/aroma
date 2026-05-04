@@ -490,10 +490,35 @@
     .flat-wrap-media-product {
       border-bottom: none !important;
     }
+    /* Galeria mobile: recorte no próprio Swiper (evita faixa de 1px do slide ao lado na transição — WebKit/iOS).
+       Não usar overflow no .flat-wrap-media-product para não cortar as setas absolutas. */
     .tf-product-media-main.swiper,
     .tf-product-media-main {
       border: none !important;
       box-shadow: none !important;
+    }
+    .tf-product-media-main.swiper {
+      overflow: hidden;
+      border-radius: 12px;
+      isolation: isolate;
+      transform: translateZ(0);
+    }
+    .tf-product-media-main .swiper-slide {
+      box-sizing: border-box;
+      border: none;
+      outline: none;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .tf-product-media-main .swiper-slide .item {
+      width: 100%;
+      min-width: 0;
+    }
+    /* Galeria principal com efeito fade (PerfumeGallery mobile): sem strip lateral do modo slide */
+    .perfume-gallery-mobile-fade.swiper {
+      overflow: hidden;
+      border-radius: 12px;
+      isolation: isolate;
     }
     .tf-product-media-thumbs {
       border-top: none !important;
