@@ -207,7 +207,7 @@ export default function UserMenu() {
               </div>
               <div className="button-wrap">
                 <Link
-                  to="/account-page"
+                  to="/minha-conta"
                   className="subscribe-button tf-btn animate-btn bg-dark-2 w-100 mb_8 d-block text-center text-decoration-none"
                   onClick={() => document.querySelector("#userMenu .icon-close-popup")?.click()}
                 >

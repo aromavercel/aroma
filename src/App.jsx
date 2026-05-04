@@ -333,7 +333,8 @@ function App() {
               path="newsletter-popup-03"
               element={<NewsletterPopup3Page />}
             />
-            <Route path="account-page" element={<AccountPage />} />
+            <Route path="minha-conta" element={<AccountPage />} />
+            <Route path="account-page" element={<Navigate to="/minha-conta" replace />} />
             <Route path="painel" element={<AdminPanelLayout />}>
               <Route index element={<Navigate to="catalogo" replace />} />
               <Route path="catalogo" element={<AdminCatalogPage />} />

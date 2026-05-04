@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import { Link } from "react-router-dom";
 import { useContextElement } from "@/context/Context";
-import { createOrder } from "@/api/orders";
+import { getMyOrders } from "@/api/orders";
 
 import CountdownTimer from "../common/Countdown";
 
@@ -11,26 +11,24 @@ export default function Account() {
   const [ordersCount, setOrdersCount] = useState(0);
 
   useEffect(() => {
-    // No futuro podemos trocar para um endpoint dedicado de "meus pedidos".
-    // Por enquanto, apenas não exibimos contagem se o backend não suportar.
-    async function loadOrdersCount() {
-      try {
-        const res = await fetch("/api/my-orders", {
-          headers: { "Content-Type": "application/json" },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setOrdersCount(data.length);
-        } else if (Array.isArray(data.orders)) {
-          setOrdersCount(data.orders.length);
-        }
-      } catch {
-        // Silencia erros - página continua funcionando.
-      }
+    if (!user?.id) {
+      setOrdersCount(0);
+      return;
     }
-    loadOrdersCount();
-  }, []);
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await getMyOrders();
+        if (cancelled) return;
+        setOrdersCount(Array.isArray(list) ? list.length : 0);
+      } catch {
+        if (!cancelled) setOrdersCount(0);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const firstName =
     (user?.name || "")
