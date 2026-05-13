@@ -367,6 +367,8 @@ export default function Checkout() {
   const stashPhoneAndOpenAuth = async (targetId) => {
     try {
       sessionStorage.setItem("checkoutAuthPhone", brazilPhoneNationalDigits(phone));
+      sessionStorage.setItem("checkoutAuthFirstname", String(firstname || "").trim());
+      sessionStorage.setItem("checkoutAuthLastname", String(lastname || "").trim());
     } catch {
       // ignora
     }

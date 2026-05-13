@@ -55,6 +55,12 @@ export default function Login() {
       document.querySelector("#login .icon-close-popup")?.click();
       setPhone("");
       setPassword("");
+      try {
+        sessionStorage.removeItem("checkoutAuthFirstname");
+        sessionStorage.removeItem("checkoutAuthLastname");
+      } catch {
+        // ignora
+      }
     } catch (err) {
       setError(err.message || "Erro ao fazer login");
     } finally {
