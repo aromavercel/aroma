@@ -59,6 +59,17 @@ function readGuestWishlistFromStorage() {
   }
   return { items: [], ids: [] };
 }
+
+/** Lê o carrinho do visitante antes do primeiro paint (evita race com o guard do checkout). */
+function readCartListFromLocalStorage() {
+  try {
+    const stored = JSON.parse(localStorage.getItem("cartList") || "null");
+    return Array.isArray(stored) && stored.length ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
 // import { openWistlistModal } from "@/utlis/openWishlist";
 
 import React, { useEffect, useRef } from "react";
@@ -70,7 +81,7 @@ export const useContextElement = () => {
 
 export default function Context({ children }) {
   const [user, setUser] = useState(null);
-  const [cartProducts, setCartProducts] = useState([]);
+  const [cartProducts, setCartProducts] = useState(readCartListFromLocalStorage);
   const [cartLoading, setCartLoading] = useState(false);
   const [wishList, setWishList] = useState([]);
   const [wishListItems, setWishListItems] = useState([]);
@@ -570,16 +581,6 @@ export default function Context({ children }) {
       // ignora quota/privacidade
     }
   }, [user, cartProducts]);
-
-  useEffect(() => {
-    // Restaura no primeiro carregamento (antes do getMe / backend)
-    try {
-      const stored = JSON.parse(localStorage.getItem("cartList") || "null");
-      if (Array.isArray(stored) && stored.length) setCartProducts(stored);
-    } catch {
-      // ignora
-    }
-  }, []);
 
   useEffect(() => {
     if (user?.id) return;
