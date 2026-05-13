@@ -27,6 +27,16 @@ export default function Register() {
           setPhone(brazilPhoneNationalDigits(fromCheckout));
           sessionStorage.removeItem("checkoutAuthPhone");
         }
+        const fn = sessionStorage.getItem("checkoutAuthFirstname");
+        const ln = sessionStorage.getItem("checkoutAuthLastname");
+        if (fn != null) {
+          setFirstName(String(fn));
+          sessionStorage.removeItem("checkoutAuthFirstname");
+        }
+        if (ln != null) {
+          setLastName(String(ln));
+          sessionStorage.removeItem("checkoutAuthLastname");
+        }
         const msg = sessionStorage.getItem("checkoutAuthMessage");
         if (msg) {
           setCheckoutMessage(String(msg));
@@ -68,6 +78,12 @@ export default function Register() {
       setPhone("");
       setEmail("");
       setPassword("");
+      try {
+        sessionStorage.removeItem("checkoutAuthFirstname");
+        sessionStorage.removeItem("checkoutAuthLastname");
+      } catch {
+        // ignora
+      }
     } catch (err) {
       setError(err.message || "Erro ao criar conta");
     } finally {
