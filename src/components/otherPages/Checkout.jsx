@@ -16,6 +16,8 @@ import { fetchAddressByCep, formatCep, onlyDigits } from "@/utils/cep";
 
 const CHECKOUT_DRAFT_KEY = "aroma_checkout_draft_v1";
 const CHECKOUT_AUTO_FINALIZE_KEY = "aroma_checkout_auto_finalize_v1";
+/** Rascunho do endereço ao abrir login/cadastro a partir do checkout — reaplica e persiste após auth. */
+const CHECKOUT_AUTH_DRAFT_KEY = "aroma_checkout_auth_draft_v1";
 
 /** Campos do checkout a partir do objeto usuário retornado por GET /api/me (ou contexto). */
 function profileToCheckoutFields(me) {
@@ -32,6 +34,22 @@ function profileToCheckoutFields(me) {
     zipcode: formatCep(me?.zipcode ?? ""),
     phone: brazilPhoneNationalDigits(me?.phone ?? ""),
   };
+}
+
+/** Preenche com o perfil sem apagar o que o visitante já digitou no checkout (campos vazios no perfil não sobrescrevem). */
+function mergeProfileIntoCheckoutState(me, s) {
+  const f = profileToCheckoutFields(me);
+  const has = (v) => String(v ?? "").trim() !== "";
+  s.setFirstname((p) => (has(f.firstname) ? f.firstname : p));
+  s.setLastname((p) => (has(f.lastname) ? f.lastname : p));
+  s.setAddress((p) => (has(f.address) ? f.address : p));
+  s.setAddressNumber((p) => (has(f.addressNumber) ? f.addressNumber : p));
+  s.setComplement((p) => (has(f.complement) ? f.complement : p));
+  s.setDeliveryInstructions((p) => (has(f.deliveryInstructions) ? f.deliveryInstructions : p));
+  s.setCity((p) => (has(f.city) ? f.city : p));
+  s.setUf((p) => (has(f.state) ? f.state : p));
+  s.setZipcode((p) => (has(f.zipcode) ? f.zipcode : p));
+  s.setPhone((p) => (has(f.phone) ? f.phone : p));
 }
 
 export default function Checkout() {
@@ -74,29 +92,29 @@ export default function Checkout() {
     setPhone("");
     try {
       sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+      sessionStorage.removeItem(CHECKOUT_AUTH_DRAFT_KEY);
     } catch {
       // ignora
     }
   }, [user?.id]);
 
-  // Logado: snapshot imediato do contexto + GET /api/me para dados atualizados do banco.
+  // Logado: mescla perfil com o formulário (evita apagar endereço após cadastro/login no checkout) + persiste rascunho do auth.
   useEffect(() => {
     if (!user?.id) return;
     const snapshot = user;
-    const apply = (me) => {
-      const f = profileToCheckoutFields(me);
-      setFirstname(f.firstname);
-      setLastname(f.lastname);
-      setAddress(f.address);
-      setAddressNumber(f.addressNumber);
-      setComplement(f.complement);
-      setDeliveryInstructions(f.deliveryInstructions);
-      setCity(f.city);
-      setState(f.state);
-      setZipcode(f.zipcode);
-      setPhone(f.phone);
+    const setters = {
+      setFirstname,
+      setLastname,
+      setAddress,
+      setAddressNumber,
+      setComplement,
+      setDeliveryInstructions,
+      setCity,
+      setUf: setState,
+      setZipcode,
+      setPhone,
     };
-    apply(snapshot);
+    mergeProfileIntoCheckoutState(snapshot, setters);
     try {
       sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
     } catch {
@@ -107,7 +125,78 @@ export default function Checkout() {
       try {
         const me = await getMe();
         if (cancelled || !me?.id) return;
-        apply(me);
+        mergeProfileIntoCheckoutState(me, setters);
+
+        let raw = "";
+        try {
+          raw = sessionStorage.getItem(CHECKOUT_AUTH_DRAFT_KEY) || "";
+        } catch {
+          raw = "";
+        }
+        if (raw) {
+          let d = null;
+          try {
+            d = JSON.parse(raw);
+          } catch {
+            d = null;
+          }
+          try {
+            sessionStorage.removeItem(CHECKOUT_AUTH_DRAFT_KEY);
+          } catch {
+            // ignora
+          }
+          if (d && typeof d === "object") {
+            const hasAny = [
+              d.firstname,
+              d.lastname,
+              d.address,
+              d.addressNumber,
+              d.zipcode,
+              d.city,
+              d.state,
+              d.complement,
+              d.deliveryInstructions,
+            ].some((x) => String(x ?? "").trim());
+            if (hasAny) {
+              if (String(d.firstname ?? "").trim()) setFirstname(String(d.firstname).trim());
+              if (String(d.lastname ?? "").trim()) setLastname(String(d.lastname).trim());
+              if (String(d.address ?? "").trim()) setAddress(String(d.address).trim());
+              if (String(d.addressNumber ?? "").trim()) setAddressNumber(String(d.addressNumber).trim());
+              if (String(d.complement ?? "").trim()) setComplement(String(d.complement).trim());
+              if (String(d.deliveryInstructions ?? "").trim()) {
+                setDeliveryInstructions(String(d.deliveryInstructions).trim());
+              }
+              if (String(d.city ?? "").trim()) setCity(String(d.city).trim());
+              if (String(d.state ?? "").trim()) setState(String(d.state).trim());
+              if (String(d.zipcode ?? "").trim()) setZipcode(String(d.zipcode).trim());
+
+              const nm = [d.firstname, d.lastname]
+                .map((x) => String(x ?? "").trim())
+                .filter(Boolean)
+                .join(" ");
+              try {
+                await updateProfile({
+                  name: nm || undefined,
+                  address: String(d.address ?? "").trim() || null,
+                  address_number: String(d.addressNumber ?? "").trim() || null,
+                  address_complement: String(d.complement ?? "").trim() || null,
+                  zipcode: String(d.zipcode ?? "").trim() || null,
+                  city: String(d.city ?? "").trim() || null,
+                  state: String(d.state ?? "").trim() || null,
+                  country: COUNTRY_BR_LABEL,
+                  delivery_instructions: String(d.deliveryInstructions ?? "").trim() || null,
+                });
+                const me2 = await getMe();
+                if (!cancelled && me2?.id) {
+                  setUser(me2);
+                  mergeProfileIntoCheckoutState(me2, setters);
+                }
+              } catch {
+                // mantém o formulário local mesmo se PATCH falhar
+              }
+            }
+          }
+        }
       } catch {
         // mantém o snapshot já aplicado
       }
@@ -369,6 +458,20 @@ export default function Checkout() {
       sessionStorage.setItem("checkoutAuthPhone", brazilPhoneNationalDigits(phone));
       sessionStorage.setItem("checkoutAuthFirstname", String(firstname || "").trim());
       sessionStorage.setItem("checkoutAuthLastname", String(lastname || "").trim());
+      sessionStorage.setItem(
+        CHECKOUT_AUTH_DRAFT_KEY,
+        JSON.stringify({
+          firstname: String(firstname || "").trim(),
+          lastname: String(lastname || "").trim(),
+          address: String(address || "").trim(),
+          addressNumber: String(addressNumber || "").trim(),
+          complement: String(complement || "").trim(),
+          deliveryInstructions: String(deliveryInstructions || "").trim(),
+          city: String(city || "").trim(),
+          state: String(state || "").trim(),
+          zipcode: String(zipcode || "").trim(),
+        }),
+      );
     } catch {
       // ignora
     }
