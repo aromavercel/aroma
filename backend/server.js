@@ -17,7 +17,6 @@ import { handlePerfumes } from "../lib/api/perfumes.js";
 
 const MAX_AVATAR_SIZE = 4 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-// Base64 aumenta ~33% o tamanho do payload. Mantemos 3MB aqui para evitar 413.
 const MAX_PERFUME_IMAGE_SIZE = 3 * 1024 * 1024;
 const ALLOWED_PERFUME_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -25,7 +24,6 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({ origin: true }));
-// Upload via dataURL (base64) precisa de limite maior que o default (~100kb)
 app.use(express.json({ limit: "8mb" }));
 
 function getMailTransport() {
@@ -98,7 +96,6 @@ app.post("/api/promo-alert", async (req, res) => {
       const [user] = await sql`SELECT id FROM users WHERE phone = ${phoneE164}`;
       if (user) userId = user.id;
     } catch {
-      // Se a coluna phone não existir (schema antigo), apenas ignora o vínculo de usuário.
     }
 
     const [row] = await sql`
@@ -127,7 +124,6 @@ app.post("/api/promo-alert", async (req, res) => {
   }
 });
 
-// Estimativa de entrega Correios (PAC) — envio normal
 app.post("/api/shipping-estimate", async (req, res) => {
   try {
     const body = req.body || {};
@@ -186,7 +182,6 @@ app.post("/api/shipping-estimate", async (req, res) => {
   }
 });
 
-// Proxy de imagens do Blob (evita 403 no browser quando o store é privado)
 const BLOB_HOST = "blob.vercel-storage.com";
 app.get("/api/perfume-image", async (req, res) => {
   const rawUrl = typeof req.query.url === "string" ? req.query.url.trim() : "";
@@ -223,18 +218,12 @@ app.get("/api/perfume-image", async (req, res) => {
   }
 });
 
-// Normaliza UUID para chave de mapa (evita falha quando driver retorna formato diferente)
 function toUuidKey(val) {
   if (val == null) return "";
   const s = String(val).trim().toLowerCase();
   return s.length > 10 ? s : "";
 }
 
-// Catálogo de perfumes (do banco) — imagens vêm da tabela perfume_images (perfume_id → url)
-// ?catalog=arabe|feminino|normal | ?all=1 (admin: lista todos, inclusive inativos)
-// Paginação: ?limit=24&offset=0 (ou ?page=1) | noTotal=1 retorna hasNext e evita COUNT(*)
-// Compacto: ?compact=1 evita enviar notes/variants (payload menor)
-// Facets: ?facets=1 retorna {brands,total} (para sidebar sem listar tudo)
 app.get("/api/perfumes", async (req, res) => {
   return await handlePerfumes([], req, res);
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
@@ -275,7 +264,6 @@ app.get("/api/perfumes", async (req, res) => {
     const filterByBrand = Boolean(brandKey);
 
     if (facetsOnly) {
-      // Sidebar: marcas + contagem total (respeita filtros exceto marca)
       const brandsRows = await sql`
         SELECT b.name_key AS key, b.name AS label, COUNT(*)::int AS count
         FROM perfumes p
@@ -318,8 +306,6 @@ app.get("/api/perfumes", async (req, res) => {
     const effectiveLimit = isPaged ? (limit ?? 24) : null;
     const effectiveOffset = isPaged ? (offset ?? 0) : null;
     const listLimit = isPaged ? (noTotal ? effectiveLimit + 1 : effectiveLimit) : null;
-    // O driver do Neon não suporta bem compor fragments sql`` dentro de outras sql``.
-    // Para evitar isso, sempre usamos LIMIT/OFFSET com valores explícitos.
     const finalLimit = isPaged ? listLimit : 5000;
     const finalOffset = isPaged ? effectiveOffset : 0;
 
@@ -344,7 +330,6 @@ app.get("/api/perfumes", async (req, res) => {
       }
 
       const runListQuery = async (isCompact) => {
-        // Evita compor fragments (Neon sql tag não suporta bem interpolar sql`` em outros sql``)
         if (sort === "title-asc") {
           return isCompact
             ? await sql`
@@ -541,7 +526,6 @@ app.get("/api/perfumes", async (req, res) => {
                 LIMIT ${finalLimit} OFFSET ${finalOffset}
               `;
         }
-        // default
         return isCompact
           ? await sql`
               SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.image_2_url, p.ativo, p.esgotado,
@@ -593,8 +577,6 @@ app.get("/api/perfumes", async (req, res) => {
 
       rows = await runListQuery(compactOnly);
     } catch (queryErr) {
-      // Retrocompatibilidade: se as colunas ativo/esgotado ainda não existem (migration 009 não aplicada),
-      // refaz a query sem esses campos e sem filtro de ativo.
       if (queryErr?.code !== "42703") throw queryErr;
       rows = filterByCatalog
         ? await sql`
@@ -691,7 +673,6 @@ app.get("/api/perfumes", async (req, res) => {
   }
 });
 
-// Busca (página /buscar): top produtos + top marcas + resultados
 app.get("/api/search", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
@@ -759,7 +740,6 @@ app.get("/api/search", async (req, res) => {
         `;
         return rows || [];
       } catch (err) {
-        // Se ainda não houver pedidos/tabelas, cai no fallback aleatório
         if (err?.code === "42P01" || err?.code === "42703") return [];
         throw err;
       }
@@ -866,7 +846,6 @@ app.get("/api/search", async (req, res) => {
 });
 
 app.get("/api/perfumes/:id", async (req, res) => {
-  // Usa a mesma lógica compartilhada (aceita UUID ou slug)
   return await handlePerfumes([req.params.id], req, res);
 });
 
@@ -1688,7 +1667,6 @@ app.post("/api/login", async (req, res) => {
     const valid = await verifyPassword(passwordStr, user.password_hash);
     if (!valid) return res.status(401).json({ error: "Telefone ou senha incorretos" });
 
-    // Atualiza última atividade no momento do login (se a coluna existir)
     try {
       await sql`UPDATE users SET last_activity_at = now() WHERE id = ${user.id}`;
     } catch (activityErr) {
@@ -1733,7 +1711,6 @@ app.post("/api/password-reset/request", async (req, res) => {
       return res.status(400).json({ error: "E-mail é obrigatório" });
     }
 
-    // Não enumerar usuários: em caso de telefone não existir, responde ok.
     const ok = () => res.status(200).json({ ok: true });
 
     const rows = await sql`SELECT id, email FROM users WHERE email = ${emailNormalized}`;
@@ -2072,12 +2049,10 @@ app.patch("/api/me", async (req, res) => {
                 try {
                   await sql`UPDATE carts SET user_phone = ${nextPhone} WHERE user_phone = ${oldk}`;
                 } catch {
-                  /* ignora */
                 }
                 try {
                   await sql`UPDATE wishlists SET user_phone = ${nextPhone} WHERE user_phone = ${oldk}`;
                 } catch {
-                  /* ignora */
                 }
               }
             }
@@ -2152,7 +2127,6 @@ app.patch("/api/me", async (req, res) => {
   }
 });
 
-// --- Carrinho: identificado pelo telefone do usuário (um carrinho por usuário) ---
 async function getCartUser(req, res) {
   const token = getBearerToken(req);
   const payload = verifyToken(token);
@@ -2178,7 +2152,6 @@ async function getCartUser(req, res) {
         WHERE id = ${user.id} AND (phone IS NULL OR TRIM(phone) = '')
       `;
     } catch {
-      // coluna phone ausente ou falha de sync — segue com telefone do token
     }
   }
   if (!String(dbPhone || jwtPhone).trim()) {
@@ -2340,7 +2313,6 @@ app.delete("/api/cart/items/:id", async (req, res) => {
   }
 });
 
-// --- Pedidos: criar pedido a partir do carrinho e zerar o carrinho ---
 app.post("/api/orders", async (req, res) => {
   const cartUser = await getCartUser(req, res);
   if (!cartUser) return;
@@ -2433,7 +2405,6 @@ app.post("/api/orders", async (req, res) => {
   }
 });
 
-// Lista os pedidos do usuário autenticado (cada usuário só enxerga seus próprios pedidos)
 app.get("/api/my-orders", async (req, res) => {
   const token = getBearerToken(req);
   const payload = verifyToken(token);
@@ -2483,7 +2454,6 @@ app.get("/api/my-orders", async (req, res) => {
   }
 });
 
-// Detalhes de um pedido específico do usuário autenticado
 app.get("/api/my-orders/:id", async (req, res) => {
   const token = getBearerToken(req);
   const payload = verifyToken(token);
@@ -2582,7 +2552,6 @@ app.get("/api/my-orders/:id", async (req, res) => {
   }
 });
 
-// --- Lista de desejos: identificada pelo telefone do usuário (uma por usuário) ---
 async function getWishlistUser(req, res) {
   const token = getBearerToken(req);
   const payload = verifyToken(token);
@@ -2600,7 +2569,6 @@ async function getWishlistUser(req, res) {
     return null;
   }
   const phone = user.phone != null ? String(user.phone).trim() : "";
-  // Fallback: contas sem telefone (ex.: login social) ainda podem usar wishlist.
   const userPhoneKey = phone || `user:${String(user.id)}`;
   return { userId: user.id, userPhone: userPhoneKey };
 }
@@ -2612,7 +2580,6 @@ app.get("/api/wishlist", async (req, res) => {
     let [wishlist] = await sql`SELECT id FROM wishlists WHERE user_phone = ${wUser.userPhone}`;
     if (!wishlist) return res.status(200).json({ items: [] });
 
-    // Lista perfumes da wishlist (apenas ativos para o usuário comum)
     let rows;
     try {
       rows = await sql`
@@ -2625,7 +2592,6 @@ app.get("/api/wishlist", async (req, res) => {
       `;
     } catch (queryErr) {
       if (queryErr?.code !== "42703") throw queryErr;
-      // Retrocompatibilidade: se ativo/esgotado ainda não existem, não filtra.
       rows = await sql`
         SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url
         FROM wishlist_items wi

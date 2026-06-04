@@ -71,7 +71,6 @@ export default function Slider6({
 
   const lightboxRef = useRef(null);
   useEffect(() => {
-    // Initialize PhotoSwipeLightbox
     const lightbox = new PhotoSwipeLightbox({
       gallery: "#gallery-swiper-started",
       children: ".item",
@@ -80,10 +79,8 @@ export default function Slider6({
 
     lightbox.init();
 
-    // Store the lightbox instance in the ref for later use
     lightboxRef.current = lightbox;
 
-    // Cleanup: destroy the lightbox when the component unmounts
     return () => {
       lightbox.destroy();
     };

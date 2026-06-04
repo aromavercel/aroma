@@ -71,11 +71,8 @@ export default function Slider8({
   const [activeIndex, setActiveIndex] = useState(0);
   const swiperRef = useRef(null);
   useEffect(() => {
-    // Function to initialize Drift
-    // Function to check window width
     const checkWindowSize = () => window.innerWidth >= 1200;
 
-    // Only proceed if window is wide enough
     if (!checkWindowSize()) return;
 
     const imageZoom = () => {
@@ -115,17 +112,15 @@ export default function Slider8({
       element.addEventListener("mouseleave", handleMouseLeave);
     });
 
-    // Cleanup event listeners on component unmount
     return () => {
       zoomElements.forEach((element) => {
         element.removeEventListener("mouseover", handleMouseOver);
         element.removeEventListener("mouseleave", handleMouseLeave);
       });
     };
-  }, []); // Empty dependency array to run only once on mount
+  }, []);
   const lightboxRef = useRef(null);
   useEffect(() => {
-    // Initialize PhotoSwipeLightbox
     const lightbox = new PhotoSwipeLightbox({
       gallery: "#gallery-swiper-started",
       children: ".item",
@@ -134,10 +129,8 @@ export default function Slider8({
 
     lightbox.init();
 
-    // Store the lightbox instance in the ref for later use
     lightboxRef.current = lightbox;
 
-    // Cleanup: destroy the lightbox when the component unmounts
     return () => {
       lightbox.destroy();
     };
@@ -161,9 +154,7 @@ export default function Slider8({
   }, []);
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Dynamically import @google/model-viewer
       import("@google/model-viewer").then(() => {
-        // Module is imported, you can use model-viewer functionality here
       });
     }
   }, []);

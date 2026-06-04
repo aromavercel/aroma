@@ -28,7 +28,7 @@ export default function Details14({ product }) {
       <div className="tf-main-product section-image-zoom">
         <div className="container">
           <div className="row">
-            {/* Product Images */}
+
             <div className="col-md-6">
               <div className="tf-product-media-wrap sticky-top">
                 <div className="product-thumbs-slider">
@@ -40,8 +40,7 @@ export default function Details14({ product }) {
                 </div>
               </div>
             </div>
-            {/* /Product Images */}
-            {/* Product Info */}
+
             <div className="col-md-6">
               <div className="tf-zoom-main" />
               <div className="tf-product-info-wrap position-relative">
@@ -234,7 +233,7 @@ export default function Details14({ product }) {
                 </div>
               </div>
             </div>
-            {/* /Product Info */}
+
           </div>
         </div>
       </div>

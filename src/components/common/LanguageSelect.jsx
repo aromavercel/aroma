@@ -16,13 +16,11 @@ export default function LanguageSelect({
         languageSelect.current &&
         !languageSelect.current.contains(event.target)
       ) {
-        setIsDDOpen(false); // Close the dropdown if click is outside
+        setIsDDOpen(false);
       }
     };
-    // Add the event listener when the component mounts
     document.addEventListener("click", handleClickOutside);
 
-    // Cleanup the event listener when the component unmounts
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };

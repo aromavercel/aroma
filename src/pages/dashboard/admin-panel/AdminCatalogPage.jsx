@@ -21,10 +21,9 @@ export default function AdminCatalogPage() {
   const [formModalPerfume, setFormModalPerfume] = useState(undefined);
   const [deletingId, setDeletingId] = useState(null);
   const [q, setQ] = useState("");
-  /** Termo efetivo para API (debounce) — evita N requisições a cada tecla e 401 em rajadas. */
   const [qForRequest, setQForRequest] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all"); // all | active | inactive
-  const [stockFilter, setStockFilter] = useState("all"); // all | in_stock | out_of_stock
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
   const [brandKey, setBrandKey] = useState("all");
   const [catalogSource, setCatalogSource] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -112,7 +111,6 @@ export default function AdminCatalogPage() {
 
   useEffect(() => { loadPerfumes(); }, [loadPerfumes]);
 
-  // Opções de marca com contagens, respeitando filtros (exceto marca).
   useEffect(() => {
     let cancelled = false;
     const term = String(qForRequest || "").trim();
@@ -133,14 +131,12 @@ export default function AdminCatalogPage() {
         setBrandOptions(opts);
       })
       .catch(() => {
-        // não bloqueia a tela se falhar
       });
     return () => {
       cancelled = true;
     };
   }, [qForRequest, statusFilter, stockFilter, catalogSource]);
 
-  // Lista já vem filtrada/paginada do backend
   const filteredList = useMemo(() => perfumesList || [], [perfumesList]);
 
   const handleDelete = useCallback(async (perfume, e) => {
@@ -377,7 +373,6 @@ export default function AdminCatalogPage() {
           </div>
         )}
 
-        {/* Paginação: visível quando há itens ou quando dá para navegar */}
         {!loading &&
         !loadError &&
         (filteredList.length > 0 ||

@@ -20,7 +20,7 @@ export default function ProductPageCollectionList() {
       <Topbar />
       <Header1 />
       <>
-        {/* Title Page */}
+
         <Breadcumb showCollection={false} />
       </>
       <SubCollections2 />

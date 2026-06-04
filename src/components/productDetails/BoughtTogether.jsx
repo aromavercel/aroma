@@ -74,7 +74,6 @@ export default function BoughtTogether() {
     );
   };
 
-  // Calculate total price dynamically
   const totalPrice = selectedProducts
     .filter((product) => product.checked)
     .reduce((sum, product) => sum + product.price, 0)

@@ -37,7 +37,7 @@ export default function Products() {
     setActiveTab(tabName);
   };
 
-  const [activeCategory, setActiveCategory] = useState("Earphones"); // Default active category
+  const [activeCategory, setActiveCategory] = useState("Earphones");
   const [filtered2, setFiltered2] = useState(electronicProducts2);
   useEffect(() => {
     setFiltered2(
@@ -257,7 +257,6 @@ export default function Products() {
                 role="tabpanel"
               >
                 <div className="tf-grid-layout tf-col-2 lg-col-3 xl-col-4">
-                  {/* item 1 */}
 
                   {filtered2.length &&
                     filtered2.map((product, i) => (
@@ -266,7 +265,7 @@ export default function Products() {
                 </div>
               </div>
             </div>
-            {/* Banner Shop */}
+
             <div className="flat-spacing-2">
               <Swiper
                 dir="ltr"
@@ -337,8 +336,7 @@ export default function Products() {
                 <div className="d-flex d-lg-none sw-dot-default sw-pagination-cls justify-content-center" />
               </Swiper>
             </div>
-            {/* /Banner Shop */}
-            {/* Just For You */}
+
             <div className="flat-animate-tab">
               <div className="flat-title style-between align-items-end flex-wrap">
                 <div className="box-title">
@@ -398,7 +396,6 @@ export default function Products() {
                       },
                     }}
                     modules={[Pagination]}
-                    // autoHeight
                   >
                     {filtered.map((product, i) => (
                       <SwiperSlide key={i}>
@@ -410,7 +407,7 @@ export default function Products() {
                 </div>
               </div>
             </div>
-            {/* Just For You */}
+
           </div>
         </div>
       </div>

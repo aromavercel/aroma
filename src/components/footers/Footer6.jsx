@@ -18,7 +18,7 @@ export default function Footer6() {
   };
 
   const sendEmail = async (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
+    e.preventDefault();
     const email = e.target.email.value;
 
     try {
@@ -30,18 +30,18 @@ export default function Footer6() {
       );
 
       if ([200, 201].includes(response.status)) {
-        e.target.reset(); // Reset the form
-        setSuccess(true); // Set success state
+        e.target.reset();
+        setSuccess(true);
         handleShowMessage();
       } else {
-        setSuccess(false); // Handle unexpected responses
+        setSuccess(false);
         handleShowMessage();
       }
     } catch (error) {
       console.error("Error:", error.response?.data || "An error occurred");
-      setSuccess(false); // Set error state
+      setSuccess(false);
       handleShowMessage();
-      e.target.reset(); // Reset the form
+      e.target.reset();
     }
   };
   useEffect(() => {
@@ -64,13 +64,12 @@ export default function Footer6() {
       heading.addEventListener("click", toggleOpen);
     });
 
-    // Clean up event listeners when the component unmounts
     return () => {
       headings.forEach((heading) => {
         heading.removeEventListener("click", toggleOpen);
       });
     };
-  }, []); // Empty dependency array means this will run only once on mount
+  }, []);
 
   return (
     <footer id="footer" className="footer-default xl-pb-70 bg-yellow-7">

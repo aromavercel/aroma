@@ -14,10 +14,6 @@ function toProxyUrl(imageUrl) {
   return `${getBase()}/api/perfume-image?url=${encodeURIComponent(normalized)}`;
 }
 
-/**
- * Formato de item do carrinho (retorno da API e uso no Context):
- * { id, perfume_id, title, imageUrl, priceShort, price, quantity }
- */
 function mapCartItem(item) {
   const rawLineId = item.id ?? item.cart_item_id;
   const pid = item.perfume_id != null ? String(item.perfume_id) : "";
@@ -36,7 +32,6 @@ function mapCartItem(item) {
   };
 }
 
-/** Retorna o carrinho do usuário logado. Se não logado ou sem telefone, retorna { items: [] }. */
 export async function getCart() {
   try {
     const data = await apiFetch("/api/cart", { method: "GET", auth: true });
@@ -48,7 +43,6 @@ export async function getCart() {
   }
 }
 
-/** Adiciona ou soma quantidade de um perfume no carrinho. Requer login com telefone. */
 export async function addCartItem(perfumeId, quantity = 1, variant = null) {
   return apiFetch("/api/cart/items", {
     method: "POST",
@@ -62,7 +56,6 @@ export async function addCartItem(perfumeId, quantity = 1, variant = null) {
   });
 }
 
-/** Atualiza a quantidade de um item. quantity 0 remove o item. */
 export async function updateCartItem(cartItemId, quantity) {
   return apiFetch(`/api/cart/items/${encodeURIComponent(cartItemId)}`, {
     method: "PATCH",
@@ -71,7 +64,6 @@ export async function updateCartItem(cartItemId, quantity) {
   });
 }
 
-/** Remove um item do carrinho. */
 export async function removeCartItem(cartItemId) {
   return apiFetch(`/api/cart/items/${encodeURIComponent(cartItemId)}`, {
     method: "DELETE",

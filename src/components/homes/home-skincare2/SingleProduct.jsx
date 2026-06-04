@@ -78,7 +78,7 @@ export default function SingleProduct() {
           </h3>
         </div>
         <div className="row section-image-zoom">
-          {/* Product Images */}
+
           <div className="col-md-6">
             <div className="tf-product-media-wrap sticky-top product-skincare">
               <div className="product-thumbs-slider">
@@ -90,8 +90,7 @@ export default function SingleProduct() {
               </div>
             </div>
           </div>
-          {/* /Product Images */}
-          {/* Product Info */}
+
           <div className="col-md-6">
             <div className="tf-zoom-main" />
             <div className="tf-product-info-wrap other-image-zoom">
@@ -270,7 +269,7 @@ export default function SingleProduct() {
               </div>
             </div>
           </div>
-          {/* /Product Info */}
+
         </div>
       </div>
     </section>

@@ -5,7 +5,6 @@ const MODAL_ID = "perfumeFormModal";
 const CATALOG_SELECT_OPTIONS = CATALOG_SOURCE_OPTIONS;
 const BLOB_HOST = "blob.vercel-storage.com";
 
-/** Reverte URLs do proxy `/api/perfume-image?url=` para a URL real (ex.: Blob), para não gravar proxy no banco. */
 function canonicalStorageUrl(url) {
   if (!url || typeof url !== "string") return url;
   const s = url.trim();
@@ -22,7 +21,6 @@ function canonicalStorageUrl(url) {
       if (inner && String(inner).trim()) return String(inner).trim();
     }
   } catch {
-    /* ignore */
   }
   return s;
 }
@@ -112,7 +110,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
-    // remove duplicadas preservando ordem
     const seen = new Set();
     return lines.filter((u) => {
       if (seen.has(u)) return false;
@@ -168,7 +165,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
   const parsePriceToNumber = (raw) => {
     const s = String(raw || "").trim();
     if (!s) return null;
-    // aceita "R$ 99,90", "99,90", "99.90", "99"
     const normalized = s
       .replace(/[^\d,.-]/g, "")
       .replace(/\./g, "")
@@ -226,7 +222,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
     setError("");
   };
 
-  /** Remove a URL da lista do item e das variantes — a vitrine junta `images` + `variants[].image_url`; só limpar o textarea não basta. */
   const removeImageUrl = (url) => {
     if (!url) return;
     const removedCanon = canonicalStorageUrl(String(url).trim());
@@ -257,7 +252,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
           }
         }
       } catch {
-        /* mantém variantsJson */
       }
       return { ...f, imagesText: nextLines.join("\n"), variantsJson: nextVariantsJson };
     });
@@ -307,7 +301,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
       if (!url) throw new Error("Upload não retornou URL");
 
       if (applyToForm) {
-        // 1) Sempre adiciona na lista de imagens
         setForm((f) => {
           const lines = String(f.imagesText || "")
             .split("\n")
@@ -317,7 +310,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
           return { ...f, imagesText: lines.join("\n") };
         });
 
-        // 2) Se já tem variantes e a primeira não tem image_url, preenche automaticamente
         setForm((f) => {
           const raw = String(f.variantsJson || "").trim();
           if (!raw) return f;
@@ -368,8 +360,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
         .map((s) => canonicalStorageUrl(s.trim()))
         .filter(Boolean);
 
-      // Se o admin selecionou um arquivo mas não clicou em "Enviar imagem",
-      // fazemos o upload automaticamente no salvar.
       const selectedFile = fileInputRef.current?.files?.[0];
       if (selectedFile) {
         const url = await uploadPerfumeImage(selectedFile, { applyToForm: false });
@@ -377,7 +367,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
 
-      // Se não tiver variantsJson, tenta usar as linhas de opções
       if (!form.variantsJson.trim() && variantRows.length) {
         const cleaned = variantRows
           .map((r) => ({
@@ -395,7 +384,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
         }
       }
 
-      /* URLs do item (textarea) são a lista oficial da galeria; tira image_url de variantes que não estão mais nela */
       if (images.length > 0) {
         const allowed = new Set(images.map((u) => canonicalStorageUrl(u)));
         variants = variants.map((v) => {
@@ -426,8 +414,6 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
       if (onSaved) onSaved();
       const bootstrap = await import("bootstrap");
       const instance = bootstrap.Modal.getInstance(modalRef.current);
-      // Não chama onClose aqui: aguardamos o evento hidden.bs.modal
-      // para o Bootstrap remover backdrop/scroll-lock corretamente.
       if (instance) instance.hide();
       else if (onClose) onClose();
     } catch (err) {
@@ -480,7 +466,7 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
                           checked={Boolean(form.active)}
                           onChange={(e) => handleChange("active", e.target.checked)}
                         />
-                        {/* <div><i className="icon-check" /></div> */}
+
                       </div>
                       <label className="text-main-2 mb-0" htmlFor="form-ativo">Ativo (visível no catálogo)</label>
                     </div>
@@ -493,7 +479,7 @@ export default function PerfumeFormModal({ perfume, onClose, onSaved }) {
                           checked={Boolean(form.outOfStock)}
                           onChange={(e) => handleChange("outOfStock", e.target.checked)}
                         />
-                        {/* <div><i className="icon-check" /></div> */}
+
                       </div>
                       <label className="text-main-2 mb-0" htmlFor="form-esgotado">Esgotado</label>
                     </div>

@@ -42,7 +42,6 @@ export default function AdminContactMessagesPage() {
 
   useEffect(() => {
     load(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const canPrev = offset > 0;
@@ -80,7 +79,6 @@ export default function AdminContactMessagesPage() {
         try {
           instance.hide();
         } catch {
-          // ignora
         }
       };
     }).catch(() => {});
@@ -239,4 +237,3 @@ export default function AdminContactMessagesPage() {
     </div>
   );
 }
-

@@ -87,7 +87,6 @@ export default function AdminOrderDetailPage() {
       const updated = await updateOrderStatus(order.id, nextStatus);
       setOrder((prev) => (prev ? { ...prev, status: updated.status } : prev));
     } catch (err) {
-      // eslint-disable-next-line no-alert
       window.alert(err.message || "Erro ao atualizar status do pedido.");
     } finally {
       setUpdating(false);
@@ -295,4 +294,3 @@ export default function AdminOrderDetailPage() {
     </div>
   );
 }
-

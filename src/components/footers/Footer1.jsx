@@ -84,13 +84,12 @@ export default function Footer1({
       heading.addEventListener("click", toggleOpen);
     });
 
-    // Clean up event listeners when the component unmounts
     return () => {
       headings.forEach((heading) => {
         heading.removeEventListener("click", toggleOpen);
       });
     };
-  }, []); // Empty dependency array means this will run only once on mount
+  }, []);
 
   return (
     <footer

@@ -25,7 +25,6 @@ export default function Lookbook() {
       updateDropdownClass();
       window.addEventListener("resize", updateDropdownClass);
 
-      // Cleanup event listener on component unmount
       return () => {
         window.removeEventListener("resize", updateDropdownClass);
       };

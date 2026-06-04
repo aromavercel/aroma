@@ -32,7 +32,7 @@ export default function Topbar1() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                {/* 2 */}
+
                 <div className="marquee-child-item">
                   <p>Pague apenas ao receber</p>
                 </div>
@@ -51,7 +51,7 @@ export default function Topbar1() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                {/* 3 */}
+
                 <div className="marquee-child-item">
                   <p>Pague apenas ao receber</p>
                 </div>
@@ -70,7 +70,7 @@ export default function Topbar1() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                {/* 4 */}
+
                 <div className="marquee-child-item">
                   <p>Pague apenas ao receber</p>
                 </div>
@@ -89,7 +89,7 @@ export default function Topbar1() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                {/* 5 */}
+
                 <div className="marquee-child-item">
                   <p>Pague apenas ao receber</p>
                 </div>

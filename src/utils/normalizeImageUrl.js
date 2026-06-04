@@ -1,8 +1,3 @@
-/**
- * Garante que caminhos usados em `src`/`href` sejam absolutos no site.
- * Evita que, em rotas aninhadas (ex.: /perfume/slug), "api/…" ou "images/…"
- * virem /perfume/api/… e quebrem o carregamento.
- */
 export function normalizePublicUrl(url) {
   if (url == null || typeof url !== "string") return "";
   const s = url.trim();

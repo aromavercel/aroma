@@ -10,7 +10,7 @@ import ColorSelect1 from "../productDetails/ColorSelect1";
 import SizePicker from "../productDetails/SizeSelect";
 export default function Quickview() {
   const [activeColor, setActiveColor] = useState("gray");
-  const [quantity, setQuantity] = useState(1); // Initial quantity is 1
+  const [quantity, setQuantity] = useState(1);
   const {
     quickViewItem,
     addProductToCart,

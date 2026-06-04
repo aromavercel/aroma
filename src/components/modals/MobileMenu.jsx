@@ -306,7 +306,7 @@ export default function MobileMenu() {
                 {user ? "Minha conta" : "Login"}
               </a>
             </div>
-            
+
           </div>
         </div>
         <div className="mb-bottom">

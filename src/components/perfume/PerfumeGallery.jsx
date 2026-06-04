@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { EffectFade, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
-/** Estilos do efeito fade (mobile): sem translate horizontal = sem faixa de 1px do slide vizinho no WebKit */
 import "swiper/css/effect-fade";
 
 const MOBILE_GALLERY_MQ = "(max-width: 767px)";
@@ -25,15 +24,6 @@ function usePerfumeGalleryMobile() {
   return mobile;
 }
 
-/**
- * Galeria de imagens do perfume no estilo Vineta (product-detail):
- * thumbs verticais + imagem principal com navegação.
- * No mobile (≤767px) só a imagem principal. A galeria principal usa efeito *fade* (não slide) para
- * evitar artefato de 1px na borda ao trocar imagem (subpixel + translate no iOS/Safari).
- *
- * O módulo Thumbs do Swiper costuma falhar com React (montagem/desmontagem + estado).
- * Aqui a sincronização é explícita: clique na miniatura → slideTo na principal; setas → atualiza miniatura ativa.
- */
 export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
   const [thumbSwiper, setThumbSwiper] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -49,7 +39,6 @@ export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
       try {
         m.slideTo(0, 0);
       } catch {
-        /* ignore */
       }
     }
   }, [imagesSig]);
@@ -60,7 +49,6 @@ export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
     try {
       thumb.slideTo(index);
     } catch {
-      /* ignore */
     }
   };
 
@@ -76,7 +64,6 @@ export default function PerfumeGallery({ images = [], alt = "Perfume" }) {
     try {
       main.slideTo(index);
     } catch {
-      /* ignore */
     }
     setActiveIndex(index);
     syncThumbStrip(index);

@@ -8,7 +8,7 @@ export default function ScrollTopBehaviour() {
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: "instant", // This makes it instant
+      behavior: "instant",
     });
   }, [pathname]);
 

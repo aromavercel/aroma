@@ -300,7 +300,7 @@ export default function Products6({ fullWidth = false }) {
             {activeLayout == 1 ? (
               <div className="tf-list-layout wrapper-shop" id="listLayout">
                 <ListProducts products={loadedItems} />
-                {/* Pagination */}
+
                 {!(loadedItems.length >= sorted.length) && (
                   <div className="wd-load" onClick={() => handleLoad()}>
                     <button
@@ -331,7 +331,7 @@ export default function Products6({ fullWidth = false }) {
                 id="gridLayout"
               >
                 <GridProducts products={loadedItems} />
-                {/* Pagination */}
+
                 {!(loadedItems.length >= sorted.length) && (
                   <div
                     className="wd-load d-flex justify-content-center"

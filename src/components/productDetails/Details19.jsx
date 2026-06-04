@@ -29,7 +29,7 @@ export default function Details19({ product }) {
       <div className="tf-main-product section-image-zoom">
         <div className="container">
           <div className="row">
-            {/* Product Images */}
+
             <div className="col-md-6">
               <Gallery2
                 setActiveColor={setActiveColor}
@@ -37,8 +37,7 @@ export default function Details19({ product }) {
                 firstItem={product.imgSrc}
               />
             </div>
-            {/* /Product Images */}
-            {/* Product Info */}
+
             <div className="col-md-6">
               <div className="tf-product-info-wrap sticky-top">
                 <div className="tf-zoom-main" />
@@ -231,7 +230,7 @@ export default function Details19({ product }) {
                 </div>
               </div>
             </div>
-            {/* /Product Info */}
+
           </div>
         </div>
       </div>

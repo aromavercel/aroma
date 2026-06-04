@@ -43,7 +43,7 @@ export default function SubCollections2() {
               </div>
             </div>
           ))}
-          {/* Pagination */}
+
         </div>
       </div>
     </section>

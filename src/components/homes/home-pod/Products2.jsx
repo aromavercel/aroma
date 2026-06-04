@@ -17,7 +17,7 @@ export default function Products2() {
     isAddedToCartProducts,
   } = useContextElement();
   const tabNames = ["What's Hot?", "Best Sellers", "Just Arrivals"];
-  const [activeTab, setActiveTab] = useState("What's Hot?"); // Default to first tab active
+  const [activeTab, setActiveTab] = useState("What's Hot?");
   const [filtered, setFiltered] = useState(products29);
   useEffect(() => {
     setFiltered(

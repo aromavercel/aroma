@@ -70,11 +70,8 @@ export default function Slider5({
   const [activeIndex, setActiveIndex] = useState(0);
   const swiperRef = useRef(null);
   useEffect(() => {
-    // Function to initialize Drift
-    // Function to check window width
     const checkWindowSize = () => window.innerWidth >= 1200;
 
-    // Only proceed if window is wide enough
     if (!checkWindowSize()) return;
 
     const imageZoom = () => {
@@ -90,19 +87,15 @@ export default function Slider5({
       });
     };
 
-    // Call the function
     imageZoom();
     document.body.classList.add("zoom-magnifier-containing");
-    // Optionally, clean up if necessary
     return () => {
       document.body.classList.remove("zoom-magnifier-containing");
-      // Clean up logic if required
     };
-  }, []); // Empty dependency array to run only once on mount
+  }, []);
 
   const lightboxRef = useRef(null);
   useEffect(() => {
-    // Initialize PhotoSwipeLightbox
     const lightbox = new PhotoSwipeLightbox({
       gallery: "#gallery-swiper-started",
       children: ".item",
@@ -111,10 +104,8 @@ export default function Slider5({
 
     lightbox.init();
 
-    // Store the lightbox instance in the ref for later use
     lightboxRef.current = lightbox;
 
-    // Cleanup: destroy the lightbox when the component unmounts
     return () => {
       lightbox.destroy();
     };

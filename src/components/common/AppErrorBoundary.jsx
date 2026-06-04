@@ -12,8 +12,6 @@ export default class AppErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    // Mantém log só para dev; em produção podemos plugar Sentry.
-    // eslint-disable-next-line no-console
     console.error("AppErrorBoundary:", error, info);
   }
 
@@ -53,4 +51,3 @@ export default class AppErrorBoundary extends React.Component {
     );
   }
 }
-

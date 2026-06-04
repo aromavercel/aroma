@@ -37,20 +37,18 @@ export default function ScrollTop() {
       });
     };
 
-    // Add event listeners
     window.addEventListener("scroll", handleScroll);
     if (goTop) {
       goTop.addEventListener("click", handleGoTopClick);
     }
 
-    // Cleanup function
     return () => {
       window.removeEventListener("scroll", handleScroll);
       if (goTop) {
         goTop.removeEventListener("click", handleGoTopClick);
       }
     };
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
   return (
     <button id="goTop">
       <span className="border-progress"></span>

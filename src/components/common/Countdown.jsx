@@ -17,7 +17,7 @@ const CountdownTimer = ({ style = 1, targetDate = "2025-06-31T23:59:59" }) => {
         seconds: Math.floor((difference / 1000) % 60),
       };
     }
-    return null; // Time is up
+    return null;
   };
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
@@ -27,7 +27,7 @@ const CountdownTimer = ({ style = 1, targetDate = "2025-06-31T23:59:59" }) => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
 
-    return () => clearInterval(timer); // Cleanup the timer on component unmount
+    return () => clearInterval(timer);
   }, [targetDate]);
 
   if (!timeLeft) {

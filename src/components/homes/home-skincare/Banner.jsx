@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export default function Banner() {
   return (
     <>
-      {/* Banner With Text */}
+
       <section className="flat-spacing-14 s-banner-with-text banner-text-skincare">
         <div className="container">
           <div className="row">
@@ -44,8 +44,7 @@ export default function Banner() {
           </div>
         </div>
       </section>
-      {/* /Banner With Text */}
-      {/* Banner With Text */}
+
       <section className="flat-spacing-3 pt-0 s-banner-with-text banner-text-skincare">
         <div className="container">
           <div className="row flex-wrap-reverse">

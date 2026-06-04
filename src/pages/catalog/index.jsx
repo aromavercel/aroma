@@ -17,7 +17,6 @@ import Skeleton from "@/components/common/Skeleton";
 
 const ITEMS_PER_PAGE = 24;
 const CATALOG_SEARCH_DEBOUNCE_MS = 360;
-/** Quantas vezes o scroll ao fim pode carregar mais automaticamente; na próxima vez aparece "Mostrar mais". */
 const AUTO_SCROLL_LOAD_BATCHES = 2;
 const metadata = {
   title: "Catálogo de Perfumes | Aroma",
@@ -32,7 +31,6 @@ const SORT_OPTIONS = [
   { value: "price-desc", label: "Preço (maior)" },
 ];
 
-/** Mesmas classes que `PerfumeCardList` — evita grid no modo lista. */
 function CatalogListSkeleton({ rows = 6 }) {
   return (
     <>
@@ -75,7 +73,6 @@ function CatalogListSkeleton({ rows = 6 }) {
   );
 }
 
-/** Mesmas classes que `PerfumeCard` (`grid style-1`). */
 function CatalogGridSkeleton({ itemCount = 12 }) {
   return (
     <>
@@ -121,7 +118,6 @@ export default function CatalogPage() {
   const [scrollLoadsDone, setScrollLoadsDone] = useState(0);
   const [brandValue, setBrandValue] = useState("all");
   const [searchValue, setSearchValue] = useState("");
-  /** Busca enviada à API (debounce) — alinha lista + facets e reduz requisições duplicadas. */
   const [searchForRequest, setSearchForRequest] = useState("");
   const [priceMinInput, setPriceMinInput] = useState("");
   const [priceMaxInput, setPriceMaxInput] = useState("");
@@ -146,7 +142,6 @@ export default function CatalogPage() {
     return () => window.clearTimeout(t);
   }, [searchValue]);
 
-  // Facets (marcas + contagens) — evita precisar carregar tudo.
   useEffect(() => {
     let cancelled = false;
     setFacetsLoading(true);
@@ -168,7 +163,6 @@ export default function CatalogPage() {
         setCountByBrand(counts);
       })
       .catch(() => {
-        // Se falhar, mantém as opções atuais (não bloqueia o catálogo).
       })
       .finally(() => {
         if (!cancelled) setFacetsLoading(false);
@@ -182,7 +176,6 @@ export default function CatalogPage() {
     () => ({
       q: searchForRequest,
       brandKey: brandValue !== "all" ? brandValue : null,
-      // Importante: `Number("") === 0`. Precisamos manter vazio como "" para não filtrar por preço 0.
       priceMin:
         priceMinInput === "" || priceMinInput == null
           ? ""
@@ -202,7 +195,6 @@ export default function CatalogPage() {
     [brandValue, searchForRequest, priceMinInput, priceMaxInput, sortValue],
   );
 
-  // Primeira página / reset ao mudar filtros ou ordenação.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -334,7 +326,6 @@ export default function CatalogPage() {
     void loadMore("manual");
   };
 
-  // Permite abrir /catalogo?q=termo já com a busca aplicada
   useEffect(() => {
     const params = new URLSearchParams(location.search || "");
     const q = (params.get("q") || "").trim();
@@ -342,7 +333,6 @@ export default function CatalogPage() {
       setSearchValue(q);
       setSearchForRequest(q);
     }
-    // Se não houver q, não sobrescreve o que o usuário já digitou no catálogo.
   }, [location.search]);
 
   const appliedFilterCount =
@@ -403,7 +393,7 @@ export default function CatalogPage() {
       <section className="flat-spacing-24 tf-section">
         <div className="container">
           <div className="row">
-            {/* Sidebar (estilo shop-left-sidebar) - visível em desktop */}
+
             <div className="col-xl-3 d-none d-xl-block">
               <div className="canvas-sidebar sidebar-filter canvas-filter left">
                 <div className="canvas-wrapper">
@@ -413,7 +403,7 @@ export default function CatalogPage() {
             </div>
 
             <div className="col-xl-9">
-              {/* Barra de controle: botão Filtro (mobile), ordenação, seletor de visualização */}
+
               <div className="tf-shop-control">
                 <div className="tf-group-filter">
                   <a
@@ -455,7 +445,6 @@ export default function CatalogPage() {
                 </ul>
               </div>
 
-              {/* Filtros aplicados (tags + limpar) - mantido do catálogo atual */}
               {appliedFilterCount > 0 && (
                 <div className="meta-filter-shop">
                   <div className="count-text">
@@ -532,7 +521,6 @@ export default function CatalogPage() {
                 </div>
               )}
 
-              {/* Área de listagem: lista ou grid conforme activeLayout */}
               <div className="wrapper-control-shop">
                 {loading ? (
                   <div className="py-4">
@@ -556,7 +544,6 @@ export default function CatalogPage() {
                       type="button"
                       className="btn btn-outline-primary mt-2"
                       onClick={() => {
-                        // Reforça a tentativa disparando o efeito de carregamento da página atual.
                         setLoadError(null);
                         setReloadToken((t) => t + 1);
                       }}

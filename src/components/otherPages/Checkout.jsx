@@ -16,10 +16,8 @@ import { fetchAddressByCep, formatCep, onlyDigits } from "@/utils/cep";
 
 const CHECKOUT_DRAFT_KEY = "aroma_checkout_draft_v1";
 const CHECKOUT_AUTO_FINALIZE_KEY = "aroma_checkout_auto_finalize_v1";
-/** Rascunho do endereço ao abrir login/cadastro a partir do checkout — reaplica e persiste após auth. */
 const CHECKOUT_AUTH_DRAFT_KEY = "aroma_checkout_auth_draft_v1";
 
-/** Campos do checkout a partir do objeto usuário retornado por GET /api/me (ou contexto). */
 function profileToCheckoutFields(me) {
   const nameParts = String(me?.name || "").trim().split(/\s+/);
   return {
@@ -40,14 +38,12 @@ function hasCheckoutStr(v) {
   return String(v ?? "").trim() !== "";
 }
 
-/** Prioridade: perfil (API) > rascunho do auth > último estado do formulário (ref). */
 function pickCheckoutValue(profileVal, draftVal, liveVal) {
   if (hasCheckoutStr(profileVal)) return String(profileVal).trim();
   if (hasCheckoutStr(draftVal)) return String(draftVal).trim();
   return String(liveVal ?? "").trim();
 }
 
-/** Mescla perfil + rascunho sessionStorage + snapshot do ref em um objeto para aplicar nos setters. */
 function buildMergedCheckoutFields(me, draft, live) {
   const f = profileToCheckoutFields(me);
   const d = draft && typeof draft === "object" ? draft : {};
@@ -101,16 +97,12 @@ export default function Checkout() {
   const [zipcode, setZipcode] = useState("");
   const [loadingCep, setLoadingCep] = useState(false);
   const [phone, setPhone] = useState("");
-  /** idle | checking | exists | absent | invalid — só visitante */
   const [phoneRegistry, setPhoneRegistry] = useState("idle");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  /** Chaves de campo com erro após tentar finalizar (borda vermelha). */
   const [checkoutFieldErrors, setCheckoutFieldErrors] = useState({});
-  /** Último estado do formulário antes dos efeitos — usado ao voltar do cadastro/login (evita perda por batching). */
   const checkoutSnapshotRef = useRef({});
 
-  // Visitante: formulário sempre vazio (sem rascunho em sessionStorage).
   useEffect(() => {
     if (user?.id) return;
     checkoutSnapshotRef.current = {};
@@ -128,7 +120,6 @@ export default function Checkout() {
       sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
       sessionStorage.removeItem(CHECKOUT_AUTH_DRAFT_KEY);
     } catch {
-      // ignora
     }
   }, [user?.id]);
 
@@ -158,7 +149,6 @@ export default function Checkout() {
     phone,
   ]);
 
-  // Logado: aplica perfil + rascunho do auth + snapshot (ref) e persiste no usuário.
   useEffect(() => {
     if (!user?.id) return;
     const liveAtAuth = { ...checkoutSnapshotRef.current };
@@ -177,7 +167,6 @@ export default function Checkout() {
     try {
       sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
     } catch {
-      // ignora
     }
     let cancelled = false;
     (async () => {
@@ -225,7 +214,6 @@ export default function Checkout() {
               delivery_instructions: merged.deliveryInstructions || null,
             });
           } catch {
-            // mantém o formulário local
           }
         }
 
@@ -243,7 +231,6 @@ export default function Checkout() {
           try {
             sessionStorage.removeItem(CHECKOUT_AUTH_DRAFT_KEY);
           } catch {
-            // ignora
           }
         }
       } catch {
@@ -255,7 +242,6 @@ export default function Checkout() {
           try {
             sessionStorage.removeItem(CHECKOUT_AUTH_DRAFT_KEY);
           } catch {
-            // ignora
           }
         }
       }
@@ -505,7 +491,6 @@ export default function Checkout() {
         try {
           el.focus();
         } catch {
-          // ignora
         }
       }
     };
@@ -533,7 +518,6 @@ export default function Checkout() {
         }),
       );
     } catch {
-      // ignora
     }
     const el = document.getElementById(targetId);
     if (!el) return;
@@ -541,7 +525,6 @@ export default function Checkout() {
       const bootstrap = await import("bootstrap");
       bootstrap.Offcanvas.getOrCreateInstance(el).show();
     } catch {
-      // ignora
     }
   };
 
@@ -556,30 +539,23 @@ export default function Checkout() {
       }
       setCheckoutFieldErrors({});
 
-      // Visitante: só direciona para login/cadastro depois de validar os dados obrigatórios.
       if (!user?.id) {
         const msg =
           "Para finalizar, entre na sua conta ou crie uma conta usando as opções que aparecem após informar seu telefone.";
         setError(msg);
 
-        // Marca para auto-finalizar assim que autenticar.
         try {
           sessionStorage.setItem(CHECKOUT_AUTO_FINALIZE_KEY, "1");
         } catch {
-          // ignora
         }
 
-        // Replica a mesma mensagem no modal.
         try {
           sessionStorage.setItem("checkoutAuthMessage", msg);
         } catch {
-          // ignora
         }
 
         const target = phoneRegistry === "exists" ? "login" : "register";
 
-        // Importante: o Bootstrap aplica `overflow: hidden` no body ao abrir o offcanvas,
-        // o que pode impedir o scroll. Então primeiro subimos a página e depois abrimos.
         requestAnimationFrame(() => {
           const el = errorRef.current;
           if (el) {
@@ -620,12 +596,10 @@ export default function Checkout() {
         return;
       }
 
-      // Se foi auto-finalização pós-auth, limpamos o flag agora (antes do request).
       if (auto) {
         try {
           sessionStorage.removeItem(CHECKOUT_AUTO_FINALIZE_KEY);
         } catch {
-          // ignora
         }
       }
 
@@ -677,7 +651,6 @@ export default function Checkout() {
       try {
         localStorage.removeItem("cartList");
       } catch {
-        // ignora
       }
       try {
         const { items } = await getCart();
@@ -735,11 +708,9 @@ export default function Checkout() {
     }
     if (!shouldAuto) return;
 
-    // Aguarda o carrinho sincronizar após login (evita "Carrinho vazio" por race),
-    // e não entra em loop infinito: se continuar vazio, limpa o flag e para.
     let cancelled = false;
     let attempts = 0;
-    const maxAttempts = 12; // ~3.6s
+    const maxAttempts = 12;
     const tick = () => {
       if (cancelled) return;
       attempts += 1;
@@ -750,12 +721,10 @@ export default function Checkout() {
         try {
           sessionStorage.removeItem(CHECKOUT_AUTO_FINALIZE_KEY);
         } catch {
-          // ignora
         }
         setError("Seu carrinho está vazio.");
         return;
       }
-      // Dá um tick para states estabilizarem após o setUser do modal.
       finalizeOrder({ auto: true });
     };
     const t = setTimeout(tick, 150);
@@ -764,15 +733,11 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!error) return;
-    // Erros de validação de campo já acionam scroll até o input; evita puxar só para o banner.
     if (Object.keys(checkoutFieldErrors).length > 0) return;
-    // Em mobile/desktop: sobe automaticamente até o alerta de erro.
-    // Usa rAF para garantir que o DOM já renderizou o alerta.
     const t = requestAnimationFrame(() => {
       const el = errorRef.current;
       if (!el) return;
-      // Primeiro: scroll explícito na janela (mais confiável no desktop).
-      const topOffset = 24; // espaço para não colar no topo
+      const topOffset = 24;
       const rect = el.getBoundingClientRect();
       const y = Math.max(0, rect.top + window.scrollY - topOffset);
       try {
@@ -780,26 +745,20 @@ export default function Checkout() {
       } catch {
         window.scrollTo(0, y);
       }
-      // Fallback: garante visibilidade mesmo se houver containers/overflow.
       try {
         el.scrollIntoView({ behavior: "smooth", block: "start" });
       } catch {
         el.scrollIntoView();
       }
-      // A11y: foco no alerta para leitores de tela.
       try {
         el.focus?.();
       } catch {
-        // ignora
       }
     });
     return () => cancelAnimationFrame(t);
   }, [error, checkoutFieldErrors]);
 
   useEffect(() => {
-    // Não permitir acesso ao checkout sem itens no carrinho.
-    // Evita redirecionar durante a hidratação/sincronização inicial.
-    // Também não redireciona enquanto estiver concluindo o pedido (o carrinho zera antes do navigate).
     if (cartLoading) return;
     if (orderPlaced) return;
     if (Array.isArray(cartProducts) && cartProducts.length === 0) {

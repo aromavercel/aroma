@@ -26,7 +26,7 @@ export default function Topbar3() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                {/* 2 */}
+
                 <div className="marquee-child-item">
                   <p>Return extended to 60 days</p>
                 </div>
@@ -45,7 +45,7 @@ export default function Topbar3() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                {/* 3 */}
+
                 <div className="marquee-child-item">
                   <p>Return extended to 60 days</p>
                 </div>
@@ -64,7 +64,7 @@ export default function Topbar3() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                {/* 4 */}
+
                 <div className="marquee-child-item">
                   <p>Return extended to 60 days</p>
                 </div>
@@ -83,7 +83,7 @@ export default function Topbar3() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                {/* 5 */}
+
                 <div className="marquee-child-item">
                   <p>Return extended to 60 days</p>
                 </div>

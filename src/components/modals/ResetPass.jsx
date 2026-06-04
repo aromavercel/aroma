@@ -6,7 +6,7 @@ import {
 } from "@/api/auth";
 
 export default function ResetPass() {
-  const [step, setStep] = useState(1); // 1: solicitar código, 2: confirmar, 3: sucesso
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");

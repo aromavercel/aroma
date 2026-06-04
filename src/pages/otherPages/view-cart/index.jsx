@@ -28,7 +28,6 @@ export default function ViewCartPage() {
       <>
         <Breadcumb pageName="Carrinho" pageTitle="Carrinho de compras" />
 
-        {/* /Title Page */}
         <div className="flat-spacing-24">
           <div className="container">
             <div className="row justify-content-center">
@@ -59,7 +58,7 @@ export default function ViewCartPage() {
         </div>
       </>
       <ShopCart />
-      {/* <RelatedProducts /> */}
+
       <Footer1 />
     </>
   );

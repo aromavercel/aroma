@@ -59,9 +59,9 @@ export default function Lookbook() {
               <Swiper
                 modules={[Pagination, Navigation]}
                 onSwiper={(swiper) => {
-                  swiperRef.current = swiper; // store swiper instance
+                  swiperRef.current = swiper;
                 }}
-                onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)} // update active index
+                onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                 pagination={{ el: ".sw-pagination-lb", clickable: true }}
                 navigation={{
                   nextEl: ".nav-next-lb",

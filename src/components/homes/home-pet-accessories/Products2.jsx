@@ -10,16 +10,14 @@ export default function Products2() {
   const { setQuickViewItem } = useContextElement();
 
   useEffect(() => {
-    // Play video on mouseenter for .hover-video
     const hoverVideos = document.querySelectorAll(".hover-video");
     hoverVideos.forEach((video) => {
       video.addEventListener("mouseenter", () => {
-        video.muted = true; // Mute the video
+        video.muted = true;
         video.play();
       });
     });
 
-    // Handle mouseenter and mouseleave for .cls-video
     const clsVideos = document.querySelectorAll(".cls-video");
     clsVideos.forEach((container) => {
       const video = container.querySelector("video");
@@ -27,7 +25,7 @@ export default function Products2() {
 
       const handleMouseEnter = () => {
         poster.classList.add("hide");
-        video.muted = true; // Mute the video
+        video.muted = true;
         video.play();
       };
 
@@ -39,14 +37,12 @@ export default function Products2() {
       container.addEventListener("mouseenter", handleMouseEnter);
       container.addEventListener("mouseleave", handleMouseLeave);
 
-      // Cleanup event listeners on unmount
       return () => {
         container.removeEventListener("mouseenter", handleMouseEnter);
         container.removeEventListener("mouseleave", handleMouseLeave);
       };
     });
 
-    // Cleanup hover-video event listeners on unmount
     return () => {
       hoverVideos.forEach((video) => {
         video.removeEventListener("mouseenter", () => {
@@ -54,7 +50,7 @@ export default function Products2() {
         });
       });
     };
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   return (
     <section className="flat-spacing-3 pb-0">

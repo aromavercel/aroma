@@ -1,6 +1,5 @@
 import { apiFetch } from "./apiFetch";
 
-/** Retorna a wishlist do usuário logado. Se não logado ou sem telefone, retorna { items: [] }. */
 export async function getWishlist() {
   try {
     const data = await apiFetch("/api/wishlist", { method: "GET", auth: true });
@@ -25,4 +24,3 @@ export async function removeWishlistItem(perfumeId) {
     auth: true,
   });
 }
-

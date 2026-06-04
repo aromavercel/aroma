@@ -136,9 +136,7 @@ function App() {
   const { pathname } = useLocation();
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Import the script only on the client side
       import("bootstrap/dist/js/bootstrap.esm").then(() => {
-        // Module is imported, you can access any exported functionality if
       });
     }
   }, []);
@@ -160,15 +158,12 @@ function App() {
 
         if (st > navbarHeight) {
           if (st > lastScrollTop + delta) {
-            // Scroll down
             header.style.top = `-${navbarHeight}px`;
           } else if (st < lastScrollTop - delta) {
-            // Scroll up
             header.style.top = "0";
             header.classList.add("header-bg");
           }
         } else {
-          // At top of page
           header.style.top = "";
           header.classList.remove("header-bg");
         }
@@ -178,27 +173,22 @@ function App() {
       }
     };
 
-    // Initial measurement
     if (header) {
       navbarHeight = header.offsetHeight;
     }
 
-    // Set up event listeners
     window.addEventListener("scroll", handleScroll);
     const scrollInterval = setInterval(checkScroll, 250);
 
-    // Cleanup function
     return () => {
       window.removeEventListener("scroll", handleScroll);
       clearInterval(scrollInterval);
     };
-  }, [pathname]); // Empty dependency array means this runs once on mount
+  }, [pathname]);
 
   useEffect(() => {
-    // Dynamically import Bootstrap
     import("bootstrap")
       .then((bootstrap) => {
-        // Close any open modal
         const modalElements = document.querySelectorAll(".modal.show");
         modalElements.forEach((modal) => {
           const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -207,7 +197,6 @@ function App() {
           }
         });
 
-        // Close any open offcanvas
         const offcanvasElements = document.querySelectorAll(".offcanvas.show");
         offcanvasElements.forEach((offcanvas) => {
           const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvas);
@@ -219,7 +208,7 @@ function App() {
       .catch((error) => {
         console.error("Error loading Bootstrap:", error);
       });
-  }, [pathname]); // Runs every time the route changes
+  }, [pathname]);
 
   useEffect(() => {
     const wow = new WOW({
@@ -468,12 +457,10 @@ function App() {
               element={<ProductDetailPageGroup />}
             />
 
-            {/* Rotas em PT-BR (padrão) */}
             <Route path="sobre-nos" element={<AboutUsPage />} />
             <Route path="contato" element={<ContactusPage />} />
             <Route path="politica-de-privacidade" element={<PrivacyPolicyPage />} />
 
-            {/* Rotas antigas (EN) -> redirect para PT-BR */}
             <Route path="about-us" element={<Navigate to="/sobre-nos" replace />} />
             <Route path="contact-us" element={<Navigate to="/contato" replace />} />
             <Route path="store-location" element={<StoreLocationPage />} />

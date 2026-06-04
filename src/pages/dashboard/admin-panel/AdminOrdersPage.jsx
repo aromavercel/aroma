@@ -88,7 +88,6 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     loadOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   const filteredOrders = useMemo(() => {
@@ -124,7 +123,6 @@ export default function AdminOrdersPage() {
         prev.map((o) => (o.id === updated.id ? updated : o)),
       );
     } catch (err) {
-      // eslint-disable-next-line no-alert
       window.alert(err.message || "Erro ao atualizar status do pedido.");
     } finally {
       setUpdatingId(null);
@@ -254,4 +252,3 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
-

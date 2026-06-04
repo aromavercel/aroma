@@ -97,7 +97,7 @@ export default function Products3() {
               >
                 {filtered.map((product, index) => (
                   <SwiperSlide className="swiper-slide" key={index}>
-                    {/* item {index + 1} */}
+
                     <div className="card-product style-2 style-border-2 border-type-2">
                       <div className="card-product-wrapper asp-ratio-0">
                         <Link

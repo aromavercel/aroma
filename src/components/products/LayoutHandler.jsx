@@ -17,14 +17,12 @@ export default function LayoutHandler({
       }
     };
     handleResize();
-    // Add the resize event listener
     window.addEventListener("resize", handleResize);
 
-    // Clean up the event listener on unmount
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
 
   return (
     <>

@@ -24,7 +24,6 @@ function normalizeGuestWishlistSnapshot(id, snapshot) {
   };
 }
 
-/** Restaura favoritos do visitante: formato novo (objetos) ou legado (só ids). */
 function readGuestWishlistFromStorage() {
   try {
     const rawItems = localStorage.getItem(WISHLIST_GUEST_STORAGE_KEY);
@@ -55,12 +54,10 @@ function readGuestWishlistFromStorage() {
       return { items: ids.map((id) => ({ id })), ids };
     }
   } catch {
-    // ignora
   }
   return { items: [], ids: [] };
 }
 
-/** Lê o carrinho do visitante antes do primeiro paint (evita race com o guard do checkout). */
 function readCartListFromLocalStorage() {
   try {
     const stored = JSON.parse(localStorage.getItem("cartList") || "null");
@@ -69,8 +66,6 @@ function readCartListFromLocalStorage() {
     return [];
   }
 }
-
-// import { openWistlistModal } from "@/utlis/openWishlist";
 
 import React, { useEffect, useRef } from "react";
 import { useContext, useState } from "react";
@@ -86,15 +81,15 @@ export default function Context({ children }) {
   const [wishList, setWishList] = useState([]);
   const [wishListItems, setWishListItems] = useState([]);
   const [wishListLoading, setWishListLoading] = useState(false);
-  const [wishlistLastError, setWishlistLastError] = useState(null); // { message, status, at }
+  const [wishlistLastError, setWishlistLastError] = useState(null);
   const [compareItem, setCompareItem] = useState([]);
   const [quickViewItem, setQuickViewItem] = useState(null);
   const [quickAddItem, setQuickAddItem] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
   const pendingOptimisticRemovalsRef = useRef([]);
   const hiddenCartLineIdsRef = useRef(new Set());
-  const pendingHideCartLineIdsRef = useRef(new Map()); // id -> attempts
-  const wishlistOpVersionRef = useRef(new Map()); // id -> version (last action wins)
+  const pendingHideCartLineIdsRef = useRef(new Map());
+  const wishlistOpVersionRef = useRef(new Map());
 
   const nextWishlistVersion = (key) => {
     const map = wishlistOpVersionRef.current;
@@ -110,8 +105,6 @@ export default function Context({ children }) {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   const syncWishlistWithRetries = async ({ opKey, opVersion, expectId, expectMissingId }) => {
-    // Não sobrescreve o estado otimista com uma lista vazia/stale.
-    // Tenta algumas vezes (eventual consistency / cache / resposta fora de ordem).
     const attempts = 3;
     for (let i = 0; i < attempts; i++) {
       if (!isWishlistVersionCurrent(opKey, opVersion)) return null;
@@ -120,16 +113,13 @@ export default function Context({ children }) {
       const hasExpected = expectId ? ids.includes(String(expectId)) : true;
       const missingOk = expectMissingId ? !ids.includes(String(expectMissingId)) : true;
 
-      // Se o servidor confirmou o estado esperado, aplica.
       if (hasExpected && missingOk) return { items };
 
-      // Se veio vazio mas não era esperado, aguarda e tenta de novo.
       if ((items || []).length === 0 && (expectId || expectMissingId)) {
         await sleep(450);
         continue;
       }
 
-      // Caso geral: tenta mais uma vez e depois desiste.
       if (i < attempts - 1) {
         await sleep(450);
         continue;
@@ -149,13 +139,11 @@ export default function Context({ children }) {
     if (!user?.id) return;
     const hidden = hiddenCartLineIdsRef.current;
     if (!hidden || hidden.size === 0) return;
-    // tenta uma revalidação curta para evitar reintrodução por respostas fora de ordem
     setTimeout(async () => {
       try {
         const { items } = await getCart();
         setCartProducts(filterHiddenCartLines(items));
       } catch {
-        // ignora
       }
     }, 700);
   };
@@ -174,7 +162,6 @@ export default function Context({ children }) {
     );
   };
 
-  /** Adiciona perfume ao carrinho. Se logado, persiste no backend; se não, usa snapshot (objeto com id, title, imgSrc, price) em memória/localStorage. */
   const addProductToCart = async (id, qty = 1, isModal = true, snapshot = null, variant = null) => {
     const quantity = Math.max(1, parseInt(qty, 10) || 1);
     if (user?.id) {
@@ -182,7 +169,6 @@ export default function Context({ children }) {
       const variantOption = String(variant?.option0 || variant?.variant_option || snapshot?.variant_option || "");
       const prevSnapshot = cartProducts.map((p) => ({ ...p }));
 
-      // UI otimista: atualiza imediatamente (sem esperar API)
       setCartProducts((pre) => {
         const idx = pre.findIndex(
           (p) =>
@@ -221,7 +207,6 @@ export default function Context({ children }) {
         const { items } = await getCart();
         setCartProducts(filterHiddenCartLines(items));
 
-        // Se o usuário removeu um item "optimistic:*" antes da sync, tenta remover o item real agora.
         const pending = pendingOptimisticRemovalsRef.current;
         if (Array.isArray(pending) && pending.length) {
           pendingOptimisticRemovalsRef.current = [];
@@ -234,14 +219,12 @@ export default function Context({ children }) {
               try {
                 await removeCartItem(String(match.id));
               } catch {
-                // ignora falha de remoção
               }
             }
             try {
               const refreshed = await getCart();
               setCartProducts(filterHiddenCartLines(refreshed.items));
             } catch {
-              // ignora
             }
           })();
         }
@@ -306,13 +289,11 @@ export default function Context({ children }) {
       const lineId = id != null ? String(id) : "";
       if (!lineId) return;
       const prevSnapshot = cartProducts.map((p) => ({ ...p }));
-      // UI otimista
       hiddenCartLineIdsRef.current.add(lineId);
       pendingHideCartLineIdsRef.current.set(lineId, (pendingHideCartLineIdsRef.current.get(lineId) || 0) + 1);
       setCartProducts((pre) => pre.filter((p) => String(p.id) !== lineId));
       setCartLoading(true);
       try {
-        // Se ainda é um item otimista (sem id real), agenda remoção após a próxima sync.
         if (lineId.startsWith("optimistic:")) {
           const parts = lineId.split(":");
           const perfumeId = parts[1] || "";
@@ -326,13 +307,11 @@ export default function Context({ children }) {
         await removeCartItem(lineId);
         const { items } = await getCart();
         setCartProducts(filterHiddenCartLines(items));
-        // Só libera o "hide" quando o servidor realmente não retorna mais este id.
         const stillThere = (items || []).some((p) => String(p.id) === lineId);
         if (!stillThere) {
           hiddenCartLineIdsRef.current.delete(lineId);
           pendingHideCartLineIdsRef.current.delete(lineId);
         } else {
-          // mantém oculto e revalida mais uma vez (eventual consistency / respostas fora de ordem)
           scheduleCartRefreshIfNeeded();
         }
       } catch (err) {
@@ -355,7 +334,6 @@ export default function Context({ children }) {
       const prevItems = wishListItems;
       const opVersion = nextWishlistVersion(key);
       setWishlistLastError(null);
-      // UX: atualiza imediatamente (otimista) e depois sincroniza com API
       setWishList((pre) => (pre.includes(key) ? pre : [...pre, key]));
       setWishListItems((pre) => {
         if (pre.some((p) => String(p.id) === key)) return pre;
@@ -411,7 +389,6 @@ export default function Context({ children }) {
       const prevItems = wishListItems;
       const opVersion = nextWishlistVersion(key);
       setWishlistLastError(null);
-      // UX: remove imediatamente (otimista) e depois sincroniza com API
       setWishList((pre) => pre.filter((x) => String(x) !== key));
       setWishListItems((pre) => pre.filter((p) => String(p.id) !== key));
       setWishListLoading(true);
@@ -467,13 +444,10 @@ export default function Context({ children }) {
   };
   useEffect(() => {
     if (user?.id) {
-      // Primeiro restaura do localStorage (UX instantânea),
-      // depois sincroniza com o backend (fonte da verdade do usuário logado).
       try {
         const stored = JSON.parse(localStorage.getItem("cartList") || "null");
         if (Array.isArray(stored) && stored.length) setCartProducts(stored);
       } catch {
-        // ignora
       }
       setCartLoading(true);
       getCart()
@@ -502,7 +476,6 @@ export default function Context({ children }) {
                 price: row.price,
               });
             } catch {
-              // item indisponível ou erro de rede
             }
           }
           try {
@@ -530,7 +503,6 @@ export default function Context({ children }) {
         })
         .finally(() => setCartLoading(false));
     } else {
-      // Usuário não logado: restaura do localStorage (se houver)
       try {
         const stored = JSON.parse(localStorage.getItem("cartList") || "null");
         if (Array.isArray(stored) && stored.length) setCartProducts(stored);
@@ -567,8 +539,6 @@ export default function Context({ children }) {
   }, [user?.id]);
 
   useEffect(() => {
-    // Visitante: sempre persiste. Logado: não gravar [] no LS (evita apagar o carrinho do visitante
-    // antes do merge com o servidor ou se a API falhar).
     try {
       if (user?.id) {
         if (Array.isArray(cartProducts) && cartProducts.length > 0) {
@@ -578,7 +548,6 @@ export default function Context({ children }) {
       }
       localStorage.setItem("cartList", JSON.stringify(cartProducts || []));
     } catch {
-      // ignora quota/privacidade
     }
   }, [user, cartProducts]);
 
@@ -588,7 +557,6 @@ export default function Context({ children }) {
       localStorage.setItem(WISHLIST_GUEST_STORAGE_KEY, JSON.stringify(wishListItems || []));
       localStorage.setItem("wishlist", JSON.stringify((wishList || []).map((x) => String(x))));
     } catch {
-      // ignora
     }
   }, [user?.id, wishListItems, wishList]);
 
@@ -639,7 +607,6 @@ export default function Context({ children }) {
     getMe().then(setUser);
   }, []);
 
-  // Processa retorno do OAuth (Google/Facebook): ?token=... ou ?auth_error=...
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");

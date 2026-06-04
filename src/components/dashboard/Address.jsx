@@ -51,7 +51,6 @@ export default function Address() {
           prev.address_complement || found.complement || prev.address_complement,
       }));
     } catch {
-      // silencioso
     } finally {
       setLoadingCep(false);
     }

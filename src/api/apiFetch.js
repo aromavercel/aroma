@@ -22,7 +22,6 @@ function getStoredToken() {
   }
 }
 
-/** Evita exibir ao usuário textos de roteamento ou diagnóstico interno vindos da API. */
 function userFacingServerMessage(msg) {
   if (!msg || typeof msg !== "string") return "";
   const s = msg.trim();
@@ -44,11 +43,6 @@ function friendlyMessage(status, serverMessage, { auth } = {}) {
   return "Não foi possível concluir. Verifique os dados e tente novamente.";
 }
 
-/**
- * Wrapper padrão para fetch: sempre tenta ler JSON {error} e lança mensagens amigáveis.
- * @param {string} path - ex.: "/api/cart"
- * @param {{ method?: string, body?: any, headers?: Record<string,string>, auth?: boolean, signal?: AbortSignal }} [opts]
- */
 export async function apiFetch(path, opts = {}) {
   const apiBase = getApiBase();
   const url = path.startsWith("http") ? path : `${apiBase}${path.startsWith("/") ? "" : "/"}${path}`;
@@ -92,4 +86,3 @@ export async function apiFetch(path, opts = {}) {
 
   return data;
 }
-

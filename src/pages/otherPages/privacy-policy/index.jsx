@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
       <Topbar1 />
       <Header1 />
       <Breadcumb pageName="Política de Privacidade" pageTitle="Política de Privacidade" />
-      {/* Privacy policy */}
+
       <section className="s-term-user flat-spacing-2">
           <div className="container">
             <div className="row">
@@ -165,7 +165,6 @@ export default function PrivacyPolicyPage() {
             </div>
           </div>
         </section>
-        {/* /Privacy policy */}
 
       <Footer1 />
     </>
