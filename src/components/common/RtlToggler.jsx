@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 
 export default function RtlToggler() {
-  // Initialize state with the value from localStorage, or default to false
   const [isRtl, setIsRtl] = useState(false);
   const [showText, setShowText] = useState(false);
   useEffect(() => {
@@ -14,7 +13,6 @@ export default function RtlToggler() {
 
   const handleRtl = (value) => {
     setIsRtl(value);
-    // Save the state to localStorage
     localStorage.setItem("isRtl", JSON.stringify(value));
   };
 

@@ -32,15 +32,6 @@ const imageData = [
     alt: "",
     src: "/images/products/fashion/women-black-3.jpg",
   },
-  // {
-  //   id: 4,
-  //   scroll: "Black",
-  //   size: "extra large",
-  //   width: 828,
-  //   height: 1241,
-  //   alt: "",
-  //   src: "/images/products/fashion/women-black-4.jpg",
-  // },
   {
     id: 5,
     scroll: "Yellow",
@@ -86,11 +77,8 @@ export default function Gallery3({
   const finalItem = [...imageData];
   finalItem[0].src = firstItem ?? finalItem[0].src;
   useEffect(() => {
-    // Function to initialize Drift
-    // Function to check window width
     const checkWindowSize = () => window.innerWidth >= 1200;
 
-    // Only proceed if window is wide enough
     if (!checkWindowSize()) return;
 
     const imageZoom = () => {
@@ -130,17 +118,15 @@ export default function Gallery3({
       element.addEventListener("mouseleave", handleMouseLeave);
     });
 
-    // Cleanup event listeners on component unmount
     return () => {
       zoomElements.forEach((element) => {
         element.removeEventListener("mouseover", handleMouseOver);
         element.removeEventListener("mouseleave", handleMouseLeave);
       });
     };
-  }, []); // Empty dependency array to run only once on mount
+  }, []);
   const lightboxRef = useRef(null);
   useEffect(() => {
-    // Initialize PhotoSwipeLightbox
     const lightbox = new PhotoSwipeLightbox({
       gallery: "#gallery-started",
       children: ".item",
@@ -149,10 +135,8 @@ export default function Gallery3({
 
     lightbox.init();
 
-    // Store the lightbox instance in the ref for later use
     lightboxRef.current = lightbox;
 
-    // Cleanup: destroy the lightbox when the component unmounts
     return () => {
       lightbox.destroy();
     };
@@ -161,25 +145,21 @@ export default function Gallery3({
   const observerRef = useRef(null);
 
   const scrollToTarget = () => {
-    // Find the element with the specific data-value attribute
     const heightScroll = window.scrollY;
     const targetElement = document.querySelector(
       `[data-scroll='${activeColor}']`
     );
 
-    // Check if the element exists
     if (targetElement) {
-      // Get the element's bounding rectangle
       setTimeout(() => {
         if (window.scrollY == heightScroll) {
           targetElement?.scrollIntoView({
-            behavior: "smooth", // Smooth scrolling animation
-            block: "center", // Center the element in the viewport
+            behavior: "smooth",
+            block: "center",
           });
         }
       }, 200);
 
-      // Scroll only if the element is not already in view
     }
   };
 
@@ -193,7 +173,6 @@ export default function Gallery3({
         rootMargin: "-50% 0px",
       };
 
-      // Create the observer
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -203,13 +182,11 @@ export default function Gallery3({
         });
       }, options);
 
-      // Observe all items
       const elements = document.querySelectorAll(".item-scroll-target");
       elements.forEach((el) => observer.observe(el));
       observerRef.current = observer;
     }, 1000);
 
-    // Cleanup on unmount
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();

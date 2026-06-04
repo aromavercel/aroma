@@ -17,7 +17,7 @@ export default function Marquee({ directionClass = "" }) {
           <div className="marquee-child-item">
             <i className="icon-flash-star" />
           </div>
-          {/* 2 */}
+
           <div className="marquee-child-item">
             <p className="display-xs fw-medium">50% Off On Selected Items</p>
           </div>
@@ -30,7 +30,7 @@ export default function Marquee({ directionClass = "" }) {
           <div className="marquee-child-item">
             <i className="icon-flash-star" />
           </div>
-          {/* 3 */}
+
           <div className="marquee-child-item">
             <p className="display-xs fw-medium">50% Off On Selected Items</p>
           </div>
@@ -43,7 +43,7 @@ export default function Marquee({ directionClass = "" }) {
           <div className="marquee-child-item">
             <i className="icon-flash-star" />
           </div>
-          {/* 4 */}
+
           <div className="marquee-child-item">
             <p className="display-xs fw-medium">50% Off On Selected Items</p>
           </div>
@@ -56,7 +56,7 @@ export default function Marquee({ directionClass = "" }) {
           <div className="marquee-child-item">
             <i className="icon-flash-star" />
           </div>
-          {/* 5 */}
+
           <div className="marquee-child-item">
             <p className="display-xs fw-medium">50% Off On Selected Items</p>
           </div>
@@ -69,7 +69,7 @@ export default function Marquee({ directionClass = "" }) {
           <div className="marquee-child-item">
             <i className="icon-flash-star" />
           </div>
-          {/* 6 */}
+
           <div className="marquee-child-item">
             <p className="display-xs fw-medium">50% Off On Selected Items</p>
           </div>
@@ -82,7 +82,7 @@ export default function Marquee({ directionClass = "" }) {
           <div className="marquee-child-item">
             <i className="icon-flash-star" />
           </div>
-          {/* 7 */}
+
           <div className="marquee-child-item">
             <p className="display-xs fw-medium">50% Off On Selected Items</p>
           </div>

@@ -25,7 +25,7 @@ export default function Topbar4({
           <div className="marquee-child-item">
             <span className="dot" />
           </div>
-          {/* 2 */}
+
           <div className="marquee-child-item">
             <p>Limited Time Offer: 20% Off Sitewide!</p>
           </div>
@@ -44,7 +44,7 @@ export default function Topbar4({
           <div className="marquee-child-item">
             <span className="dot" />
           </div>
-          {/* 3 */}
+
           <div className="marquee-child-item">
             <p>Limited Time Offer: 20% Off Sitewide!</p>
           </div>
@@ -63,7 +63,7 @@ export default function Topbar4({
           <div className="marquee-child-item">
             <span className="dot" />
           </div>
-          {/* 4 */}
+
           <div className="marquee-child-item">
             <p>Limited Time Offer: 20% Off Sitewide!</p>
           </div>
@@ -82,7 +82,7 @@ export default function Topbar4({
           <div className="marquee-child-item">
             <span className="dot" />
           </div>
-          {/* 5 */}
+
           <div className="marquee-child-item">
             <p>Limited Time Offer: 20% Off Sitewide!</p>
           </div>
@@ -101,7 +101,7 @@ export default function Topbar4({
           <div className="marquee-child-item">
             <span className="dot" />
           </div>
-          {/* 6 */}
+
           <div className="marquee-child-item">
             <p>Limited Time Offer: 20% Off Sitewide!</p>
           </div>

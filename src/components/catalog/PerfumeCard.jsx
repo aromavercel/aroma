@@ -5,11 +5,6 @@ import { Link } from "react-router-dom";
 import { getPerfumeDisplayData } from "@/data/perfumes";
 import { useContextElement } from "@/context/Context";
 
-/**
- * Card de um perfume para o catálogo no estilo Vineta (shop-left-sidebar).
- * Ícones de ação no hover: carrinho, favoritos, ver detalhes.
- * Redireciona para /perfume/:id.
- */
 export default function PerfumeCard({
   perfume,
   className = "",

@@ -58,9 +58,9 @@ export default function Lookbook() {
                 <h4 className="font-9 title">Shop The Look</h4>
                 <Swiper
                   onSwiper={(swiper) => {
-                    swiperRef.current = swiper; // store swiper instance
+                    swiperRef.current = swiper;
                   }}
-                  onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)} // update active index
+                  onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                   dir="ltr"
                   modules={[Pagination, Navigation]}
                   pagination={{ clickable: true, el: ".sw-pagination-lb" }}

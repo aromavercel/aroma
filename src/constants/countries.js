@@ -1,4 +1,3 @@
-/** Opções de país para o seletor de telefone (código ISO + indicativo). */
 export const COUNTRY_OPTIONS = [
   { code: "BR", label: "Brasil (+55)" },
   { code: "PT", label: "Portugal (+351)" },

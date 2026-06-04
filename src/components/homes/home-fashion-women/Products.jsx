@@ -46,7 +46,6 @@ export default function Products() {
           <div className="tab-content">
             <div className="tab-pane active show">
               <div className="tf-grid-layout tf-col-2 md-col-3 xl-col-4">
-                {/* Card Product 1 */}
 
                 {filtered.map((product, i) => (
                   <ProductCard1

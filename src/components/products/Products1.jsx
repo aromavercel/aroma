@@ -287,7 +287,7 @@ export default function Products1({
             {activeLayout == 1 ? (
               <div className="tf-list-layout wrapper-shop" id="listLayout">
                 <ListProducts products={sorted} />
-                {/* Pagination */}
+
                 <ul className="wg-pagination">
                   <li className="active">
                     <div className="pagination-item">1</div>
@@ -319,7 +319,7 @@ export default function Products1({
                   products={sorted}
                   tooltipDirection={tooltipDirection}
                 />
-                {/* Pagination */}
+
                 <ul className="wg-pagination">
                   <li className="active">
                     <div className="pagination-item">1</div>

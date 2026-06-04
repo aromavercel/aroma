@@ -5,10 +5,6 @@ import { useNavigate } from "react-router-dom";
 import QuantitySelect from "@/components/common/QuantitySelect";
 import { useContextElement } from "@/context/Context";
 
-/**
- * Coluna de informações do perfume no estilo Vineta (product-detail):
- * título, preço, variantes, quantidade, adicionar ao carrinho, wishlist, compare, etc.
- */
 export default function PerfumeDetailInfo({
   perfume,
   displayData,

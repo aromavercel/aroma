@@ -21,11 +21,9 @@ function isMobile(agent) {
 function createEvent(event, bubble = false, cancel = false, detail = null) {
   let customEvent;
   if (document.createEvent != null) {
-    // W3C DOM
     customEvent = document.createEvent("CustomEvent");
     customEvent.initCustomEvent(event, bubble, cancel, detail);
   } else if (document.createEventObject != null) {
-    // IE DOM < 9
     customEvent = document.createEventObject();
     customEvent.eventType = event;
   } else {
@@ -37,7 +35,6 @@ function createEvent(event, bubble = false, cancel = false, detail = null) {
 
 function emitEvent(elem, event) {
   if (elem.dispatchEvent != null) {
-    // W3C DOM
     elem.dispatchEvent(event);
   } else if (event in (elem != null)) {
     elem[event]();
@@ -48,26 +45,20 @@ function emitEvent(elem, event) {
 
 function addEvent(elem, event, fn) {
   if (elem.addEventListener != null) {
-    // W3C DOM
     elem.addEventListener(event, fn, false);
   } else if (elem.attachEvent != null) {
-    // IE DOM
     elem.attachEvent(`on${event}`, fn);
   } else {
-    // fallback
     elem[event] = fn;
   }
 }
 
 function removeEvent(elem, event, fn) {
   if (elem.removeEventListener != null) {
-    // W3C DOM
     elem.removeEventListener(event, fn, false);
   } else if (elem.detachEvent != null) {
-    // IE DOM
     elem.detachEvent(`on${event}`, fn);
   } else {
-    // fallback
     delete elem[event];
   }
 }
@@ -80,7 +71,6 @@ function getInnerHeight() {
   return document.documentElement.clientHeight;
 }
 
-// Minimalistic WeakMap shim, just in case.
 const WeakMap =
   window.WeakMap ||
   window.MozWeakMap ||
@@ -114,7 +104,6 @@ const WeakMap =
     }
   };
 
-// Dummy MutationObserver, to avoid raising exceptions.
 const MutationObserver =
   window.MutationObserver ||
   window.WebkitMutationObserver ||
@@ -134,7 +123,6 @@ const MutationObserver =
     observe() {}
   };
 
-// getComputedStyle shim, from http://stackoverflow.com/a/21797294
 const getComputedStyle =
   window.getComputedStyle ||
   function getComputedStyle(el) {
@@ -176,7 +164,6 @@ export default class WOW {
         options.scrollContainer
       );
     }
-    // Map of elements to animation names:
     this.animationNameCache = new WeakMap();
     this.wowEvent = createEvent(this.config.boxClass);
   }
@@ -234,7 +221,6 @@ export default class WOW {
     }
   }
 
-  // unbind the scroll event
   stop() {
     this.stopped = true;
     removeEvent(
@@ -278,7 +264,6 @@ export default class WOW {
     }
   }
 
-  // show box element
   show(box) {
     this.applyStyle(box);
     box.className = `${box.className} ${this.config.animateClass}`;
@@ -395,15 +380,12 @@ export default class WOW {
   }
 
   cacheAnimationName(box) {
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=921834
-    // box.dataset is not supported for SVG elements in Firefox
     return this.animationNameCache.set(box, this.animationName(box));
   }
   cachedAnimationName(box) {
     return this.animationNameCache.get(box);
   }
 
-  // fast window.scroll callback
   scrollHandler() {
     this.scrolled = true;
   }
@@ -429,11 +411,7 @@ export default class WOW {
     }
   }
 
-  // Calculate element offset top
   offsetTop(element) {
-    // SVG elements don't have an offsetTop in Firefox.
-    // This will use their nearest parent that has an offsetTop.
-    // Also, using ('offsetTop' of element) causes an exception in Firefox.
     while (element.offsetTop === undefined) {
       element = element.parentNode;
     }
@@ -445,7 +423,6 @@ export default class WOW {
     return top;
   }
 
-  // check if box is visible
   isVisible(box) {
     const offset = box.getAttribute("data-wow-offset") || this.config.offset;
     const viewTop =

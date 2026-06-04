@@ -17,7 +17,6 @@ export const openCartModal = async () => {
       bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el, { keyboard: true });
     instance.show();
   } catch (err) {
-    // não bloqueia a UX se o bootstrap não estiver disponível
     console.error("openCartModal:", err);
   }
 };

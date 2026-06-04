@@ -2,20 +2,17 @@ import { prepareBrazilPhoneForParse } from "@/utils/brPhone";
 
 const BASE = import.meta.env.VITE_API_URL || "";
 
-/** Em produção (mesma origem), usa a URL atual para a API. Evita chamar outro backend por engano. */
 function getBase() {
   if (BASE) return BASE.replace(/\/$/, "");
   if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
   return "";
 }
 
-/** URL para iniciar login com Google (redireciona para o backend). */
 export function getAuthGoogleUrl() {
   const b = getBase();
   return b ? `${b}/api/auth-google` : "/api/auth-google";
 }
 
-/** URL para iniciar login com Facebook (redireciona para o backend). */
 export function getAuthFacebookUrl() {
   const b = getBase();
   return b ? `${b}/api/auth-facebook` : "/api/auth-facebook";
@@ -51,7 +48,6 @@ export async function register({ phone, password, name, email, country }) {
   return data;
 }
 
-/** Verifica se já existe conta com o telefone (normalizado no servidor). */
 export async function checkPhoneRegistered({ phone, country = "BR" }) {
   const res = await fetch(`${getBase()}/api/check-phone`, {
     method: "POST",
@@ -115,7 +111,6 @@ export async function getMe() {
   return data?.user ?? null;
 }
 
-/** Verifica no servidor se o usuário atual é admin. Retorna true só se o backend confirmar. */
 export async function checkAdmin() {
   const token = getStoredToken();
   if (!token) return false;

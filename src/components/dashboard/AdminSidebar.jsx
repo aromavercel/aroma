@@ -7,7 +7,6 @@ export const adminLinks = [
   { href: "/painel/usuarios", label: "Usuários cadastrados" },
   { href: "/painel/pedidos", label: "Pedidos" },
   { href: "/painel/mensagens", label: "Mensagens de contato" },
-  // { href: "/painel/acesso", label: "Dados de acesso ao site" },
 ];
 
 export default function AdminSidebar() {

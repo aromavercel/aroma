@@ -1,14 +1,3 @@
-/**
- * Script para popular o banco com perfumes a partir dos JSON do catálogo.
- * Faz upload das imagens para o Vercel Blob e guarda as URLs no banco.
- *
- * Uso (na raiz do projeto):
- *   node --env-file=.env backend/scripts/seed-perfumes.js
- *
- * Variáveis de ambiente necessárias:
- *   DATABASE_URL          - conexão Postgres (Neon/Vercel)
- *   BLOB_READ_WRITE_TOKEN - token do Vercel Blob para upload
- */
 
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
@@ -87,7 +76,6 @@ async function downloadImage(url) {
 function getBlobAccess() {
   const raw = (process.env.BLOB_ACCESS || "").trim().toLowerCase();
   if (raw === "public" || raw === "private") return raw;
-  // Sem configuração explícita: tentamos sem "access" e reagimos ao erro.
   return null;
 }
 
@@ -109,10 +97,7 @@ function inferRequiredAccessFromError(err) {
 }
 
 async function uploadImageToBlob(buffer, pathname, token) {
-  // Estratégia:
-  // - tenta 1x com o que foi configurado (ou sem "access" se não foi)
-  // - se a Vercel reclamar do modo, tenta 1x com o modo exigido
-  const configured = getBlobAccess(); // "public" | "private" | null
+  const configured = getBlobAccess();
 
   const tryPut = async (access) => {
     const opts = { addRandomSuffix: true, token };
@@ -154,7 +139,6 @@ async function main() {
 
   const sql = neon(databaseUrl);
 
-  // Carregar todos os perfumes dos 3 catálogos
   const allItems = [];
   for (const { file, source } of CATALOG_FILES) {
     const filePath = path.join(DATA_DIR, file);
@@ -198,7 +182,6 @@ async function main() {
       const imageUrls = getPerfumeAllImageUrls(item);
       const urlToBlobUrl = new Map();
 
-      // Upload de cada imagem para o Blob
       const basePath = `perfumes/${slug(title)}-${i}`;
       for (let j = 0; j < imageUrls.length; j++) {
         const originalUrl = imageUrls[j];
@@ -214,7 +197,6 @@ async function main() {
         }
       }
 
-      // Substituir image_url nas variants pelas URLs do Blob
       const variants = (item.variants || []).map((v) => {
         const v2 = { ...v };
         if (v.image_url) {

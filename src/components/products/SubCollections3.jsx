@@ -54,7 +54,7 @@ export default function SubCollections3({ parentClass = "flat-spacing-24" }) {
               </div>
             </SwiperSlide>
           ))}
-          {/* item 8 */}
+
           <SwiperSlide className="swiper-slide">
             <div className="wg-cls style-circle-md">
               <Link to={`/shop-default`} className="image shop-all">

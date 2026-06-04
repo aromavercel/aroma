@@ -52,7 +52,7 @@ export default function SearchPage() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      {/* Cópia 1:1 do antigo SearchModal.jsx, mas como página */}
+
       <div className="modal popup-search fade show d-block" id="search-page" tabIndex={-1}>
         <div className="modal-dialog modal-fullscreen">
           <div className="modal-content">
@@ -188,4 +188,3 @@ export default function SearchPage() {
     </>
   );
 }
-

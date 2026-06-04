@@ -42,9 +42,6 @@ function IconEyeClosed() {
   );
 }
 
-/**
- * Campo de senha com botão para alternar visibilidade (acessível).
- */
 export default function PasswordFieldWithToggle({
   id: idProp,
   value,

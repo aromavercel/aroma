@@ -45,7 +45,6 @@ export default function Register() {
           setCheckoutMessage("");
         }
       } catch {
-        // ignora
       }
     };
     el.addEventListener("show.bs.offcanvas", onShow);
@@ -82,7 +81,6 @@ export default function Register() {
         sessionStorage.removeItem("checkoutAuthFirstname");
         sessionStorage.removeItem("checkoutAuthLastname");
       } catch {
-        // ignora
       }
     } catch (err) {
       setError(err.message || "Erro ao criar conta");
@@ -206,7 +204,6 @@ export default function Register() {
                     try {
                       sessionStorage.setItem("checkoutAuthPhone", brazilPhoneNationalDigits(phone));
                     } catch {
-                      // ignora
                     }
                   }}
                 >

@@ -48,17 +48,12 @@ export function getBrandOptions(perfumesList) {
   );
 }
 
-// Mantido para o painel admin (campo técnico do banco)
 export const CATALOG_SOURCE_OPTIONS = [
   { value: "arabe", label: "Árabe" },
   { value: "feminino", label: "Feminino" },
   { value: "normal", label: "Masculino / Unissex" },
 ];
 
-/**
- * TEMPORÁRIO: quando o blob está fora do limite, usar imagem local para visualização.
- * Coloque em false quando o banco/blob voltar a funcionar.
- */
 const USE_TEMPORARY_PERFUME_IMAGE = false;
 const TEMPORARY_PERFUME_IMAGE = "/images/perfume1.webp";
 
@@ -125,8 +120,6 @@ export function getPerfumeAllImages(item) {
   };
 
   const gallery = Array.isArray(item.images) ? item.images : [];
-  /* Só mescla variant[].image_url quando não há lista em perfume_images: senão URLs antigas
-     nas variantes (ex.: blob apagado) viravam slide extra com ícone de erro. */
   if (gallery.length > 0) {
     gallery.forEach(add);
     return out;

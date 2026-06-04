@@ -63,7 +63,7 @@ export default function PerfumeDetailModal({ perfume, onClose, onEdit, onDelete 
           />
           <div className="modal-body p-4 p-md-5">
             <div className="row g-4">
-              {/* Coluna esquerda: foto principal + miniaturas */}
+
               <div className="col-12 col-md-5">
                 <div
                   className="bg-light rounded d-flex align-items-center justify-content-center mb-3 overflow-hidden"
@@ -103,7 +103,7 @@ export default function PerfumeDetailModal({ perfume, onClose, onEdit, onDelete 
                   <div style={{ minHeight: 56 }} />
                 )}
               </div>
-              {/* Coluna direita: informações e botões */}
+
               <div className="col-12 col-md-7">
                 {d.catalogLabel && (
                   <span className="badge bg-primary mb-2">{d.catalogLabel}</span>

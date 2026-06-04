@@ -17,17 +17,14 @@ export default function AdminPanelPage() {
   const { user } = useContextElement();
   const [adminVerified, setAdminVerified] = useState(null);
 
-  // Camada 1: não logado → redireciona (nunca mostra conteúdo)
   if (!user) {
     return <Navigate to="/" replace />;
   }
 
-  // Camada 2: contexto diz que não é admin → redireciona (evita confiança só no cliente)
   if (user.role !== "admin") {
     return <Navigate to="/" replace />;
   }
 
-  // Camada 3: confirmação no servidor (banco). Só renderiza o painel após OK do backend.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -37,7 +34,6 @@ export default function AdminPanelPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Enquanto não tiver confirmação do servidor, não mostra conteúdo do painel
   if (adminVerified === null) {
     return (
       <>
@@ -58,7 +54,6 @@ export default function AdminPanelPage() {
     );
   }
 
-  // Servidor negou: não é admin no banco
   if (adminVerified === false) {
     return <Navigate to="/" replace />;
   }

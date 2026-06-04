@@ -5,7 +5,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Link } from "react-router-dom";
 
 export default function Hero() {
-  // Swiper em loop exige slides suficientes; com 1 slide só gera warning e comportamento estranho.
   const enableLoop = slides.length > 1;
   return (
     <section className="tf-slideshow slider-fashion-1 slider-default">

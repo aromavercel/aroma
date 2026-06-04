@@ -27,7 +27,7 @@ export default function HomePageBaby() {
       <Topbar4 parentClass="tf-topbar bg-light-pink topbar-bg marquee-topbar" />
       <Header13 />
       <Hero />
-      {/* <Features /> */}
+
       <Categories />
       <Products />
       <Banner />

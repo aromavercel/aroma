@@ -5,10 +5,6 @@ import { Link } from "react-router-dom";
 import { getPerfumeDisplayData } from "@/data/perfumes";
 import { useContextElement } from "@/context/Context";
 
-/**
- * Card de perfume em layout de lista (estilo Vineta): imagem à esquerda,
- * informações e botões (Adicionar ao carrinho, Favoritos, Compare) à direita.
- */
 export default function PerfumeCardList({ perfume, className = "" }) {
   const {
     addProductToCart,

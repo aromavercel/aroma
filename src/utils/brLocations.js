@@ -61,7 +61,6 @@ export async function fetchBrazilCitiesByUF(uf) {
       }
     }
   } catch {
-    // ignora cache inválido
   }
 
   const data = await fetchJson(`${IBGE_BASE}/estados/${key}/municipios`);
@@ -75,8 +74,6 @@ export async function fetchBrazilCitiesByUF(uf) {
   try {
     localStorage.setItem(storageKey(key), JSON.stringify(cities));
   } catch {
-    // ignora quota
   }
   return cities;
 }
-

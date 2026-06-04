@@ -30,4 +30,3 @@ export async function fetchAddressByCep(cep) {
     state: (data.uf || "").toUpperCase(),
   };
 }
-

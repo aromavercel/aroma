@@ -44,7 +44,7 @@ export default function Testimonials() {
           className="wrapper-thumbs-tes flat-thumbs-tes bg-white rounded-0"
           data-effect="fade"
         >
-          {/* Thumbnail Swiper */}
+
           <div className="box-left">
             <Swiper
               modules={[Thumbs]}
@@ -69,7 +69,6 @@ export default function Testimonials() {
             </Swiper>
           </div>
 
-          {/* Testimonial Swiper */}
           <div className="box-right wow fadeInUp">
             <Swiper
               modules={[Thumbs, Navigation]}
@@ -142,7 +141,6 @@ export default function Testimonials() {
                 </SwiperSlide>
               ))}
 
-              {/* Navigation */}
               <div className="box-nav-swiper">
                 <div className="swiper-button-prev nav-swiper size-30 nav-prev-tes" />
                 <div className="swiper-button-next nav-swiper size-30 nav-next-tes" />

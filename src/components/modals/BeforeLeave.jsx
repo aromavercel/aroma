@@ -10,7 +10,7 @@ export default function BeforeLeave() {
   const modalElement = useRef();
   useEffect(() => {
     const showModal = async () => {
-      const bootstrap = await import("bootstrap"); // dynamically import bootstrap
+      const bootstrap = await import("bootstrap");
       const myModal = new bootstrap.Modal(
         document.getElementById("BeforeLeave"),
         {
@@ -18,7 +18,6 @@ export default function BeforeLeave() {
         }
       );
 
-      // Show the modal after a delay using a promise
       await new Promise((resolve) => setTimeout(resolve, 2000));
       myModal.show();
 

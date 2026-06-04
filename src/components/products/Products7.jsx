@@ -160,7 +160,7 @@ export default function Products7({ fullWidth = false }) {
           handleLoad();
         }
       },
-      { threshold: 0.1 } // Trigger when 10% of the element is visible
+      { threshold: 0.1 }
     );
 
     if (elementRef.current) {
@@ -180,7 +180,7 @@ export default function Products7({ fullWidth = false }) {
           handleLoad();
         }
       },
-      { threshold: 0.1 } // Trigger when 10% of the element is visible
+      { threshold: 0.1 }
     );
 
     if (elementRef2.current) {
@@ -345,7 +345,7 @@ export default function Products7({ fullWidth = false }) {
             {activeLayout == 1 ? (
               <div className="tf-list-layout wrapper-shop" id="listLayout">
                 <ListProducts products={loadedItems} />
-                {/* Pagination */}
+
                 {!(loadedItems.length >= sorted.length) && (
                   <div className="wd-load" ref={elementRef}>
                     <button
@@ -376,7 +376,7 @@ export default function Products7({ fullWidth = false }) {
                 id="gridLayout"
               >
                 <GridProducts products={loadedItems} />
-                {/* Pagination */}
+
                 {!(loadedItems.length >= sorted.length) && (
                   <div
                     className="wd-load d-flex justify-content-center"

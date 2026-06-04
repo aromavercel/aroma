@@ -1,7 +1,6 @@
 export const brands = [
   { name: "Vineta", count: 11 },
   { name: "Zotac", count: 20 },
-  // Add more brands as needed
 ];
 
 export const sizes = [

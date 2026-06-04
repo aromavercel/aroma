@@ -4,11 +4,6 @@ import { useContextElement } from "@/context/Context";
 import CartLength from "@/components/common/CartLength";
 import WishlistLength from "@/components/common/WishlistLength";
 
-/**
- * Navegação fixa inferior (Início, Conta, Loja, Favoritos, Carrinho).
- * Visível em viewports ≤1199px (ver _responsive.scss + custom.scss).
- * Oculta no painel admin (/painel/*).
- */
 export default function Toolbar() {
   const wishClipId = `aroma-toolbar-wish-${useId().replace(/:/g, "")}`;
   const { pathname } = useLocation();

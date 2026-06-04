@@ -2,9 +2,6 @@
 
 import React from "react";
 
-/**
- * Seção de descrição do perfume em accordions (estilo Vineta product-detail).
- */
 export default function PerfumeDescription({
   description = "",
   notes = {},

@@ -1,12 +1,6 @@
 import { Link } from "react-router-dom";
 import React from "react";
 
-/**
- * Breadcrumb compacto em linha (igual à página de produto/perfume):
- * "Início • …" à esquerda e opcionalmente link de volta à direita.
- * `pageTitle` mantido por compatibilidade com chamadas antigas; o rastro usa `pageName`.
- * @param {{ label: string, to: string }[]} [trail] - links entre "Início" e a página atual (ex.: Catálogo).
- */
 export default function Breadcumb({
   pageName = "Addresses",
   pageTitle: _pageTitle = "My Orders",

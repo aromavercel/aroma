@@ -32,7 +32,6 @@ export default function Login() {
           setCheckoutMessage("");
         }
       } catch {
-        // ignora
       }
     };
     el.addEventListener("show.bs.offcanvas", onShow);
@@ -59,7 +58,6 @@ export default function Login() {
         sessionStorage.removeItem("checkoutAuthFirstname");
         sessionStorage.removeItem("checkoutAuthLastname");
       } catch {
-        // ignora
       }
     } catch (err) {
       setError(err.message || "Erro ao fazer login");
@@ -160,7 +158,6 @@ export default function Login() {
                     try {
                       sessionStorage.setItem("checkoutAuthPhone", brazilPhoneNationalDigits(phone));
                     } catch {
-                      // ignora
                     }
                   }}
                 >

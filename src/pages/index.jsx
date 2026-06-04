@@ -30,7 +30,7 @@ export default function HomePage() {
       <Banner />
       <Testimonials />
       <Footer1 />
-      {/* <Newsletter /> */}
+
     </>
   );
 }

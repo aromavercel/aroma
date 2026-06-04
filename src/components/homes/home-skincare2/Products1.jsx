@@ -61,7 +61,7 @@ export default function Products1() {
                         data-src={product.imgSrc}
                         alt={`image-product-${product.id}`}
                         src={product.imgSrc}
-                        width={513} // You might need to adjust width/height based on actual images
+                        width={513}
                         height={513}
                       />
                       <img
@@ -150,7 +150,7 @@ export default function Products1() {
                         product.inforItems.map((item, index) => (
                           <li className="item" key={index}>
                             {" "}
-                            {/* Using index as key if items are static */}
+
                             <svg
                               width={21}
                               height={22}

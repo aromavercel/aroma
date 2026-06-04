@@ -27,13 +27,6 @@ export function applyImageProxy(perfume) {
   return p;
 }
 
-/**
- * Lista perfumes do banco. Opcional: ?catalog=arabe|feminino|normal | ?all=1 (admin: lista todos, inclusive inativos).
- * Imagens do Blob são convertidas para o proxy do backend (evita 403).
- * Suporta paginação/filtros quando enviado { limit, offset/page, q, brandKey, priceMin, priceMax, sort }.
- * @param {{ catalog?: string, all?: boolean, limit?: number, offset?: number, page?: number, q?: string, brandKey?: string, priceMin?: number|string, priceMax?: number|string, sort?: string }} [params]
- * @returns {Promise<any>}
- */
 export async function getPerfumesList(params = {}) {
   const apiBase = getApiBase();
   const url = new URL(`${apiBase}/api/perfumes`, apiBase || undefined);
@@ -52,7 +45,6 @@ export async function getPerfumesList(params = {}) {
   if (params.status) url.searchParams.set("status", String(params.status));
   if (params.stock) url.searchParams.set("stock", String(params.stock));
   if (params.compact) url.searchParams.set("compact", "1");
-  // Novo padrão: includeTotal=1/0. Compat: se alguém ainda passar `noTotal`, traduzimos.
   if (params.includeTotal != null) {
     url.searchParams.set("includeTotal", params.includeTotal ? "1" : "0");
   } else if (params.noTotal != null) {
@@ -76,17 +68,10 @@ export async function getPerfumeFacets(params = {}) {
   if (params.q) url.searchParams.set("q", String(params.q));
   if (params.status) url.searchParams.set("status", String(params.status));
   if (params.stock) url.searchParams.set("stock", String(params.stock));
-  // Mesma regra da lista: ?all=1 exige admin no servidor — precisa enviar Bearer.
   const data = await apiFetch(url.toString(), { method: "GET", auth: Boolean(params.all) });
   return data;
 }
 
-/**
- * Busca um perfume por id.
- * Imagens do Blob são convertidas para o proxy do backend (evita 403).
- * @param {string} id - UUID do perfume
- * @returns {Promise<{ id: string, url: string, title: string, description: string, catalogSource: string, notes: object, variants: array, images: string[] }>}
- */
 export async function getPerfumeById(id) {
   const apiBase = getApiBase();
   const data = await apiFetch(`${apiBase}/api/perfumes/${encodeURIComponent(id)}`, { method: "GET", auth: true });
